@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live OEE Dashboard</title>
+    <!-- Chart.js Library -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            background: #343a40;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .controls {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        select {
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 5px;
+            width: 250px;
+        }
+        .cards {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+        }
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            width: 20%;
+            text-align: center;
+            min-width: 150px;
+            margin: 10px;
+        }
+        .card h3 {
+            margin: 0 0 10px 0;
+            color: #6c757d;
+            font-size: 16px;
+        }
+        .card .value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #28a745;
+        }
+        .chart-container {
+            width: 80%;
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .loading {
+            text-align: center;
+            font-size: 18px;
+            color: #007bff;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Live OEE Dashboard</h1>
+    </div>
+
+    <div class="controls">
+        <label for="machineSelect"><strong>Select Machine: </strong></label>
+        <select id="machineSelect" onchange="calculateOEE()">
+            <option value="All">All Machines (Average)</option>
+            <!-- Machine options will load here -->
+        </select>
+    </div>
+
+    <div id="loadingMsg" class="loading">Fetching Live Data from Google Sheets... Please wait.</div>
+
+    <div class="cards" id="dashboardCards" style="display:none;">
+        <div class="card">
+            <h3>Overall OEE</h3>
+            <div class="value" id="valOEE">0%</div>
+        </div>
+        <div class="card">
+            <h3>Availability</h3>
+            <div class="value" id="valA">0%</div>
+        </div>
+        <div class="card">
+            <h3>Performance</h3>
+            <div class="value" id="valP">0%</div>
+        </div>
+        <div class="card">
+            <h3>Quality</h3>
+            <div class="value" id="valQ">0%</div>
+        </div>
+    </div>
+
+    <div class="chart-container" id="chartDiv" style="display:none;">
+        <canvas id="oeeChart"></canvas>
+    </div>
+
+    <script>
+        // Aapka apna API link
+        const API_URL = "https://script.google.com/macros/s/AKfycbyRkmh4_ofJjAftObCfnX9gmhqCa4xcsvSp143BXCUdQujfy4gaFkBMlEhsVrwa61HugQ/exec";
+        let allLogs = [];
+        let oeeChartInstance = null;
+
+        // Data Fetch karna
+        fetch(API_URL)
+            .then(response => response.json())
+            .then(data => {
+                allLogs = data;
+                document.getElementById('loadingMsg').style.display = 'none';
+                document.getElementById('dashboardCards').style.display = 'flex';
+                document.getElementById('chartDiv').style.display = 'block';
+                populateDropdown();
+                calculateOEE();
+            })
+            .catch(error => {
+                console.error("Error fetching data: ", error);
+                document.getElementById('loadingMsg').innerText = "Error loading data. Check internet or API link.";
+                document.getElementById('loadingMsg').style.color = "red";
+            });
+
+        // Dropdown mein machines ke Barcode add karna
+        function populateDropdown() {
+            const select = document.getElementById("machineSelect");
+            const machines = [...new Set(allLogs.map(item => item["Barcode #"]))].filter(b => b); // Remove empty
+            
+            machines.forEach(machine => {
+                let opt = document.createElement("option");
+                opt.value = machine;
+                opt.innerText = "Barcode: " + machine;
+                select.appendChild(opt);
+            });
+        }
+
+        // OEE Calculation Logic
+        function calculateOEE() {
+            const selectedMachine = document.getElementById("machineSelect").value;
+            let filteredData = allLogs;
+
+            if (selectedMachine !== "All") {
+                filteredData = allLogs.filter(item => String(item["Barcode #"]) === String(selectedMachine));
+            }
+
+            let totalRuntime = 0, totalDowntime = 0;
+            let totalTarget = 0, totalActual = 0;
+            let totalGood = 0, totalReject = 0;
+
+            filteredData.forEach(row => {
+                if (row["Entry Type"] === "Production") {
+                    totalRuntime += Number(row["Runtime (Min)"]) || 0;
+                    totalTarget += Number(row["Target Qty"]) || 0;
+                    totalActual += Number(row["Actual Qty"]) || 0;
+                } else if (row["Entry Type"] === "Maintenance") {
+                    totalDowntime += Number(row["Downtime (Min)"]) || 0;
+                } else if (row["Entry Type"] === "Quality") {
+                    totalGood += Number(row["Good Parts"]) || 0;
+                    totalReject += Number(row["Reject Parts"]) || 0;
+                }
+            });
+
+            // Formulas for A, P, Q
+            let availability = (totalRuntime + totalDowntime) > 0 ? (totalRuntime / (totalRuntime + totalDowntime)) : 0;
+            let performance = totalTarget > 0 ? (totalActual / totalTarget) : 0;
+            
+            let totalProduced = totalGood + totalReject;
+            let quality = totalProduced > 0 ? (totalGood / totalProduced) : 0;
+
+            // Cap at 100% (1.0) in case of extra actuals
+            if(performance > 1) performance = 1; 
+            
+            let oee = availability * performance * quality;
+
+            // Convert to percentages
+            let aPct = (availability * 100).toFixed(1);
+            let pPct = (performance * 100).toFixed(1);
+            let qPct = (quality * 100).toFixed(1);
+            let oeePct = (oee * 100).toFixed(1);
+
+            // Update Screen Values
+            document.getElementById("valOEE").innerText = oeePct + "%";
+            document.getElementById("valA").innerText = aPct + "%";
+            document.getElementById("valP").innerText = pPct + "%";
+            document.getElementById("valQ").innerText = qPct + "%";
+
+            updateChart(aPct, pPct, qPct, oeePct);
+        }
+
+        // Chart Update Function
+        function updateChart(a, p, q, oee) {
+            const ctx = document.getElementById('oeeChart').getContext('2d');
+            
+            if (oeeChartInstance) {
+                oeeChartInstance.destroy();
+            }
+
+            oeeChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Availability', 'Performance', 'Quality', 'Overall OEE'],
+                    datasets: [{
+                        label: 'Percentage (%)',
+                        data: [a, p, q, oee],
+                        backgroundColor: [
+                            'rgba(54, 162, 235, 0.7)',
+                            'rgba(255, 206, 86, 0.7)',
+                            'rgba(153, 102, 255, 0.7)',
+                            'rgba(40, 167, 69, 0.8)'
+                        ],
+                        borderColor: [
+                            'rgba(54, 162, 235, 1)',
+                            'rgba(255, 206, 86, 1)',
+                            'rgba(153, 102, 255, 1)',
+                            'rgba(40, 167, 69, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
