@@ -5,77 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CNC OEE Data Entry</title>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #e9ecef;
-            padding: 20px;
-            margin: 0;
-        }
-        .container {
-            max-width: 450px;
-            margin: 0 auto;
-            background: #ffffff;
-            padding: 25px;
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        }
-        h2 {
-            text-align: center;
-            color: #333;
-            margin-bottom: 20px;
-        }
-        .form-group {
-            margin-bottom: 15px;
-        }
-        label {
-            display: block;
-            margin-bottom: 6px;
-            font-weight: 600;
-            color: #555;
-            font-size: 14px;
-        }
-        input, select {
-            width: 100%;
-            padding: 10px;
-            box-sizing: border-box;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            font-size: 15px;
-        }
-        input:focus, select:focus {
-            border-color: #007bff;
-            outline: none;
-            box-shadow: 0 0 5px rgba(0,123,255,0.3);
-        }
-        .hidden {
-            display: none;
-        }
-        .section-box {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 6px;
-            border: 1px solid #dee2e6;
-            margin-bottom: 15px;
-        }
-        button {
-            width: 100%;
-            padding: 12px;
-            background: #28a745;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-        button:hover {
-            background: #218838;
-        }
-        button:disabled {
-            background: #6c757d;
-            cursor: not-allowed;
-        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #e9ecef; padding: 20px; margin: 0; }
+        .container { max-width: 450px; margin: 0 auto; background: #ffffff; padding: 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #333; margin-bottom: 20px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 6px; font-weight: 600; color: #555; font-size: 14px; }
+        input, select { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 6px; font-size: 15px; }
+        input:focus, select:focus { border-color: #007bff; outline: none; box-shadow: 0 0 5px rgba(0,123,255,0.3); }
+        .hidden { display: none; }
+        .section-box { background: #f8f9fa; padding: 15px; border-radius: 6px; border: 1px solid #dee2e6; margin-bottom: 15px; }
+        button { width: 100%; padding: 12px; background: #28a745; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; transition: background 0.3s; }
+        button:hover { background: #218838; }
+        button:disabled { background: #6c757d; cursor: not-allowed; }
+        .alert-label { color: #dc3545; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -86,7 +28,6 @@
             <!-- Common Fields -->
             <div class="form-group">
                 <label>Barcode # (Machine ID)</label>
-                <!-- Scanner ka option yahan baad mein camera API ke through attach kiya ja sakta hai -->
                 <input type="text" id="barcode" required placeholder="Enter Barcode / Scan">
             </div>
             
@@ -118,35 +59,34 @@
             <!-- Production Section -->
             <div id="productionSection" class="section-box hidden">
                 <div class="form-group">
-                    <label>Runtime (Minutes)</label>
-                    <input type="number" id="runtime" placeholder="e.g. 420">
+                    <label>Total Shift Time (Minutes)</label>
+                    <input type="number" id="shiftTime" placeholder="e.g. 480 (for 8 hours)">
                 </div>
                 <div class="form-group">
-                    <label>Target Quantity</label>
+                    <label>Standard Production (Target)</label>
                     <input type="number" id="target" placeholder="e.g. 500">
                 </div>
                 <div class="form-group">
-                    <label>Actual Quantity</label>
-                    <input type="number" id="actual" placeholder="e.g. 480">
+                    <label>Actual Production</label>
+                    <input type="number" id="actual" placeholder="e.g. 450">
+                </div>
+                
+                <!-- Yeh reason box auto show hoga agar Actual < Target -->
+                <div class="form-group hidden" id="lossReasonDiv">
+                    <label class="alert-label">Kam Production Ki Wajah (Reason)</label>
+                    <input type="text" id="lossReason" placeholder="e.g. Tooling Issue, Material Shortage">
                 </div>
             </div>
 
             <!-- Maintenance Section -->
             <div id="maintenanceSection" class="section-box hidden">
                 <div class="form-group">
-                    <label>Maintenance Reason</label>
-                    <select id="maintReason">
-                        <option value="">Select Reason</option>
-                        <option value="Mechanical Fault">Mechanical Fault</option>
-                        <option value="Electrical Issue">Electrical Issue</option>
-                        <option value="Tool/Insert Change">Tool/Insert Change</option>
-                        <option value="Preventive Maintenance">Preventive Maintenance</option>
-                        <option value="No Power / No Air">No Power / No Air</option>
-                    </select>
+                    <label>Total Downtime (Minutes)</label>
+                    <input type="number" id="downtime" placeholder="e.g. 45">
                 </div>
                 <div class="form-group">
-                    <label>Downtime (Minutes)</label>
-                    <input type="number" id="downtime" placeholder="e.g. 45">
+                    <label>Problem / Maintenance Reason</label>
+                    <input type="text" id="maintReason" placeholder="e.g. Motor Heating, Sensor Fault">
                 </div>
                 <div class="form-group">
                     <label>Technician Name</label>
@@ -161,7 +101,7 @@
                     <input type="number" id="goodParts" placeholder="e.g. 470">
                 </div>
                 <div class="form-group">
-                    <label>Reject / Scrap Parts</label>
+                    <label>Rejected / Scrap Parts</label>
                     <input type="number" id="rejectParts" placeholder="e.g. 10">
                 </div>
                 <div class="form-group">
@@ -175,7 +115,6 @@
     </div>
 
     <script>
-        // Section hide/show karne ka function
         function toggleSections() {
             const type = document.getElementById("entryType").value;
             
@@ -192,23 +131,38 @@
             }
         }
 
-        // Form submit hone ka function
+        // Auto Reason Box Logic
+        document.getElementById("actual").addEventListener("input", checkTarget);
+        document.getElementById("target").addEventListener("input", checkTarget);
+
+        function checkTarget() {
+            const target = parseFloat(document.getElementById("target").value) || 0;
+            const actual = parseFloat(document.getElementById("actual").value) || 0;
+            
+            // Show reason input if Actual is less than Target
+            if(actual > 0 && actual < target) {
+                document.getElementById("lossReasonDiv").classList.remove("hidden");
+            } else {
+                document.getElementById("lossReasonDiv").classList.add("hidden");
+            }
+        }
+
         document.getElementById("oeeForm").addEventListener("submit", function(e) {
-            e.preventDefault(); // Page refresh rokne ke liye
+            e.preventDefault(); 
             
             const btn = document.getElementById("submitBtn");
             btn.innerText = "Submitting... Please wait";
             btn.disabled = true;
             
-            // Sab fields ka data jama karna
             const data = {
                 barcode: document.getElementById("barcode").value,
                 operatorName: document.getElementById("operatorName").value,
                 shift: document.getElementById("shift").value,
                 entryType: document.getElementById("entryType").value,
-                runtime: document.getElementById("runtime").value,
+                shiftTime: document.getElementById("shiftTime").value,
                 target: document.getElementById("target").value,
                 actual: document.getElementById("actual").value,
+                lossReason: document.getElementById("lossReason").value,
                 maintReason: document.getElementById("maintReason").value,
                 downtime: document.getElementById("downtime").value,
                 techName: document.getElementById("techName").value,
@@ -217,16 +171,17 @@
                 rejectReason: document.getElementById("rejectReason").value
             };
 
-            // Google Apps Script ko data bhejna
+            // Apne API URL se isay check zaroor kar lein
             fetch("https://script.google.com/macros/s/AKfycbyRkmh4_ofJjAftObCfnX9gmhqCa4xcsvSp143BXCUdQujfy4gaFkBMlEhsVrwa61HugQ/exec", {
                 method: "POST",
                 body: JSON.stringify(data)
             })
-            .then(response => response.text()) // Expecting JSON, using text to avoid parse errors temporarily
+            .then(response => response.text()) 
             .then(result => {
                 alert("Data Successfully Saved to Google Sheets!");
-                document.getElementById("oeeForm").reset(); // Form clear karna
-                toggleSections(); // Sections wapis hide karna
+                document.getElementById("oeeForm").reset(); 
+                toggleSections(); 
+                document.getElementById("lossReasonDiv").classList.add("hidden");
                 btn.innerText = "Submit Data";
                 btn.disabled = false;
             })
