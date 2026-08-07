@@ -101,11 +101,10 @@
         <label for="machineSelect"><strong>Select View: </strong></label>
         <select id="machineSelect" onchange="calculateOEE()">
             <option value="All">Factory Aggregate (All Machines)</option>
-            <!-- Machine options will load here -->
         </select>
     </div>
 
-    <div id="loadingMsg" class="loading">Fetching Live Data from ERP/Google Sheets... Please wait.</div>
+    <div id="loadingMsg" class="loading">Fetching Live Data from Google Sheets... Please wait.</div>
 
     <div class="cards" id="dashboardCards" style="display:none;">
         <div class="card" style="border-color: #2c3e50;">
@@ -127,12 +126,10 @@
     </div>
 
     <div class="charts-wrapper" id="chartDiv" style="display:none;">
-        <!-- OEE Factors Chart -->
         <div class="chart-container">
             <h3 style="text-align:center; color:#333;">OEE Factors (%)</h3>
             <canvas id="oeeChart"></canvas>
         </div>
-        <!-- Top Downtime Reasons Pareto Chart -->
         <div class="chart-container">
             <h3 style="text-align:center; color:#333;">Top Downtime Reasons (Minutes)</h3>
             <canvas id="downtimeChart"></canvas>
@@ -140,7 +137,6 @@
     </div>
 
     <script>
-        // AAPKA GOOGLE SCRIPT URL
         const API_URL = "https://script.google.com/macros/s/AKfycbyRkmh4_ofJjAftObCfnX9gmhqCa4xcsvSp143BXCUdQujfy4gaFkBMlEhsVrwa61HugQ/exec";
         let allLogs = [];
         let oeeChartInstance = null;
@@ -182,23 +178,24 @@
                 filteredData = allLogs.filter(item => String(item["Barcode #"]) === String(selectedMachine));
             }
 
-            let totalShiftTime = 0, totalDowntime = 0;
-            let totalTarget = 0, totalActual = 0;
+            let totalPlannedTime = 0, totalDowntime = 0;
+            let totalIdealTime = 0; // Ideal CT * Total Count
             let totalGood = 0, totalReject = 0;
-            
-            // Downtime Tracking Object
             let downtimeReasons = {};
 
             filteredData.forEach(row => {
                 if (row["Entry Type"] === "Production") {
-                    totalShiftTime += Number(row["Shift Time (Min)"]) || 0;
-                    totalTarget += Number(row["Target Qty"]) || 0;
-                    totalActual += Number(row["Actual Qty"]) || 0;
+                    // Using new Header Names
+                    totalPlannedTime += Number(row["Planned Time (Min)"]) || 0;
+                    
+                    let idealCT = Number(row["Ideal CT (Min)"]) || 0;
+                    let totalCount = Number(row["Total Count"]) || 0;
+                    totalIdealTime += (idealCT * totalCount); // Standard Time
+
                 } else if (row["Entry Type"] === "Maintenance") {
                     let dt = Number(row["Downtime (Min)"]) || 0;
                     totalDowntime += dt;
                     
-                    // Populate Downtime Reasons for Pareto Chart
                     let reason = row["Maint. Reason"] || "Unspecified";
                     if(downtimeReasons[reason]) {
                         downtimeReasons[reason] += dt;
@@ -207,18 +204,20 @@
                     }
 
                 } else if (row["Entry Type"] === "Quality") {
-                    totalGood += Number(row["Good Parts"]) || 0;
-                    totalReject += Number(row["Reject Parts"]) || 0;
+                    totalGood += Number(row["Good Count"]) || 0;
+                    totalReject += Number(row["Scrap Count"]) || 0;
                 }
             });
 
-            // Actual Run Time
-            let actualRunTime = totalShiftTime - totalDowntime;
+            // Run Time Calculation
+            let actualRunTime = totalPlannedTime - totalDowntime;
             if (actualRunTime < 0) actualRunTime = 0;
 
-            // OEE Calculation (Weighted Aggregation as per Presentation)
-            let availability = totalShiftTime > 0 ? (actualRunTime / totalShiftTime) : 0;
-            let performance = totalTarget > 0 ? (totalActual / totalTarget) : 0;
+            // Presentation-based OEE Formulas
+            let availability = totalPlannedTime > 0 ? (actualRunTime / totalPlannedTime) : 0;
+            
+            // Performance = (Ideal Cycle Time * Total Count) / Run Time
+            let performance = actualRunTime > 0 ? (totalIdealTime / actualRunTime) : 0;
             
             let totalProduced = totalGood + totalReject;
             let quality = totalProduced > 0 ? (totalGood / totalProduced) : 0;
@@ -236,10 +235,10 @@
             document.getElementById("valP").innerText = pPct + "%";
             document.getElementById("valQ").innerText = qPct + "%";
 
-            // Prepare Downtime Data for Chart (Sorting High to Low)
+            // Pareto Chart Data Preparation
             let sortedDowntime = Object.keys(downtimeReasons)
                 .map(key => ({ reason: key, time: downtimeReasons[key] }))
-                .sort((a, b) => b.time - a.time); // Highest first
+                .sort((a, b) => b.time - a.time); 
 
             let dtLabels = sortedDowntime.map(item => item.reason);
             let dtData = sortedDowntime.map(item => item.time);
@@ -248,7 +247,6 @@
         }
 
         function updateCharts(a, p, q, oee, dtLabels, dtData) {
-            // 1. OEE Bar Chart
             const ctx1 = document.getElementById('oeeChart').getContext('2d');
             if (oeeChartInstance) oeeChartInstance.destroy();
 
@@ -265,7 +263,6 @@
                 options: { scales: { y: { beginAtZero: true, max: 100 } }, plugins: { legend: { display: false } } }
             });
 
-            // 2. Downtime Pareto Chart (Horizontal Bar)
             const ctx2 = document.getElementById('downtimeChart').getContext('2d');
             if (downtimeChartInstance) downtimeChartInstance.destroy();
 
@@ -280,7 +277,7 @@
                     }]
                 },
                 options: { 
-                    indexAxis: 'y', // Makes it horizontal
+                    indexAxis: 'y', 
                     scales: { x: { beginAtZero: true } },
                     plugins: { legend: { display: false } } 
                 }
