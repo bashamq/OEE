@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Machine Registration & QR Generator</title>
+    <!-- QR Code Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background-color: #e9ecef; padding: 20px; }
+        .container { max-width: 500px; margin: 0 auto; background: #fff; padding: 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #2c3e50; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #34495e; }
+        input, select { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 5px; }
+        button { width: 100%; padding: 12px; background: #2980b9; color: white; border: none; border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px;}
+        button:hover { background: #2471a3; }
+        #qrSection { text-align: center; margin-top: 30px; display: none; padding: 20px; border: 2px dashed #bdc3c7; border-radius: 10px;}
+        #qrcode { display: flex; justify-content: center; margin: 15px 0; }
+        .print-btn { background: #27ae60; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Register New Machine</h2>
+        <form id="registerForm">
+            <div class="form-group">
+                <label>Select Production Line</label>
+                <select id="lineName" required>
+                    <option value="">-- Select Line --</option>
+                    <option value="Axle 385">1. Axle 385</option>
+                    <option value="Sump 385">2. Sump 385</option>
+                    <option value="Hyd. Lift Cover">3. Hyd. Lift Cover</option>
+                    <option value="Cylinder 240/385">4. Cylinder 240/385</option>
+                    <option value="FAS 350">5. FAS 350</option>
+                    <option value="Spacer Block/Adaptor Plate/PTO">6. Spacer Block/Adaptor Plate/PTO</option>
+                    <option value="Rear Wheel 1st and 2nd">7. Rear Wheel 1st and 2nd</option>
+                    <option value="Diff Case 385 (set)">8. Diff Case 385 (set)</option>
+                    <option value="Piston 240/385">9. Piston 240/385</option>
+                    <option value="Front Support 350/385">10. Front Support 350/385</option>
+                    <option value="Front Support 850/85-56">11. Front Support 850/85-56</option>
+                    <option value="Diff Plate">12. Diff Plate</option>
+                    <option value="FAS 480">13. FAS 480</option>
+                    <option value="Diff Case 480">14. Diff Case 480</option>
+                    <option value="Tube Final Drive 480/640/850">15. Tube Final Drive 480/640/850</option>
+                    <option value="Hub 240/385/480">16. Hub 240/385/480</option>
+                    <option value="Support Splitter">17. Support Splitter</option>
+                    <option value="Small Parts">18. Small Parts</option>
+                    <option value="Axle Casing 480/850/85-56">19. Axle Casing 480/850/85-56</option>
+                    <option value="Casing Gear Box 480/850">20. Casing Gear Box 480/850</option>
+                </select>
+            </div>
+            <div class="form-group"><label>Machine Name</label><input type="text" id="machineName" required></div>
+            <div class="form-group"><label>Machine Brand / Make</label><input type="text" id="brand" required></div>
+            <div class="form-group"><label>Asset Number (Barcode)</label><input type="text" id="assetNumber" required></div>
+            <div class="form-group"><label>Operation</label><input type="text" id="operation" placeholder="e.g. Turning, Milling" required></div>
+            <div class="form-group"><label>Ideal Cycle Time (Min)</label><input type="number" step="0.01" id="idealCT" required></div>
+            <div class="form-group"><label>Standard Production (Shift)</label><input type="number" id="stdProduction" required></div>
+            
+            <button type="submit" id="submitBtn">Register Machine & Generate QR</button>
+        </form>
+
+        <!-- QR Code Section -->
+        <div id="qrSection">
+            <h3 id="qrTitle" style="margin: 0; color: #333;"></h3>
+            <p id="qrAsset" style="margin: 5px 0; color: #555; font-weight: bold;"></p>
+            <div id="qrcode"></div>
+            <p style="font-size: 12px; color: #7f8c8d;">Scan to open Data Entry Form</p>
+            <button class="print-btn" onclick="printQR()">🖨️ Print QR Code</button>
+        </div>
+    </div>
+
+    <script>
+        // Yahan Apna GitHub Data Entry form ka link dalein
+        // Maslan: "https://yourusername.github.io/OEE/index.html"
+        const ENTRY_FORM_URL = "https://yourwebsite.com/index.html"; 
+
+        document.getElementById("registerForm").addEventListener("submit", function(e) {
+            e.preventDefault();
+            const btn = document.getElementById("submitBtn");
+            btn.innerText = "Registering..."; btn.disabled = true;
+
+            const data = {
+                formType: "registerMachine", // Backend ko batane ke liye
+                lineName: document.getElementById("lineName").value,
+                machineName: document.getElementById("machineName").value,
+                brand: document.getElementById("brand").value,
+                assetNumber: document.getElementById("assetNumber").value,
+                operation: document.getElementById("operation").value,
+                idealCT: document.getElementById("idealCT").value,
+                stdProduction: document.getElementById("stdProduction").value
+            };
+
+            // YAHAN APNA GOOGLE SCRIPT URL DALEIN
+            fetch("https://script.google.com/macros/s/AKfycbyRkmh4_ofJjAftObCfnX9gmhqCa4xcsvSp143BXCUdQujfy4gaFkBMlEhsVrwa61HugQ/exec", {
+                method: "POST",
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                alert("Machine Registered Successfully!");
+                generateQR(data.assetNumber, data.machineName);
+                btn.innerText = "Register Machine & Generate QR"; btn.disabled = false;
+            })
+            .catch(error => {
+                alert("Error saving data!");
+                btn.innerText = "Register Machine & Generate QR"; btn.disabled = false;
+            });
+        });
+
+        function generateQR(asset, name) {
+            document.getElementById("registerForm").style.display = "none";
+            document.getElementById("qrSection").style.display = "block";
+            
+            document.getElementById("qrTitle").innerText = name;
+            document.getElementById("qrAsset").innerText = "Asset #: " + asset;
+
+            // QR Code mein Data Entry form ka URL aur Asset number store kar rahe hain
+            const qrText = ENTRY_FORM_URL + "?asset=" + asset;
+
+            document.getElementById("qrcode").innerHTML = ""; // Clear old QR
+            new QRCode(document.getElementById("qrcode"), {
+                text: qrText,
+                width: 150,
+                height: 150
+            });
+        }
+
+        function printQR() {
+            let printContents = document.getElementById('qrSection').innerHTML;
+            let originalContents = document.body.innerHTML;
+            document.body.innerHTML = printContents;
+            window.print();
+            document.body.innerHTML = originalContents;
+            location.reload(); // Reload to reset form
+        }
+    </script>
+</body>
+</html>
