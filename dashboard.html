@@ -3,27 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enterprise MES Dashboard</title>
-    <!-- Chart.js Library -->
+    <title>MES Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; }
         .header { text-align: center; background: #2c3e50; color: #f1c40f; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-bottom: 5px solid #e74c3c; }
         .header h1 { margin: 0; font-size: 28px; color: white;}
         .controls { text-align: center; margin-bottom: 20px; }
-        select { padding: 10px; font-size: 16px; border-radius: 5px; width: 350px; border: 1px solid #ccc; font-weight: bold; color: #2c3e50; }
+        select { padding: 10px; font-size: 16px; border-radius: 5px; width: 350px; border: 1px solid #ccc; font-weight: bold; }
         
-        /* Progress Bar Section */
         .progress-wrapper { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin-bottom: 30px; border-left: 5px solid #27ae60; display: none; }
-        .progress-header { display: flex; justify-content: space-between; align-items: center; }
-        .progress-header h3 { margin: 0; color: #34495e; }
-        .progress-text { font-size: 18px; font-weight: bold; color: #2c3e50; }
-        .progress-bar-bg { background: #ecf0f1; border-radius: 10px; height: 30px; width: 100%; overflow: hidden; margin-top: 15px; position: relative; }
-        .progress-fill { background: #27ae60; height: 100%; width: 0%; transition: width 0.8s ease-in-out; display: flex; align-items: center; justify-content: flex-end; padding-right: 10px; box-sizing: border-box; color: white; font-weight: bold; }
+        .progress-header { display: flex; justify-content: space-between; }
+        .progress-text { font-size: 18px; font-weight: bold; }
+        .progress-bar-bg { background: #ecf0f1; border-radius: 10px; height: 30px; width: 100%; margin-top: 15px; position: relative; }
+        .progress-fill { background: #27ae60; height: 100%; width: 0%; transition: 0.8s; display: flex; align-items: center; justify-content: flex-end; padding-right: 10px; color: white; font-weight: bold; border-radius: 10px; }
         
         .cards { display: flex; justify-content: center; flex-wrap: wrap; margin-bottom: 30px; gap: 15px; }
         .card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); width: 15%; text-align: center; min-width: 140px; border-top: 4px solid #3498db; }
-        .card h3 { margin: 0 0 10px 0; color: #34495e; font-size: 14px; text-transform: uppercase; }
+        .card h3 { margin: 0 0 10px 0; color: #34495e; font-size: 14px; }
         .card .value { font-size: 24px; font-weight: bold; color: #27ae60; }
         
         .charts-wrapper { display: flex; justify-content: space-between; flex-wrap: wrap; }
@@ -33,26 +30,23 @@
     </style>
 </head>
 <body>
-
     <div class="header">
-        <h1>Manufacturing Excellence - OEE Program</h1>
-        <p style="color: #bdc3c7; margin-top:5px;">MES Dashboard - Target vs Actual, OEE, MTTR & MTBF</p>
+        <h1>Manufacturing Excellence Dashboard</h1>
+        <p style="color: #bdc3c7; margin-top:5px;">Target vs Actual, OEE, MTTR & MTBF</p>
     </div>
 
     <div class="controls">
         <label><strong>Select View: </strong></label>
         <select id="viewSelect" onchange="calculateDashboard()">
             <option value="All">🏭 Factory Aggregate (All Lines)</option>
-            <!-- Lines aur Machines automatically yahan load hongi -->
         </select>
     </div>
 
-    <div id="loadingMsg" class="loading">Fetching Live Data from Server... Please wait.</div>
+    <div id="loadingMsg" class="loading">Fetching Data... Please wait.</div>
 
-    <!-- Monthly Target Progress Bar -->
     <div class="progress-wrapper" id="progressDiv">
         <div class="progress-header">
-            <h3>Monthly Production Progress</h3>
+            <h3>Monthly Target Progress</h3>
             <div class="progress-text" id="targetText">0 / 0 (0%)</div>
         </div>
         <div class="progress-bar-bg">
@@ -60,207 +54,101 @@
         </div>
     </div>
 
-    <!-- Metrics Cards -->
     <div class="cards" id="dashboardCards" style="display:none;">
-        <div class="card" style="border-color: #2c3e50;"><h3>Overall OEE</h3><div class="value" id="valOEE">0%</div></div>
-        <div class="card" style="border-color: #3498db;"><h3>Availability</h3><div class="value" id="valA">0%</div></div>
-        <div class="card" style="border-color: #f1c40f;"><h3>Performance</h3><div class="value" id="valP">0%</div></div>
-        <div class="card" style="border-color: #e74c3c;"><h3>Quality</h3><div class="value" id="valQ">0%</div></div>
-        <div class="card" style="border-color: #8e44ad;"><h3>MTTR (Mins)</h3><div class="value" style="color:#8e44ad;" id="valMTTR">0</div></div>
-        <div class="card" style="border-color: #16a085;"><h3>MTBF (Mins)</h3><div class="value" style="color:#16a085;" id="valMTBF">0</div></div>
+        <div class="card"><h3>OEE</h3><div class="value" id="valOEE">0%</div></div>
+        <div class="card"><h3>Availability</h3><div class="value" id="valA">0%</div></div>
+        <div class="card"><h3>Performance</h3><div class="value" id="valP">0%</div></div>
+        <div class="card"><h3>Quality</h3><div class="value" id="valQ">0%</div></div>
+        <div class="card"><h3>MTTR (Min)</h3><div class="value" style="color:#8e44ad;" id="valMTTR">0</div></div>
+        <div class="card"><h3>MTBF (Min)</h3><div class="value" style="color:#16a085;" id="valMTBF">0</div></div>
     </div>
 
     <div class="charts-wrapper" id="chartDiv" style="display:none;">
-        <div class="chart-container">
-            <h3 style="text-align:center; color:#333;">OEE Factors (%)</h3>
-            <canvas id="oeeChart"></canvas>
-        </div>
-        <div class="chart-container">
-            <h3 style="text-align:center; color:#333;">Top Downtime Reasons (Minutes)</h3>
-            <canvas id="downtimeChart"></canvas>
-        </div>
+        <div class="chart-container"><canvas id="oeeChart"></canvas></div>
+        <div class="chart-container"><canvas id="downtimeChart"></canvas></div>
     </div>
 
     <script>
-        // Yahan Apna Apps Script URL hi rehne dein
         const API_URL = "https://script.google.com/macros/s/AKfycbyRkmh4_ofJjAftObCfnX9gmhqCa4xcsvSp143BXCUdQujfy4gaFkBMlEhsVrwa61HugQ/exec";
-        
-        let allLogs = [], allTargets = [], allMachines = [];
-        let machineMap = {}; // Barcode ko Line ke sath link karne ke liye
-        
+        let allLogs = [], allTargets = [], allMachines = [], machineMap = {};
         let oeeChartInstance = null, downtimeChartInstance = null;
 
         fetch(API_URL)
-            .then(response => response.json())
+            .then(res => res.json())
             .then(data => {
-                // Ab data naye JSON format (logs, targets, machines) mein araha hai
-                allLogs = data.logs || [];
-                allTargets = data.targets || [];
-                allMachines = data.machines || [];
-                
-                buildMachineMap();
-                
+                allLogs = data.logs || []; allTargets = data.targets || []; allMachines = data.machines || [];
+                allMachines.forEach(m => machineMap[String(m["Asset Number"])] = m);
                 document.getElementById('loadingMsg').style.display = 'none';
                 document.getElementById('progressDiv').style.display = 'block';
                 document.getElementById('dashboardCards').style.display = 'flex';
                 document.getElementById('chartDiv').style.display = 'flex';
-                
-                populateDropdown();
-                calculateDashboard();
-            })
-            .catch(error => {
-                document.getElementById('loadingMsg').innerText = "Error loading data. Check API link.";
-                document.getElementById('loadingMsg').style.color = "red";
-                console.error(error);
-            });
-
-        function buildMachineMap() {
-            allMachines.forEach(m => {
-                machineMap[String(m["Asset Number"])] = m;
-            });
-        }
+                populateDropdown(); calculateDashboard();
+            }).catch(e => { document.getElementById('loadingMsg').innerText = "Error loading data."; });
 
         function populateDropdown() {
             const select = document.getElementById("viewSelect");
-            
-            // 1. Production Lines nikalna
             let uniqueLines = [...new Set(allMachines.map(m => m["Line Name"]))].filter(Boolean);
-            
-            // Lines ke Options add karna
-            let optGroupLine = document.createElement("optgroup");
-            optGroupLine.label = "--- Production Lines ---";
-            uniqueLines.forEach(line => {
-                let opt = document.createElement("option");
-                opt.value = "Line:" + line;
-                opt.innerText = "🛠️ Line: " + line;
-                optGroupLine.appendChild(opt);
-            });
+            let optGroupLine = document.createElement("optgroup"); optGroupLine.label = "Lines";
+            uniqueLines.forEach(l => { let o = document.createElement("option"); o.value = "Line:"+l; o.innerText = "🛠️ Line: "+l; optGroupLine.appendChild(o); });
             select.appendChild(optGroupLine);
-
-            // 2. Individual Machines ke Options add karna
-            let optGroupMachine = document.createElement("optgroup");
-            optGroupMachine.label = "--- Individual Machines ---";
-            allMachines.forEach(m => {
-                let opt = document.createElement("option");
-                opt.value = "Machine:" + m["Asset Number"];
-                opt.innerText = "⚙️ Machine: " + m["Machine Name"] + " (" + m["Asset Number"] + ")";
-                optGroupMachine.appendChild(opt);
-            });
+            let optGroupMachine = document.createElement("optgroup"); optGroupMachine.label = "Machines";
+            allMachines.forEach(m => { let o = document.createElement("option"); o.value = "Machine:"+m["Asset Number"]; o.innerText = "⚙️ "+m["Machine Name"]; optGroupMachine.appendChild(o); });
             select.appendChild(optGroupMachine);
         }
 
-        // Kisi line ka latest target nikalne ka function
         function getLatestTarget(lineName) {
-            let lineTargets = allTargets.filter(t => t["Line Name"] === lineName);
-            if(lineTargets.length === 0) return 0;
-            // Aakhri entry (latest) target uthana hai
-            return Number(lineTargets[lineTargets.length - 1]["Target Qty"]) || 0;
+            let trgs = allTargets.filter(t => t["Line Name"] === lineName);
+            return trgs.length ? Number(trgs[trgs.length - 1]["Target Qty"]) : 0;
         }
 
         function calculateDashboard() {
-            let selected = document.getElementById("viewSelect").value;
-            let filteredLogs = [];
-            let targetForView = 0;
+            let sel = document.getElementById("viewSelect").value;
+            let fLogs = [], trg = 0;
 
-            // View ke hisaab se Data aur Target filter karna
-            if (selected === "All") {
-                filteredLogs = allLogs;
-                // Factory target (Sab lines ke latest targets ka sum)
-                let uniqueLines = [...new Set(allMachines.map(m => m["Line Name"]))].filter(Boolean);
-                uniqueLines.forEach(l => { targetForView += getLatestTarget(l); });
-                
-            } else if (selected.startsWith("Line:")) {
-                let lineName = selected.split(":")[1];
-                targetForView = getLatestTarget(lineName);
-                // Sirf us line ki machines ka data
-                filteredLogs = allLogs.filter(log => {
-                    let m = machineMap[String(log["Barcode #"])];
-                    return m && m["Line Name"] === lineName;
-                });
-                
-            } else if (selected.startsWith("Machine:")) {
-                let asset = selected.split(":")[1];
-                filteredLogs = allLogs.filter(log => String(log["Barcode #"]) === asset);
-                
-                // Machine ke liye hum target show kar sakte hain uski line ka
-                let m = machineMap[asset];
-                if(m) { targetForView = getLatestTarget(m["Line Name"]); }
+            if (sel === "All") {
+                fLogs = allLogs;
+                [...new Set(allMachines.map(m => m["Line Name"]))].forEach(l => trg += getLatestTarget(l));
+            } else if (sel.startsWith("Line:")) {
+                let l = sel.split(":")[1]; trg = getLatestTarget(l);
+                fLogs = allLogs.filter(log => machineMap[String(log["Barcode #"])]?.["Line Name"] === l);
+            } else if (sel.startsWith("Machine:")) {
+                let a = sel.split(":")[1]; fLogs = allLogs.filter(log => String(log["Barcode #"]) === a);
+                trg = machineMap[a] ? getLatestTarget(machineMap[a]["Line Name"]) : 0;
             }
 
-            // OEE aur MTTR Variables
-            let totalPlannedTime = 0, totalDowntime = 0, totalIdealTime = 0, totalGood = 0, totalReject = 0;
-            let downtimeEventsCount = 0;
-            let downtimeReasons = {};
-
-            filteredLogs.forEach(row => {
-                if (row["Entry Type"] === "Production") {
-                    totalPlannedTime += Number(row["Planned Time (Min)"]) || 0;
-                    totalIdealTime += (Number(row["Ideal CT (Min)"]) || 0) * (Number(row["Total Count"]) || 0);
-                } else if (row["Entry Type"] === "Maintenance") {
-                    let dt = Number(row["Downtime (Min)"]) || 0;
-                    if(dt > 0) {
-                        totalDowntime += dt;
-                        downtimeEventsCount += 1; 
-                        let reason = row["Maint. Reason"] || "Unspecified";
-                        downtimeReasons[reason] = (downtimeReasons[reason] || 0) + dt;
-                    }
-                } else if (row["Entry Type"] === "Quality") {
-                    totalGood += Number(row["Good Count"]) || 0;
-                    totalReject += Number(row["Scrap Count"]) || 0;
-                }
+            let pt = 0, dt = 0, it = 0, g = 0, r = 0, dtC = 0, dtR = {};
+            fLogs.forEach(row => {
+                if (row["Entry Type"] === "Production") { pt += Number(row["Planned Time (Min)"])||0; it += (Number(row["Ideal CT (Min)"])||0)*(Number(row["Total Count"])||0); }
+                else if (row["Entry Type"] === "Maintenance") { let d = Number(row["Downtime (Min)"])||0; if(d>0){ dt+=d; dtC++; let rn = row["Maint. Reason"]||"N/A"; dtR[rn]=(dtR[rn]||0)+d; } }
+                else if (row["Entry Type"] === "Quality") { g += Number(row["Good Count"])||0; r += Number(row["Scrap Count"])||0; }
             });
 
-            // Target vs Actual Update
-            let progressPct = targetForView > 0 ? ((totalGood / targetForView) * 100) : 0;
-            if(progressPct > 100) progressPct = 100; // Cap at 100% visually
-            
-            document.getElementById("targetText").innerText = `${totalGood} / ${targetForView} (${progressPct.toFixed(1)}%)`;
-            document.getElementById("targetFill").style.width = `${progressPct}%`;
-            document.getElementById("targetFill").innerText = `${progressPct.toFixed(1)}%`;
-            
-            // Bar color change logic
-            if(progressPct < 50) document.getElementById("targetFill").style.backgroundColor = "#e74c3c";
-            else if(progressPct < 85) document.getElementById("targetFill").style.backgroundColor = "#f1c40f";
-            else document.getElementById("targetFill").style.backgroundColor = "#27ae60";
+            let pct = trg > 0 ? (g/trg)*100 : 0; if(pct>100) pct=100;
+            document.getElementById("targetText").innerText = `${g} / ${trg} (${pct.toFixed(1)}%)`;
+            document.getElementById("targetFill").style.width = `${pct}%`;
+            document.getElementById("targetFill").innerText = `${pct.toFixed(1)}%`;
+            document.getElementById("targetFill").style.backgroundColor = pct<50?"#e74c3c":pct<85?"#f1c40f":"#27ae60";
 
+            let rt = pt - dt; if(rt<0) rt=0;
+            let a = pt>0?rt/pt:0, p = rt>0?it/rt:0, q = (g+r)>0?g/(g+r):0;
+            if(p>1) p=1; let oee = a*p*q;
 
-            // OEE Calculations
-            let actualRunTime = totalPlannedTime - totalDowntime;
-            if (actualRunTime < 0) actualRunTime = 0;
+            document.getElementById("valOEE").innerText = (oee*100).toFixed(1)+"%";
+            document.getElementById("valA").innerText = (a*100).toFixed(1)+"%";
+            document.getElementById("valP").innerText = (p*100).toFixed(1)+"%";
+            document.getElementById("valQ").innerText = (q*100).toFixed(1)+"%";
+            document.getElementById("valMTTR").innerText = dtC>0?(dt/dtC).toFixed(1):0;
+            document.getElementById("valMTBF").innerText = dtC>0?(rt/dtC).toFixed(1):rt.toFixed(1);
 
-            let availability = totalPlannedTime > 0 ? (actualRunTime / totalPlannedTime) : 0;
-            let performance = actualRunTime > 0 ? (totalIdealTime / actualRunTime) : 0;
-            let totalProduced = totalGood + totalReject;
-            let quality = totalProduced > 0 ? (totalGood / totalProduced) : 0;
-
-            if(performance > 1) performance = 1; 
-            let oee = availability * performance * quality;
-
-            document.getElementById("valOEE").innerText = (oee * 100).toFixed(1) + "%";
-            document.getElementById("valA").innerText = (availability * 100).toFixed(1) + "%";
-            document.getElementById("valP").innerText = (performance * 100).toFixed(1) + "%";
-            document.getElementById("valQ").innerText = (quality * 100).toFixed(1) + "%";
-
-            // MTTR & MTBF
-            let mttr = downtimeEventsCount > 0 ? (totalDowntime / downtimeEventsCount).toFixed(1) : 0;
-            let mtbf = downtimeEventsCount > 0 ? (actualRunTime / downtimeEventsCount).toFixed(1) : actualRunTime.toFixed(1);
-
-            document.getElementById("valMTTR").innerText = mttr;
-            document.getElementById("valMTBF").innerText = mtbf;
-
-            // Charts
-            let sortedDowntime = Object.keys(downtimeReasons).map(key => ({ reason: key, time: downtimeReasons[key] })).sort((a, b) => b.time - a.time); 
-            updateCharts((availability*100), (performance*100), (quality*100), (oee*100), sortedDowntime.map(i=>i.reason), sortedDowntime.map(i=>i.time));
+            let sDt = Object.keys(dtR).map(k => ({r:k, t:dtR[k]})).sort((x,y)=>y.t-x.t);
+            updateCharts(a*100, p*100, q*100, oee*100, sDt.map(i=>i.r), sDt.map(i=>i.t));
         }
 
-        function updateCharts(a, p, q, oee, dtLabels, dtData) {
-            const ctx1 = document.getElementById('oeeChart').getContext('2d');
+        function updateCharts(a, p, q, o, l, d) {
             if (oeeChartInstance) oeeChartInstance.destroy();
-            oeeChartInstance = new Chart(ctx1, { type: 'bar', data: { labels: ['Availability', 'Performance', 'Quality', 'Overall OEE'], datasets: [{ label: '%', data: [a, p, q, oee], backgroundColor: ['#3498db', '#f1c40f', '#e74c3c', '#2c3e50'] }] }, options: { scales: { y: { max: 100 } }, plugins: { legend: { display: false } } } });
-
-            const ctx2 = document.getElementById('downtimeChart').getContext('2d');
+            oeeChartInstance = new Chart(document.getElementById('oeeChart'), { type: 'bar', data: { labels: ['A', 'P', 'Q', 'OEE'], datasets: [{ data: [a, p, q, o], backgroundColor: ['#3498db', '#f1c40f', '#e74c3c', '#2c3e50'] }] }, options: { scales: { y: { max: 100 } }, plugins: { legend: { display: false } } } });
             if (downtimeChartInstance) downtimeChartInstance.destroy();
-            downtimeChartInstance = new Chart(ctx2, { type: 'bar', data: { labels: dtLabels, datasets: [{ label: 'Minutes', data: dtData, backgroundColor: '#95a5a6' }] }, options: { indexAxis: 'y', plugins: { legend: { display: false } } } });
+            downtimeChartInstance = new Chart(document.getElementById('downtimeChart'), { type: 'bar', data: { labels: l, datasets: [{ data: d, backgroundColor: '#95a5a6' }] }, options: { indexAxis: 'y', plugins: { legend: { display: false } } } });
         }
     </script>
 </body>
