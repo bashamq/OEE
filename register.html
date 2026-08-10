@@ -3,8 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Machine Registration & QR</title>
+    <title>Machine Registration & QR Label</title>
+    <!-- QR Code Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- HTML to Image Library (Save As Image ke liye) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background-color: #e9ecef; padding: 20px; }
         .container { max-width: 500px; margin: 0 auto; background: #fff; padding: 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
@@ -14,13 +17,52 @@
         input, select { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 5px; }
         button { width: 100%; padding: 12px; background: #2980b9; color: white; border: none; border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px;}
         button:hover { background: #2471a3; }
-        #qrSection { text-align: center; margin-top: 30px; display: none; padding: 20px; border: 2px dashed #bdc3c7; border-radius: 10px;}
-        #qrcode { display: flex; justify-content: center; margin: 15px 0; }
-        .print-btn { background: #27ae60; }
+        
+        /* ---------------- QR Label Professional Design ---------------- */
+        #qrSection { text-align: center; display: none; margin-top: 20px; }
+        .label-card {
+            width: 320px;
+            margin: 0 auto;
+            padding: 25px 20px;
+            background: #ffffff;
+            border: 3px solid #2c3e50; /* Industrial thick border */
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .label-card h2 { margin: 0; font-size: 26px; color: #000; text-transform: uppercase; letter-spacing: 1px; }
+        .asset-text { font-size: 18px; font-weight: bold; color: #333; margin: 5px 0 20px 0; }
+        .qr-wrapper { display: flex; justify-content: center; margin: 15px 0; padding: 10px; background: #fff; }
+        .op-text { font-size: 18px; font-weight: bold; color: #2980b9; margin: 20px 0 0 0; border-top: 2px dashed #bdc3c7; padding-top: 15px; text-transform: uppercase; }
+        
+        .action-buttons { display: flex; gap: 10px; margin-top: 25px; }
+        .btn-print { background: #27ae60; flex: 1; }
+        .btn-print:hover { background: #219150; }
+        .btn-save { background: #f39c12; flex: 1; }
+        .btn-save:hover { background: #d68910; }
+        .btn-back { background: #7f8c8d; margin-top: 15px; }
+
+        /* ---------------- Print Mode Layout ---------------- */
+        @media print {
+            body { background: white; margin: 0; padding: 0; }
+            body * { visibility: hidden; } /* Hide everything */
+            #printLabel, #printLabel * { visibility: visible; } /* Show only the label */
+            
+            /* Center the label on the printed page */
+            #printLabel {
+                position: absolute;
+                left: 50%;
+                top: 50%;
+                transform: translate(-50%, -50%);
+                box-shadow: none; /* Remove shadow for printing */
+                border: 2px solid #000;
+            }
+            @page { margin: 0; } /* Remove default browser headers/footers */
+        }
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="container" id="mainContainer">
         <h2>Register New Machine</h2>
         <form id="registerForm">
             <div class="form-group">
@@ -60,11 +102,19 @@
         </form>
 
         <div id="qrSection">
-            <h3 id="qrTitle" style="margin: 0; color: #333;"></h3>
-            <p id="qrAsset" style="margin: 5px 0; color: #555; font-weight: bold;"></p>
-            <div id="qrcode"></div>
-            <p style="font-size: 12px; color: #7f8c8d;">Scan to open Data Entry Form</p>
-            <button class="print-btn" onclick="printQR()">🖨️ Print QR Code</button>
+            <!-- Yeh hissa Print aur Save Image ke liye design kiya gaya hai -->
+            <div id="printLabel" class="label-card">
+                <h2 id="lblMachineName">Machine Name</h2>
+                <p id="lblAssetNum" class="asset-text">Asset #: 00000</p>
+                <div id="qrcode" class="qr-wrapper"></div>
+                <p id="lblOperation" class="op-text">Operation Name</p>
+            </div>
+            
+            <div class="action-buttons">
+                <button class="btn-print" onclick="printQR()">🖨️ Print</button>
+                <button class="btn-save" onclick="saveQR()">💾 Save Image</button>
+            </div>
+            <button class="btn-back" onclick="location.reload()">⬅️ Register Another Machine</button>
         </div>
     </div>
 
@@ -93,9 +143,8 @@
             })
             .then(response => response.json())
             .then(result => {
-                alert("Machine Registered!");
-                generateQR(data.assetNumber, data.machineName);
-                btn.innerText = "Register Machine & Generate QR"; btn.disabled = false;
+                alert("Machine Registered Successfully!");
+                generateQR(data.assetNumber, data.machineName, data.operation);
             })
             .catch(error => {
                 alert("Error saving data!");
@@ -103,23 +152,44 @@
             });
         });
 
-        function generateQR(asset, name) {
+        function generateQR(asset, name, operation) {
+            // Form hide karein, Label show karein
             document.getElementById("registerForm").style.display = "none";
+            document.querySelector("h2").style.display = "none"; // Hide main heading
             document.getElementById("qrSection").style.display = "block";
-            document.getElementById("qrTitle").innerText = name;
-            document.getElementById("qrAsset").innerText = "Asset #: " + asset;
+            
+            // Label ka data set karein
+            document.getElementById("lblMachineName").innerText = name;
+            document.getElementById("lblAssetNum").innerText = "Asset #: " + asset;
+            document.getElementById("lblOperation").innerText = "Op: " + operation;
+            
+            // QR Code generate karein
             const qrText = ENTRY_FORM_URL + "?asset=" + asset;
             document.getElementById("qrcode").innerHTML = ""; 
-            new QRCode(document.getElementById("qrcode"), { text: qrText, width: 150, height: 150 });
+            new QRCode(document.getElementById("qrcode"), { 
+                text: qrText, 
+                width: 180, 
+                height: 180,
+                colorDark : "#000000",
+                colorLight : "#ffffff"
+            });
         }
 
         function printQR() {
-            let printContents = document.getElementById('qrSection').innerHTML;
-            let originalContents = document.body.innerHTML;
-            document.body.innerHTML = printContents;
             window.print();
-            document.body.innerHTML = originalContents;
-            location.reload(); 
+        }
+
+        function saveQR() {
+            const label = document.getElementById("printLabel");
+            const assetName = document.getElementById("lblAssetNum").innerText.split(": ")[1];
+            
+            // html2canvas library label ko image mein convert karti hai
+            html2canvas(label).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `Machine_${assetName}_QR.png`;
+                link.href = canvas.toDataURL("image/png");
+                link.click();
+            });
         }
     </script>
 </body>
