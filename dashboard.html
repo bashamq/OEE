@@ -4,125 +4,47 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Enterprise OEE Dashboard</title>
-    <!-- Chart.js Library -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f4f7f6;
-            margin: 0;
-            padding: 20px;
-        }
-        .header {
-            text-align: center;
-            background: #2c3e50;
-            color: #f1c40f;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            border-bottom: 5px solid #e74c3c;
-        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; }
+        .header { text-align: center; background: #2c3e50; color: #f1c40f; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-bottom: 5px solid #e74c3c; }
         .header h1 { margin: 0; font-size: 28px; color: white;}
-        .header p { margin: 5px 0 0 0; font-size: 14px; color: #bdc3c7;}
-        .controls {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        select {
-            padding: 10px;
-            font-size: 16px;
-            border-radius: 5px;
-            width: 300px;
-            border: 1px solid #ccc;
-        }
-        .cards {
-            display: flex;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            margin-bottom: 30px;
-        }
-        .card {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            width: 22%;
-            text-align: center;
-            min-width: 150px;
-            margin: 10px 0;
-            border-top: 4px solid #3498db;
-        }
-        .card h3 {
-            margin: 0 0 10px 0;
-            color: #34495e;
-            font-size: 16px;
-            text-transform: uppercase;
-        }
-        .card .value {
-            font-size: 32px;
-            font-weight: bold;
-            color: #27ae60;
-        }
-        .charts-wrapper {
-            display: flex;
-            justify-content: space-between;
-            flex-wrap: wrap;
-        }
-        .chart-container {
-            width: 48%;
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-            box-sizing: border-box;
-        }
-        .loading {
-            text-align: center;
-            font-size: 18px;
-            color: #2980b9;
-            font-weight: bold;
-            margin-top: 50px;
-        }
-        @media (max-width: 900px) {
-            .chart-container { width: 100%; }
-            .card { width: 45%; }
-        }
+        .controls { text-align: center; margin-bottom: 20px; }
+        select { padding: 10px; font-size: 16px; border-radius: 5px; width: 300px; border: 1px solid #ccc; }
+        .cards { display: flex; justify-content: center; flex-wrap: wrap; margin-bottom: 30px; gap: 15px; }
+        .card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); width: 15%; text-align: center; min-width: 140px; border-top: 4px solid #3498db; }
+        .card h3 { margin: 0 0 10px 0; color: #34495e; font-size: 14px; text-transform: uppercase; }
+        .card .value { font-size: 24px; font-weight: bold; color: #27ae60; }
+        .charts-wrapper { display: flex; justify-content: space-between; flex-wrap: wrap; }
+        .chart-container { width: 48%; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin-bottom: 20px; box-sizing: border-box; }
+        .loading { text-align: center; font-size: 18px; color: #2980b9; font-weight: bold; margin-top: 50px; }
+        @media (max-width: 900px) { .chart-container { width: 100%; } .card { width: 30%; } }
     </style>
 </head>
 <body>
 
     <div class="header">
         <h1>Manufacturing Excellence - OEE Program</h1>
-        <p>Live Dashboard - Aggregated & Machine Level</p>
+        <p style="color: #bdc3c7; margin-top:5px;">Live Dashboard - OEE, MTTR & MTBF</p>
     </div>
 
     <div class="controls">
-        <label for="machineSelect"><strong>Select View: </strong></label>
+        <label><strong>Select Machine: </strong></label>
         <select id="machineSelect" onchange="calculateOEE()">
             <option value="All">Factory Aggregate (All Machines)</option>
         </select>
     </div>
 
-    <div id="loadingMsg" class="loading">Fetching Live Data from Google Sheets... Please wait.</div>
+    <div id="loadingMsg" class="loading">Fetching Live Data... Please wait.</div>
 
+    <!-- Metrics Cards -->
     <div class="cards" id="dashboardCards" style="display:none;">
-        <div class="card" style="border-color: #2c3e50;">
-            <h3>Overall OEE</h3>
-            <div class="value" id="valOEE">0%</div>
-        </div>
-        <div class="card" style="border-color: #3498db;">
-            <h3>Availability</h3>
-            <div class="value" id="valA">0%</div>
-        </div>
-        <div class="card" style="border-color: #f1c40f;">
-            <h3>Performance</h3>
-            <div class="value" id="valP">0%</div>
-        </div>
-        <div class="card" style="border-color: #e74c3c;">
-            <h3>Quality</h3>
-            <div class="value" id="valQ">0%</div>
-        </div>
+        <div class="card" style="border-color: #2c3e50;"><h3>Overall OEE</h3><div class="value" id="valOEE">0%</div></div>
+        <div class="card" style="border-color: #3498db;"><h3>Availability</h3><div class="value" id="valA">0%</div></div>
+        <div class="card" style="border-color: #f1c40f;"><h3>Performance</h3><div class="value" id="valP">0%</div></div>
+        <div class="card" style="border-color: #e74c3c;"><h3>Quality</h3><div class="value" id="valQ">0%</div></div>
+        <div class="card" style="border-color: #8e44ad;"><h3>MTTR (Mins)</h3><div class="value" style="color:#8e44ad;" id="valMTTR">0</div></div>
+        <div class="card" style="border-color: #16a085;"><h3>MTBF (Mins)</h3><div class="value" style="color:#16a085;" id="valMTBF">0</div></div>
     </div>
 
     <div class="charts-wrapper" id="chartDiv" style="display:none;">
@@ -139,8 +61,7 @@
     <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbyRkmh4_ofJjAftObCfnX9gmhqCa4xcsvSp143BXCUdQujfy4gaFkBMlEhsVrwa61HugQ/exec";
         let allLogs = [];
-        let oeeChartInstance = null;
-        let downtimeChartInstance = null;
+        let oeeChartInstance = null, downtimeChartInstance = null;
 
         fetch(API_URL)
             .then(response => response.json())
@@ -153,135 +74,85 @@
                 calculateOEE();
             })
             .catch(error => {
-                console.error("Error fetching data: ", error);
-                document.getElementById('loadingMsg').innerText = "Error loading data. Check internet or API link.";
+                document.getElementById('loadingMsg').innerText = "Error loading data.";
                 document.getElementById('loadingMsg').style.color = "red";
             });
 
         function populateDropdown() {
             const select = document.getElementById("machineSelect");
             const machines = [...new Set(allLogs.map(item => item["Barcode #"]))].filter(b => b); 
-            
             machines.forEach(machine => {
                 let opt = document.createElement("option");
                 opt.value = machine;
-                opt.innerText = "Machine Barcode: " + machine;
+                opt.innerText = "Barcode: " + machine;
                 select.appendChild(opt);
             });
         }
 
         function calculateOEE() {
             const selectedMachine = document.getElementById("machineSelect").value;
-            let filteredData = allLogs;
+            let filteredData = selectedMachine === "All" ? allLogs : allLogs.filter(item => String(item["Barcode #"]) === String(selectedMachine));
 
-            if (selectedMachine !== "All") {
-                filteredData = allLogs.filter(item => String(item["Barcode #"]) === String(selectedMachine));
-            }
-
-            let totalPlannedTime = 0, totalDowntime = 0;
-            let totalIdealTime = 0; // Ideal CT * Total Count
-            let totalGood = 0, totalReject = 0;
+            let totalPlannedTime = 0, totalDowntime = 0, totalIdealTime = 0, totalGood = 0, totalReject = 0;
+            let downtimeEventsCount = 0; // Breakdown count for MTTR/MTBF
             let downtimeReasons = {};
 
             filteredData.forEach(row => {
                 if (row["Entry Type"] === "Production") {
-                    // Using new Header Names
                     totalPlannedTime += Number(row["Planned Time (Min)"]) || 0;
-                    
-                    let idealCT = Number(row["Ideal CT (Min)"]) || 0;
-                    let totalCount = Number(row["Total Count"]) || 0;
-                    totalIdealTime += (idealCT * totalCount); // Standard Time
-
+                    totalIdealTime += (Number(row["Ideal CT (Min)"]) || 0) * (Number(row["Total Count"]) || 0);
                 } else if (row["Entry Type"] === "Maintenance") {
                     let dt = Number(row["Downtime (Min)"]) || 0;
-                    totalDowntime += dt;
-                    
-                    let reason = row["Maint. Reason"] || "Unspecified";
-                    if(downtimeReasons[reason]) {
-                        downtimeReasons[reason] += dt;
-                    } else {
-                        downtimeReasons[reason] = dt;
+                    if(dt > 0) {
+                        totalDowntime += dt;
+                        downtimeEventsCount += 1; // Count each maintenance entry as 1 breakdown event
+                        
+                        let reason = row["Maint. Reason"] || "Unspecified";
+                        downtimeReasons[reason] = (downtimeReasons[reason] || 0) + dt;
                     }
-
                 } else if (row["Entry Type"] === "Quality") {
                     totalGood += Number(row["Good Count"]) || 0;
                     totalReject += Number(row["Scrap Count"]) || 0;
                 }
             });
 
-            // Run Time Calculation
             let actualRunTime = totalPlannedTime - totalDowntime;
             if (actualRunTime < 0) actualRunTime = 0;
 
-            // Presentation-based OEE Formulas
+            // OEE Formulas
             let availability = totalPlannedTime > 0 ? (actualRunTime / totalPlannedTime) : 0;
-            
-            // Performance = (Ideal Cycle Time * Total Count) / Run Time
             let performance = actualRunTime > 0 ? (totalIdealTime / actualRunTime) : 0;
-            
             let totalProduced = totalGood + totalReject;
             let quality = totalProduced > 0 ? (totalGood / totalProduced) : 0;
 
             if(performance > 1) performance = 1; 
             let oee = availability * performance * quality;
 
-            let aPct = (availability * 100).toFixed(1);
-            let pPct = (performance * 100).toFixed(1);
-            let qPct = (quality * 100).toFixed(1);
-            let oeePct = (oee * 100).toFixed(1);
+            document.getElementById("valOEE").innerText = (oee * 100).toFixed(1) + "%";
+            document.getElementById("valA").innerText = (availability * 100).toFixed(1) + "%";
+            document.getElementById("valP").innerText = (performance * 100).toFixed(1) + "%";
+            document.getElementById("valQ").innerText = (quality * 100).toFixed(1) + "%";
 
-            document.getElementById("valOEE").innerText = oeePct + "%";
-            document.getElementById("valA").innerText = aPct + "%";
-            document.getElementById("valP").innerText = pPct + "%";
-            document.getElementById("valQ").innerText = qPct + "%";
+            // MTTR & MTBF Calculations
+            let mttr = downtimeEventsCount > 0 ? (totalDowntime / downtimeEventsCount).toFixed(1) : 0;
+            let mtbf = downtimeEventsCount > 0 ? (actualRunTime / downtimeEventsCount).toFixed(1) : actualRunTime.toFixed(1);
 
-            // Pareto Chart Data Preparation
-            let sortedDowntime = Object.keys(downtimeReasons)
-                .map(key => ({ reason: key, time: downtimeReasons[key] }))
-                .sort((a, b) => b.time - a.time); 
+            document.getElementById("valMTTR").innerText = mttr;
+            document.getElementById("valMTBF").innerText = mtbf;
 
-            let dtLabels = sortedDowntime.map(item => item.reason);
-            let dtData = sortedDowntime.map(item => item.time);
-
-            updateCharts(aPct, pPct, qPct, oeePct, dtLabels, dtData);
+            // Charts
+            let sortedDowntime = Object.keys(downtimeReasons).map(key => ({ reason: key, time: downtimeReasons[key] })).sort((a, b) => b.time - a.time); 
+            updateCharts((availability*100), (performance*100), (quality*100), (oee*100), sortedDowntime.map(i=>i.reason), sortedDowntime.map(i=>i.time));
         }
 
         function updateCharts(a, p, q, oee, dtLabels, dtData) {
             const ctx1 = document.getElementById('oeeChart').getContext('2d');
             if (oeeChartInstance) oeeChartInstance.destroy();
-
-            oeeChartInstance = new Chart(ctx1, {
-                type: 'bar',
-                data: {
-                    labels: ['Availability', 'Performance', 'Quality', 'Overall OEE'],
-                    datasets: [{
-                        label: 'Percentage (%)',
-                        data: [a, p, q, oee],
-                        backgroundColor: ['#3498db', '#f1c40f', '#e74c3c', '#2c3e50']
-                    }]
-                },
-                options: { scales: { y: { beginAtZero: true, max: 100 } }, plugins: { legend: { display: false } } }
-            });
+            oeeChartInstance = new Chart(ctx1, { type: 'bar', data: { labels: ['Availability', 'Performance', 'Quality', 'Overall OEE'], datasets: [{ label: '%', data: [a, p, q, oee], backgroundColor: ['#3498db', '#f1c40f', '#e74c3c', '#2c3e50'] }] }, options: { scales: { y: { max: 100 } }, plugins: { legend: { display: false } } } });
 
             const ctx2 = document.getElementById('downtimeChart').getContext('2d');
             if (downtimeChartInstance) downtimeChartInstance.destroy();
-
-            downtimeChartInstance = new Chart(ctx2, {
-                type: 'bar',
-                data: {
-                    labels: dtLabels,
-                    datasets: [{
-                        label: 'Downtime Minutes',
-                        data: dtData,
-                        backgroundColor: '#95a5a6'
-                    }]
-                },
-                options: { 
-                    indexAxis: 'y', 
-                    scales: { x: { beginAtZero: true } },
-                    plugins: { legend: { display: false } } 
-                }
-            });
+            downtimeChartInstance = new Chart(ctx2, { type: 'bar', data: { labels: dtLabels, datasets: [{ label: 'Minutes', data: dtData, backgroundColor: '#95a5a6' }] }, options: { indexAxis: 'y', plugins: { legend: { display: false } } } });
         }
     </script>
 </body>
