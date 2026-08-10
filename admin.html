@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel - Monthly Targets</title>
+    <title>Admin - Set Targets</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background-color: #ecf0f1; padding: 20px; }
         .container { max-width: 500px; margin: 0 auto; background: #fff; padding: 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-top: 5px solid #8e44ad; }
@@ -16,15 +16,10 @@
     </style>
 </head>
 <body>
-
     <div class="container">
-        <h2>Set Monthly Production Targets</h2>
+        <h2>Set Monthly Targets</h2>
         <form id="adminForm">
-            <div class="form-group">
-                <label>Select Month</label>
-                <input type="month" id="targetMonth" required>
-            </div>
-            
+            <div class="form-group"><label>Select Month</label><input type="month" id="targetMonth" required></div>
             <div class="form-group">
                 <label>Select Production Line</label>
                 <select id="lineName" required>
@@ -51,12 +46,7 @@
                     <option value="Casing Gear Box 480/850">20. Casing Gear Box 480/850</option>
                 </select>
             </div>
-
-            <div class="form-group">
-                <label>Target Quantity (Customer Order)</label>
-                <input type="number" id="targetQty" placeholder="e.g. 5000" required>
-            </div>
-            
+            <div class="form-group"><label>Target Quantity</label><input type="number" id="targetQty" required></div>
             <button type="submit" id="submitBtn">Save Target</button>
         </form>
     </div>
@@ -68,20 +58,19 @@
             btn.innerText = "Saving..."; btn.disabled = true;
 
             const data = {
-                formType: "adminTarget", // Backend routing
+                formType: "adminTarget", 
                 month: document.getElementById("targetMonth").value,
                 lineName: document.getElementById("lineName").value,
                 targetQty: document.getElementById("targetQty").value
             };
 
-            // YAHAN APNA GOOGLE SCRIPT URL DALEIN
             fetch("https://script.google.com/macros/s/AKfycbyRkmh4_ofJjAftObCfnX9gmhqCa4xcsvSp143BXCUdQujfy4gaFkBMlEhsVrwa61HugQ/exec", {
                 method: "POST",
                 body: JSON.stringify(data)
             })
             .then(response => response.json())
             .then(result => {
-                alert("Target Saved Successfully!");
+                alert("Target Saved!");
                 document.getElementById("adminForm").reset();
                 btn.innerText = "Save Target"; btn.disabled = false;
             })
