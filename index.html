@@ -11,11 +11,15 @@
         .form-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 6px; font-weight: 600; color: #34495e; font-size: 14px; }
         input, select { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 6px; font-size: 15px; }
-        input[readonly] { background-color: #f8f9fa; cursor: not-allowed; }
+        
+        /* Auto-filled fields ka design change taa kay operator ko pata ho isme type nahi karna */
+        input[readonly] { background-color: #e8f8f5; border-color: #1abc9c; color: #16a085; font-weight: bold; cursor: not-allowed; }
+        
         .hidden { display: none; }
         .section-box { background: #f8f9fa; padding: 15px; border-radius: 6px; border: 1px solid #dee2e6; margin-bottom: 15px; }
         button { width: 100%; padding: 12px; background: #27ae60; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer;}
         button:hover { background: #219150; }
+        .loading-text { font-size: 13px; font-weight: bold; margin-bottom: 15px; text-align: center; display: none; }
     </style>
 </head>
 <body>
@@ -24,6 +28,9 @@
         <form id="oeeForm">
             <div class="form-group"><label>Date & Time</label><input type="datetime-local" id="entryDateTime" required></div>
             <div class="form-group"><label>Barcode # (Asset Number)</label><input type="text" id="barcode" required placeholder="Enter Barcode / Scan QR"></div>
+            
+            <div id="machineDataStatus" class="loading-text">Fetching machine parameters...</div>
+
             <div class="form-group"><label>Operator Name</label><input type="text" id="operatorName" required></div>
             <div class="form-group">
                 <label>Shift</label>
@@ -38,19 +45,27 @@
                 </select>
             </div>
 
+            <!-- Production Section -->
             <div id="productionSection" class="section-box hidden">
-                <div class="form-group"><label>Planned Time (Mins)</label><input type="number" id="shiftTime"></div>
-                <div class="form-group"><label>Ideal CT (Min/part)</label><input type="number" step="0.01" id="target"></div>
-                <div class="form-group"><label>Total Count</label><input type="number" id="actual"></div>
-                <div class="form-group hidden" id="lossReasonDiv"><label style="color:#e74c3c;">Performance Loss Reason</label><input type="text" id="lossReason"></div>
+                <p style="font-size:12px; color:#7f8c8d; margin-top:0;">* Machine settings loaded automatically</p>
+                <div class="form-group"><label>Planned Time (Mins)</label><input type="number" id="shiftTime" value="480" readonly></div>
+                <div class="form-group"><label>Ideal CT (Min/part)</label><input type="number" step="0.01" id="target" readonly></div>
+                <div class="form-group"><label>Standard Production (Shift Target)</label><input type="number" id="stdProd" readonly></div>
+                
+                <hr style="border: 0; border-top: 1px solid #ccc; margin: 20px 0;">
+                
+                <div class="form-group"><label style="color:#2980b9;">Total Count (Parts Produced)</label><input type="number" id="actual" placeholder="Enter parts produced today"></div>
+                <div class="form-group hidden" id="lossReasonDiv"><label style="color:#e74c3c;">Performance Loss Reason (Why less?)</label><input type="text" id="lossReason" placeholder="e.g. Tool change, low speed"></div>
             </div>
 
+            <!-- Maintenance Section -->
             <div id="maintenanceSection" class="section-box hidden">
                 <div class="form-group"><label>Total Downtime (Mins)</label><input type="number" id="downtime"></div>
                 <div class="form-group"><label>Maintenance Reason</label><input type="text" id="maintReason"></div>
                 <div class="form-group"><label>Technician Name</label><input type="text" id="techName"></div>
             </div>
 
+            <!-- Quality Section -->
             <div id="qualitySection" class="section-box hidden">
                 <div class="form-group"><label>Good Count</label><input type="number" id="goodParts"></div>
                 <div class="form-group"><label>Scrap Count</label><input type="number" id="rejectParts"></div>
@@ -62,17 +77,59 @@
     </div>
 
     <script>
+        // Yahan apna Google Apps Script ka URL hi rehne dain
+        const API_URL = "https://script.google.com/macros/s/AKfycbyRkmh4_ofJjAftObCfnX9gmhqCa4xcsvSp143BXCUdQujfy4gaFkBMlEhsVrwa61HugQ/exec";
+        
         window.onload = function() {
             let now = new Date();
             now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
             document.getElementById('entryDateTime').value = now.toISOString().slice(0,16);
 
             const urlParams = new URLSearchParams(window.location.search);
-            if(urlParams.get('asset')) {
-                document.getElementById('barcode').value = urlParams.get('asset');
+            const assetFromQR = urlParams.get('asset');
+            if(assetFromQR) {
+                document.getElementById('barcode').value = assetFromQR;
                 document.getElementById('barcode').readOnly = true; 
+                fetchMachineData(assetFromQR);
             }
+
+            // Agar koi manual barcode type karta hai tab bhi data fetch ho
+            document.getElementById('barcode').addEventListener('blur', function() {
+                if(!this.readOnly && this.value) {
+                    fetchMachineData(this.value);
+                }
+            });
         };
+
+        // Backend se register ki gayi machine ka data mangwana
+        function fetchMachineData(barcode) {
+            const statusDiv = document.getElementById('machineDataStatus');
+            statusDiv.innerText = "Fetching machine parameters...";
+            statusDiv.style.color = "#f39c12";
+            statusDiv.style.display = "block";
+
+            fetch(API_URL)
+                .then(res => res.json())
+                .then(data => {
+                    let allMachines = data.machines || [];
+                    let machine = allMachines.find(m => String(m["Asset Number"]) === String(barcode));
+                    
+                    if(machine) {
+                        document.getElementById('target').value = machine["Ideal CT"] || 0;
+                        document.getElementById('stdProd').value = machine["Std Production"] || 0;
+                        
+                        statusDiv.innerText = `✅ Loaded: ${machine["Machine Name"]} (${machine["Line Name"]})`;
+                        statusDiv.style.color = "#27ae60";
+                    } else {
+                        statusDiv.innerText = "⚠️ Machine not found in registered database.";
+                        statusDiv.style.color = "#e74c3c";
+                    }
+                })
+                .catch(err => {
+                    statusDiv.innerText = "⚠️ Error fetching data. Check internet.";
+                    statusDiv.style.color = "#e74c3c";
+                });
+        }
 
         function toggleSections() {
             const type = document.getElementById("entryType").value;
@@ -84,15 +141,14 @@
             if(type === "Quality") document.getElementById("qualitySection").classList.remove("hidden");
         }
 
+        // Logic check: Agar Actual parts Standard Production se kam hain, toh reason poochein
         document.getElementById("actual").addEventListener("input", checkTarget);
-        document.getElementById("target").addEventListener("input", checkTarget);
-        document.getElementById("shiftTime").addEventListener("input", checkTarget);
 
         function checkTarget() {
-            let pTime = parseFloat(document.getElementById("shiftTime").value)||0;
-            let iCT = parseFloat(document.getElementById("target").value)||0;
-            let count = parseFloat(document.getElementById("actual").value)||0;
-            if(pTime>0 && iCT>0 && count>0 && ((iCT*count) < pTime)) {
+            let actual = parseFloat(document.getElementById("actual").value) || 0;
+            let stdProd = parseFloat(document.getElementById("stdProd").value) || 0;
+            
+            if(actual > 0 && actual < stdProd) {
                 document.getElementById("lossReasonDiv").classList.remove("hidden");
             } else {
                 document.getElementById("lossReasonDiv").classList.add("hidden");
@@ -112,7 +168,7 @@
                 shift: document.getElementById("shift").value,
                 entryType: document.getElementById("entryType").value,
                 shiftTime: document.getElementById("shiftTime").value,
-                target: document.getElementById("target").value,
+                target: document.getElementById("target").value, // Backend mein Target ke column mein Ideal CT jayega
                 actual: document.getElementById("actual").value,
                 lossReason: document.getElementById("lossReason").value,
                 maintReason: document.getElementById("maintReason").value,
@@ -123,16 +179,25 @@
                 rejectReason: document.getElementById("rejectReason").value
             };
 
-            fetch("https://script.google.com/macros/s/AKfycbyRkmh4_ofJjAftObCfnX9gmhqCa4xcsvSp143BXCUdQujfy4gaFkBMlEhsVrwa61HugQ/exec", {
+            fetch(API_URL, {
                 method: "POST", body: JSON.stringify(data)
             })
             .then(res => res.json()) 
             .then(res => {
-                alert("Data Saved!");
+                alert("Data Saved Successfully!");
                 let savedBc = document.getElementById("barcode").value;
                 document.getElementById("oeeForm").reset(); 
                 document.getElementById("barcode").value = savedBc;
+                
+                let now = new Date();
+                now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+                document.getElementById('entryDateTime').value = now.toISOString().slice(0,16);
+
                 toggleSections();
+                
+                // Form reset hone ke baad dobara data auto-fill karna
+                if(savedBc) fetchMachineData(savedBc);
+
                 btn.innerText = "Submit Data"; btn.disabled = false;
             })
             .catch(err => { alert("Error saving data"); btn.innerText = "Submit Data"; btn.disabled = false; });
