@@ -12,6 +12,7 @@
         label { display: block; margin-bottom: 6px; font-weight: 600; color: #34495e; font-size: 14px; }
         input, select { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 6px; font-size: 15px; }
         input:focus, select:focus { border-color: #3498db; outline: none; box-shadow: 0 0 5px rgba(52,152,219,0.3); }
+        input[readonly] { background-color: #f8f9fa; cursor: not-allowed; }
         .hidden { display: none; }
         .section-box { background: #f8f9fa; padding: 15px; border-radius: 6px; border: 1px solid #dee2e6; margin-bottom: 15px; }
         button { width: 100%; padding: 12px; background: #27ae60; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; transition: background 0.3s; }
@@ -25,10 +26,18 @@
     <div class="container">
         <h2>OEE Data Entry Form</h2>
         <form id="oeeForm">
+            
+            <!-- Date & Time Selection -->
+            <div class="form-group">
+                <label>Date & Time</label>
+                <input type="datetime-local" id="entryDateTime" required>
+            </div>
+
             <!-- Common Fields -->
             <div class="form-group">
-                <label>Barcode # (Machine ID)</label>
-                <input type="text" id="barcode" required placeholder="Enter Barcode / Scan">
+                <label>Barcode # (Asset Number)</label>
+                <!-- Jab QR scan hoga toh yeh automatically fill ho jayega -->
+                <input type="text" id="barcode" required placeholder="Enter Barcode / Scan QR">
             </div>
             
             <div class="form-group">
@@ -60,7 +69,7 @@
             <div id="productionSection" class="section-box hidden">
                 <div class="form-group">
                     <label>Planned Production Time (Minutes)</label>
-                    <input type="number" id="shiftTime" placeholder="e.g. 480 (for 8 hours)">
+                    <input type="number" id="shiftTime" placeholder="e.g. 480">
                 </div>
                 <div class="form-group">
                     <label>Ideal Cycle Time (Min/part)</label>
@@ -114,6 +123,23 @@
     </div>
 
     <script>
+        // Page Load hone par Date/Time aur QR Code read karne ka setup
+        window.onload = function() {
+            // 1. Current Date & Time set karna
+            let now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            document.getElementById('entryDateTime').value = now.toISOString().slice(0,16);
+
+            // 2. QR Code (URL link) se Asset Number read karna
+            const urlParams = new URLSearchParams(window.location.search);
+            const assetFromQR = urlParams.get('asset');
+            if(assetFromQR) {
+                document.getElementById('barcode').value = assetFromQR;
+                // Form mein value fix kar dena taake operator isay ghalti se change na kare
+                document.getElementById('barcode').readOnly = true; 
+            }
+        };
+
         function toggleSections() {
             const type = document.getElementById("entryType").value;
             
@@ -130,7 +156,6 @@
             }
         }
 
-        // Auto Reason Box Logic based on Ideal Cycle Time
         document.getElementById("actual").addEventListener("input", checkTarget);
         document.getElementById("target").addEventListener("input", checkTarget);
         document.getElementById("shiftTime").addEventListener("input", checkTarget);
@@ -140,7 +165,6 @@
             const idealCT = parseFloat(document.getElementById("target").value) || 0;
             const totalCount = parseFloat(document.getElementById("actual").value) || 0;
             
-            // Show reason if theoretical time (Ideal CT * Total Count) is less than Planned Time
             if(plannedTime > 0 && idealCT > 0 && totalCount > 0) {
                 if((idealCT * totalCount) < plannedTime) {
                     document.getElementById("lossReasonDiv").classList.remove("hidden");
@@ -158,6 +182,8 @@
             btn.disabled = true;
             
             const data = {
+                formType: "dataEntry", // Master API ko batane ke liye
+                manualDateTime: document.getElementById("entryDateTime").value,
                 barcode: document.getElementById("barcode").value,
                 operatorName: document.getElementById("operatorName").value,
                 shift: document.getElementById("shift").value,
@@ -178,10 +204,18 @@
                 method: "POST",
                 body: JSON.stringify(data)
             })
-            .then(response => response.text()) 
+            .then(response => response.json()) 
             .then(result => {
                 alert("Data Successfully Saved to Google Sheets!");
+                // Form reset karte waqt Barcode wapis lana agar wo QR se scan hua tha
+                let savedBarcode = document.getElementById("barcode").value;
                 document.getElementById("oeeForm").reset(); 
+                document.getElementById("barcode").value = savedBarcode;
+                
+                let now = new Date();
+                now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+                document.getElementById('entryDateTime').value = now.toISOString().slice(0,16);
+
                 toggleSections(); 
                 document.getElementById("lossReasonDiv").classList.add("hidden");
                 btn.innerText = "Submit Data";
