@@ -3,26 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MES Dashboard</title>
+    <title>MES Dashboard & Admin</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; }
-        .header { text-align: center; background: #2c3e50; color: #f1c40f; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-bottom: 5px solid #e74c3c; }
-        .header h1 { margin: 0; font-size: 28px; color: white;}
-        .controls { text-align: center; margin-bottom: 20px; }
-        select { padding: 10px; font-size: 16px; border-radius: 5px; width: 350px; border: 1px solid #ccc; font-weight: bold; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; overflow-x: hidden; }
         
+        /* Header */
+        .header { position: relative; text-align: center; background: #2c3e50; color: #f1c40f; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-bottom: 5px solid #e74c3c; }
+        .header h1 { margin: 0; font-size: 28px; color: white;}
+        
+        /* Admin Button */
+        .admin-btn { position: absolute; top: 25px; left: 20px; background: #8e44ad; color: white; border: none; padding: 10px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 14px; }
+        .admin-btn:hover { background: #732d91; }
+
+        /* Left Sidebar (Admin Panel) */
+        .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 999; display: none; }
+        .admin-sidebar { position: fixed; top: 0; left: -400px; width: 320px; height: 100%; background: #fff; box-shadow: 2px 0 15px rgba(0,0,0,0.3); z-index: 1000; transition: left 0.4s ease; padding: 20px; overflow-y: auto; }
+        .admin-sidebar.open { left: 0; }
+        .close-btn { float: right; background: none; border: none; font-size: 22px; color: #e74c3c; cursor: pointer; }
+        
+        /* Sidebar Form Styles */
+        .admin-sidebar h2 { color: #2c3e50; margin-top: 0; font-size: 22px; border-bottom: 2px solid #ecf0f1; padding-bottom: 10px;}
+        .form-group { margin-bottom: 15px; text-align: left; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; color: #34495e; font-size: 14px;}
+        .form-group input, .form-group select { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 5px; font-size: 14px; }
+        .save-btn { width: 100%; padding: 12px; background: #8e44ad; color: white; border: none; border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px;}
+        .save-btn:hover { background: #732d91; }
+
+        /* Dashboard Controls */
+        .controls { text-align: center; margin-bottom: 20px; }
+        select#viewSelect { padding: 10px; font-size: 16px; border-radius: 5px; width: 350px; border: 1px solid #ccc; font-weight: bold; }
+        
+        /* Progress Bar */
         .progress-wrapper { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin-bottom: 30px; border-left: 5px solid #27ae60; display: none; }
         .progress-header { display: flex; justify-content: space-between; }
         .progress-text { font-size: 18px; font-weight: bold; }
         .progress-bar-bg { background: #ecf0f1; border-radius: 10px; height: 30px; width: 100%; margin-top: 15px; position: relative; }
         .progress-fill { background: #27ae60; height: 100%; width: 0%; transition: 0.8s; display: flex; align-items: center; justify-content: flex-end; padding-right: 10px; color: white; font-weight: bold; border-radius: 10px; }
         
+        /* Cards */
         .cards { display: flex; justify-content: center; flex-wrap: wrap; margin-bottom: 30px; gap: 15px; }
         .card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); width: 15%; text-align: center; min-width: 140px; border-top: 4px solid #3498db; }
         .card h3 { margin: 0 0 10px 0; color: #34495e; font-size: 14px; }
         .card .value { font-size: 24px; font-weight: bold; color: #27ae60; }
         
+        /* Charts */
         .charts-wrapper { display: flex; justify-content: space-between; flex-wrap: wrap; }
         .chart-container { width: 48%; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin-bottom: 20px; box-sizing: border-box; }
         .loading { text-align: center; font-size: 18px; color: #2980b9; font-weight: bold; margin-top: 50px; }
@@ -30,7 +55,49 @@
     </style>
 </head>
 <body>
+
+    <!-- Sidebar Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleAdmin()"></div>
+
+    <!-- Admin Sidebar Panel -->
+    <div class="admin-sidebar" id="adminSidebar">
+        <button class="close-btn" onclick="toggleAdmin()">✖</button>
+        <h2>Set Targets</h2>
+        <form id="adminForm">
+            <div class="form-group"><label>Select Month</label><input type="month" id="targetMonth" required></div>
+            <div class="form-group">
+                <label>Production Line</label>
+                <select id="lineName" required>
+                    <option value="">-- Select Line --</option>
+                    <option value="Axle 385">1. Axle 385</option>
+                    <option value="Sump 385">2. Sump 385</option>
+                    <option value="Hyd. Lift Cover">3. Hyd. Lift Cover</option>
+                    <option value="Cylinder 240/385">4. Cylinder 240/385</option>
+                    <option value="FAS 350">5. FAS 350</option>
+                    <option value="Spacer Block/Adaptor Plate/PTO">6. Spacer Block/Adaptor Plate/PTO</option>
+                    <option value="Rear Wheel 1st and 2nd">7. Rear Wheel 1st and 2nd</option>
+                    <option value="Diff Case 385 (set)">8. Diff Case 385 (set)</option>
+                    <option value="Piston 240/385">9. Piston 240/385</option>
+                    <option value="Front Support 350/385">10. Front Support 350/385</option>
+                    <option value="Front Support 850/85-56">11. Front Support 850/85-56</option>
+                    <option value="Diff Plate">12. Diff Plate</option>
+                    <option value="FAS 480">13. FAS 480</option>
+                    <option value="Diff Case 480">14. Diff Case 480</option>
+                    <option value="Tube Final Drive 480/640/850">15. Tube Final Drive 480/640/850</option>
+                    <option value="Hub 240/385/480">16. Hub 240/385/480</option>
+                    <option value="Support Splitter">17. Support Splitter</option>
+                    <option value="Small Parts">18. Small Parts</option>
+                    <option value="Axle Casing 480/850/85-56">19. Axle Casing 480/850/85-56</option>
+                    <option value="Casing Gear Box 480/850">20. Casing Gear Box 480/850</option>
+                </select>
+            </div>
+            <div class="form-group"><label>Target Quantity</label><input type="number" id="targetQty" required></div>
+            <button type="submit" class="save-btn" id="submitTargetBtn">Save Target</button>
+        </form>
+    </div>
+
     <div class="header">
+        <button class="admin-btn" onclick="toggleAdmin()">⚙️ Set Targets</button>
         <h1>Manufacturing Excellence Dashboard</h1>
         <p style="color: #bdc3c7; margin-top:5px;">Target vs Actual, OEE, MTTR & MTBF</p>
     </div>
@@ -73,18 +140,72 @@
         let allLogs = [], allTargets = [], allMachines = [], machineMap = {};
         let oeeChartInstance = null, downtimeChartInstance = null;
 
-        fetch(API_URL)
-            .then(res => res.json())
-            .then(data => {
-                allLogs = data.logs || []; allTargets = data.targets || []; allMachines = data.machines || [];
-                allMachines.forEach(m => machineMap[String(m["Asset Number"])] = m);
-                document.getElementById('loadingMsg').style.display = 'none';
-                document.getElementById('progressDiv').style.display = 'block';
-                document.getElementById('dashboardCards').style.display = 'flex';
-                document.getElementById('chartDiv').style.display = 'flex';
-                populateDropdown(); calculateDashboard();
-            }).catch(e => { document.getElementById('loadingMsg').innerText = "Error loading data."; });
+        // Fetch Data on Load
+        function fetchAllData() {
+            fetch(API_URL)
+                .then(res => res.json())
+                .then(data => {
+                    allLogs = data.logs || []; allTargets = data.targets || []; allMachines = data.machines || [];
+                    allMachines.forEach(m => machineMap[String(m["Asset Number"])] = m);
+                    document.getElementById('loadingMsg').style.display = 'none';
+                    document.getElementById('progressDiv').style.display = 'block';
+                    document.getElementById('dashboardCards').style.display = 'flex';
+                    document.getElementById('chartDiv').style.display = 'flex';
+                    
+                    // Only populate dropdown once to avoid duplicates
+                    if(document.getElementById("viewSelect").options.length === 1) {
+                        populateDropdown();
+                    }
+                    calculateDashboard();
+                }).catch(e => { document.getElementById('loadingMsg').innerText = "Error loading data."; });
+        }
+        
+        fetchAllData(); // Initial Call
 
+        // Toggle Sidebar
+        function toggleAdmin() {
+            const sidebar = document.getElementById('adminSidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            if(sidebar.classList.contains('open')) {
+                sidebar.classList.remove('open');
+                overlay.style.display = 'none';
+            } else {
+                sidebar.classList.add('open');
+                overlay.style.display = 'block';
+            }
+        }
+
+        // Admin Form Submit (Save Target)
+        document.getElementById("adminForm").addEventListener("submit", function(e) {
+            e.preventDefault();
+            const btn = document.getElementById("submitTargetBtn");
+            btn.innerText = "Saving..."; btn.disabled = true;
+
+            const data = {
+                formType: "adminTarget", 
+                month: document.getElementById("targetMonth").value,
+                lineName: document.getElementById("lineName").value,
+                targetQty: document.getElementById("targetQty").value
+            };
+
+            fetch(API_URL, { method: "POST", body: JSON.stringify(data) })
+            .then(response => response.json())
+            .then(result => {
+                alert("Target Saved Successfully!");
+                document.getElementById("adminForm").reset();
+                btn.innerText = "Save Target"; btn.disabled = false;
+                toggleAdmin(); // Close sidebar
+                
+                // Refresh dashboard data silently
+                fetchAllData(); 
+            })
+            .catch(error => {
+                alert("Error saving data!");
+                btn.innerText = "Save Target"; btn.disabled = false;
+            });
+        });
+
+        // Populate Dropdown
         function populateDropdown() {
             const select = document.getElementById("viewSelect");
             let uniqueLines = [...new Set(allMachines.map(m => m["Line Name"]))].filter(Boolean);
