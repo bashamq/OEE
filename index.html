@@ -12,14 +12,18 @@
         label { display: block; margin-bottom: 6px; font-weight: 600; color: #34495e; font-size: 14px; }
         input, select { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 6px; font-size: 15px; }
         
-        /* Auto-filled fields ka design change taa kay operator ko pata ho isme type nahi karna */
+        /* Auto-filled fields styling */
         input[readonly] { background-color: #e8f8f5; border-color: #1abc9c; color: #16a085; font-weight: bold; cursor: not-allowed; }
         
         .hidden { display: none; }
         .section-box { background: #f8f9fa; padding: 15px; border-radius: 6px; border: 1px solid #dee2e6; margin-bottom: 15px; }
-        button { width: 100%; padding: 12px; background: #27ae60; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer;}
+        
+        /* Special box for Machine Details */
+        .machine-info-box { background-color: #e8f8f5; border: 1px solid #1abc9c; padding: 15px; border-radius: 6px; margin-bottom: 15px; }
+        
+        button { width: 100%; padding: 12px; background: #27ae60; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s;}
         button:hover { background: #219150; }
-        .loading-text { font-size: 13px; font-weight: bold; margin-bottom: 15px; text-align: center; display: none; }
+        .loading-text { font-size: 14px; font-weight: bold; margin-bottom: 15px; text-align: center; display: none; }
     </style>
 </head>
 <body>
@@ -30,6 +34,19 @@
             <div class="form-group"><label>Barcode # (Asset Number)</label><input type="text" id="barcode" required placeholder="Enter Barcode / Scan QR"></div>
             
             <div id="machineDataStatus" class="loading-text">Fetching machine parameters...</div>
+
+            <!-- NAYA HISSA: Machine ki Tafseel aur Multi-Product Dropdown -->
+            <div id="machineDetailsSection" class="machine-info-box hidden">
+                <p style="font-size:12px; color:#16a085; margin-top:0; font-weight:bold;">* Machine Found. Select active product if shared.</p>
+                <div class="form-group">
+                    <label style="color: #16a085;">Active Line / Department</label>
+                    <select id="activeLineSelect" onchange="updateMachineParams()" style="border-color: #1abc9c;"></select>
+                </div>
+                <div class="form-group">
+                    <label style="color: #16a085;">Operation Name</label>
+                    <input type="text" id="activeOperation" readonly>
+                </div>
+            </div>
 
             <div class="form-group"><label>Operator Name</label><input type="text" id="operatorName" required></div>
             <div class="form-group">
@@ -47,7 +64,6 @@
 
             <!-- Production Section -->
             <div id="productionSection" class="section-box hidden">
-                <p style="font-size:12px; color:#7f8c8d; margin-top:0;">* Machine settings loaded automatically</p>
                 <div class="form-group"><label>Planned Time (Mins)</label><input type="number" id="shiftTime" value="480" readonly></div>
                 <div class="form-group"><label>Ideal CT (Min/part)</label><input type="number" step="0.01" id="target" readonly></div>
                 <div class="form-group"><label>Standard Production (Shift Target)</label><input type="number" id="stdProd" readonly></div>
@@ -77,9 +93,10 @@
     </div>
 
     <script>
-        // Yahan apna Google Apps Script ka URL hi rehne dain
         const API_URL = "https://script.google.com/macros/s/AKfycbyRkmh4_ofJjAftObCfnX9gmhqCa4xcsvSp143BXCUdQujfy4gaFkBMlEhsVrwa61HugQ/exec";
         
+        let currentMachineOptions = []; // Variable to store multiple lines for a single machine
+
         window.onload = function() {
             let now = new Date();
             now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
@@ -93,7 +110,6 @@
                 fetchMachineData(assetFromQR);
             }
 
-            // Agar koi manual barcode type karta hai tab bhi data fetch ho
             document.getElementById('barcode').addEventListener('blur', function() {
                 if(!this.readOnly && this.value) {
                     fetchMachineData(this.value);
@@ -101,25 +117,48 @@
             });
         };
 
-        // Backend se register ki gayi machine ka data mangwana
+        // Backend se data mangwana aur Dropdown banana
         function fetchMachineData(barcode) {
             const statusDiv = document.getElementById('machineDataStatus');
+            const detailsSec = document.getElementById('machineDetailsSection');
+            
             statusDiv.innerText = "Fetching machine parameters...";
             statusDiv.style.color = "#f39c12";
             statusDiv.style.display = "block";
+            detailsSec.classList.add("hidden");
 
             fetch(API_URL)
                 .then(res => res.json())
                 .then(data => {
                     let allMachines = data.machines || [];
-                    let machine = allMachines.find(m => String(m["Asset Number"]) === String(barcode));
                     
-                    if(machine) {
-                        document.getElementById('target').value = machine["Ideal CT"] || 0;
-                        document.getElementById('stdProd').value = machine["Std Production"] || 0;
+                    // Filter: Us Barcode ki tamam registrations nikalna
+                    currentMachineOptions = allMachines.filter(m => 
+                        String(m["Asset Number"] || m["Asset #"] || m["barcode"]) === String(barcode)
+                    );
+                    
+                    if(currentMachineOptions.length > 0) {
+                        // Undefined Fix: Safe fallbacks
+                        let machineName = currentMachineOptions[0]["Machine Name"] || currentMachineOptions[0]["Machine"] || "Machine";
                         
-                        statusDiv.innerText = `✅ Loaded: ${machine["Machine Name"]} (${machine["Line Name"]})`;
+                        statusDiv.innerText = `✅ Loaded: ${machineName}`;
                         statusDiv.style.color = "#27ae60";
+
+                        // Dropdown banana
+                        let select = document.getElementById("activeLineSelect");
+                        select.innerHTML = "";
+                        
+                        currentMachineOptions.forEach((m, index) => {
+                            let lineName = m["Line Name"] || m["Line"] || m["Department"] || "Unknown Line";
+                            let opt = document.createElement("option");
+                            opt.value = index;
+                            opt.innerText = lineName;
+                            select.appendChild(opt);
+                        });
+
+                        detailsSec.classList.remove("hidden");
+                        updateMachineParams(); // By default pehli line select ho jayegi
+
                     } else {
                         statusDiv.innerText = "⚠️ Machine not found in registered database.";
                         statusDiv.style.color = "#e74c3c";
@@ -129,6 +168,26 @@
                     statusDiv.innerText = "⚠️ Error fetching data. Check internet.";
                     statusDiv.style.color = "#e74c3c";
                 });
+        }
+
+        // Dropdown change hone par Operation, CT aur Production update karna
+        function updateMachineParams() {
+            let select = document.getElementById("activeLineSelect");
+            let selectedIndex = select.value;
+            
+            if(currentMachineOptions[selectedIndex]) {
+                let m = currentMachineOptions[selectedIndex];
+                
+                let operation = m["Operation"] || m["Op"] || "Unknown Operation";
+                let idealCT = m["Ideal CT"] || m["Ideal CT (Min)"] || 0;
+                let stdProd = m["Std Production"] || m["Standard Production"] || 0;
+
+                document.getElementById('activeOperation').value = operation;
+                document.getElementById('target').value = idealCT;
+                document.getElementById('stdProd').value = stdProd;
+                
+                checkTarget();
+            }
         }
 
         function toggleSections() {
@@ -141,7 +200,6 @@
             if(type === "Quality") document.getElementById("qualitySection").classList.remove("hidden");
         }
 
-        // Logic check: Agar Actual parts Standard Production se kam hain, toh reason poochein
         document.getElementById("actual").addEventListener("input", checkTarget);
 
         function checkTarget() {
@@ -168,7 +226,7 @@
                 shift: document.getElementById("shift").value,
                 entryType: document.getElementById("entryType").value,
                 shiftTime: document.getElementById("shiftTime").value,
-                target: document.getElementById("target").value, // Backend mein Target ke column mein Ideal CT jayega
+                target: document.getElementById("target").value, 
                 actual: document.getElementById("actual").value,
                 lossReason: document.getElementById("lossReason").value,
                 maintReason: document.getElementById("maintReason").value,
@@ -195,7 +253,6 @@
 
                 toggleSections();
                 
-                // Form reset hone ke baad dobara data auto-fill karna
                 if(savedBc) fetchMachineData(savedBc);
 
                 btn.innerText = "Submit Data"; btn.disabled = false;
