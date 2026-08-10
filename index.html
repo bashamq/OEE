@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CNC OEE Data Entry</title>
+    <title>OEE Data Entry</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #e9ecef; padding: 20px; margin: 0; }
         .container { max-width: 450px; margin: 0 auto; background: #ffffff; padding: 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
@@ -11,111 +11,50 @@
         .form-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 6px; font-weight: 600; color: #34495e; font-size: 14px; }
         input, select { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 6px; font-size: 15px; }
-        input:focus, select:focus { border-color: #3498db; outline: none; box-shadow: 0 0 5px rgba(52,152,219,0.3); }
         input[readonly] { background-color: #f8f9fa; cursor: not-allowed; }
         .hidden { display: none; }
         .section-box { background: #f8f9fa; padding: 15px; border-radius: 6px; border: 1px solid #dee2e6; margin-bottom: 15px; }
-        button { width: 100%; padding: 12px; background: #27ae60; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; transition: background 0.3s; }
+        button { width: 100%; padding: 12px; background: #27ae60; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer;}
         button:hover { background: #219150; }
-        button:disabled { background: #95a5a6; cursor: not-allowed; }
-        .alert-label { color: #e74c3c; font-weight: bold; }
     </style>
 </head>
 <body>
-
     <div class="container">
         <h2>OEE Data Entry Form</h2>
         <form id="oeeForm">
-            
-            <!-- Date & Time Selection -->
-            <div class="form-group">
-                <label>Date & Time</label>
-                <input type="datetime-local" id="entryDateTime" required>
-            </div>
-
-            <!-- Common Fields -->
-            <div class="form-group">
-                <label>Barcode # (Asset Number)</label>
-                <!-- Jab QR scan hoga toh yeh automatically fill ho jayega -->
-                <input type="text" id="barcode" required placeholder="Enter Barcode / Scan QR">
-            </div>
-            
-            <div class="form-group">
-                <label>Operator Name</label>
-                <input type="text" id="operatorName" required placeholder="Enter Name">
-            </div>
-
+            <div class="form-group"><label>Date & Time</label><input type="datetime-local" id="entryDateTime" required></div>
+            <div class="form-group"><label>Barcode # (Asset Number)</label><input type="text" id="barcode" required placeholder="Enter Barcode / Scan QR"></div>
+            <div class="form-group"><label>Operator Name</label><input type="text" id="operatorName" required></div>
             <div class="form-group">
                 <label>Shift</label>
                 <select id="shift" required>
-                    <option value="">Select Shift</option>
-                    <option value="Morning">Morning</option>
-                    <option value="Evening">Evening</option>
-                    <option value="Night">Night</option>
+                    <option value="">Select Shift</option><option value="Morning">Morning</option><option value="Evening">Evening</option><option value="Night">Night</option>
                 </select>
             </div>
-
             <div class="form-group">
                 <label>Entry Type</label>
                 <select id="entryType" required onchange="toggleSections()">
-                    <option value="">Select Type...</option>
-                    <option value="Production">Production</option>
-                    <option value="Maintenance">Maintenance</option>
-                    <option value="Quality">Quality</option>
+                    <option value="">Select Type...</option><option value="Production">Production</option><option value="Maintenance">Maintenance</option><option value="Quality">Quality</option>
                 </select>
             </div>
 
-            <!-- Production Section -->
             <div id="productionSection" class="section-box hidden">
-                <div class="form-group">
-                    <label>Planned Production Time (Minutes)</label>
-                    <input type="number" id="shiftTime" placeholder="e.g. 480">
-                </div>
-                <div class="form-group">
-                    <label>Ideal Cycle Time (Min/part)</label>
-                    <input type="number" step="0.01" id="target" placeholder="e.g. 1.3">
-                </div>
-                <div class="form-group">
-                    <label>Total Count (Produced Parts)</label>
-                    <input type="number" id="actual" placeholder="e.g. 340">
-                </div>
-                
-                <div class="form-group hidden" id="lossReasonDiv">
-                    <label class="alert-label">Performance Loss Reason (Speed/Stops)</label>
-                    <input type="text" id="lossReason" placeholder="e.g. Slow speed, tooling change">
-                </div>
+                <div class="form-group"><label>Planned Time (Mins)</label><input type="number" id="shiftTime"></div>
+                <div class="form-group"><label>Ideal CT (Min/part)</label><input type="number" step="0.01" id="target"></div>
+                <div class="form-group"><label>Total Count</label><input type="number" id="actual"></div>
+                <div class="form-group hidden" id="lossReasonDiv"><label style="color:#e74c3c;">Performance Loss Reason</label><input type="text" id="lossReason"></div>
             </div>
 
-            <!-- Maintenance Section -->
             <div id="maintenanceSection" class="section-box hidden">
-                <div class="form-group">
-                    <label>Total Downtime (Minutes)</label>
-                    <input type="number" id="downtime" placeholder="e.g. 45">
-                </div>
-                <div class="form-group">
-                    <label>Problem / Maintenance Reason</label>
-                    <input type="text" id="maintReason" placeholder="e.g. Motor Heating, Setup Change">
-                </div>
-                <div class="form-group">
-                    <label>Technician Name</label>
-                    <input type="text" id="techName" placeholder="Name of Technician">
-                </div>
+                <div class="form-group"><label>Total Downtime (Mins)</label><input type="number" id="downtime"></div>
+                <div class="form-group"><label>Maintenance Reason</label><input type="text" id="maintReason"></div>
+                <div class="form-group"><label>Technician Name</label><input type="text" id="techName"></div>
             </div>
 
-            <!-- Quality Section -->
             <div id="qualitySection" class="section-box hidden">
-                <div class="form-group">
-                    <label>Good Count</label>
-                    <input type="number" id="goodParts" placeholder="e.g. 330">
-                </div>
-                <div class="form-group">
-                    <label>Scrap / Rework Count</label>
-                    <input type="number" id="rejectParts" placeholder="e.g. 10">
-                </div>
-                <div class="form-group">
-                    <label>Reject Reason</label>
-                    <input type="text" id="rejectReason" placeholder="e.g. Undersize / Porosity">
-                </div>
+                <div class="form-group"><label>Good Count</label><input type="number" id="goodParts"></div>
+                <div class="form-group"><label>Scrap Count</label><input type="number" id="rejectParts"></div>
+                <div class="form-group"><label>Reject Reason</label><input type="text" id="rejectReason"></div>
             </div>
 
             <button type="submit" id="submitBtn">Submit Data</button>
@@ -123,37 +62,26 @@
     </div>
 
     <script>
-        // Page Load hone par Date/Time aur QR Code read karne ka setup
         window.onload = function() {
-            // 1. Current Date & Time set karna
             let now = new Date();
             now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
             document.getElementById('entryDateTime').value = now.toISOString().slice(0,16);
 
-            // 2. QR Code (URL link) se Asset Number read karna
             const urlParams = new URLSearchParams(window.location.search);
-            const assetFromQR = urlParams.get('asset');
-            if(assetFromQR) {
-                document.getElementById('barcode').value = assetFromQR;
-                // Form mein value fix kar dena taake operator isay ghalti se change na kare
+            if(urlParams.get('asset')) {
+                document.getElementById('barcode').value = urlParams.get('asset');
                 document.getElementById('barcode').readOnly = true; 
             }
         };
 
         function toggleSections() {
             const type = document.getElementById("entryType").value;
-            
             document.getElementById("productionSection").classList.add("hidden");
             document.getElementById("maintenanceSection").classList.add("hidden");
             document.getElementById("qualitySection").classList.add("hidden");
-            
-            if(type === "Production") {
-                document.getElementById("productionSection").classList.remove("hidden");
-            } else if(type === "Maintenance") {
-                document.getElementById("maintenanceSection").classList.remove("hidden");
-            } else if(type === "Quality") {
-                document.getElementById("qualitySection").classList.remove("hidden");
-            }
+            if(type === "Production") document.getElementById("productionSection").classList.remove("hidden");
+            if(type === "Maintenance") document.getElementById("maintenanceSection").classList.remove("hidden");
+            if(type === "Quality") document.getElementById("qualitySection").classList.remove("hidden");
         }
 
         document.getElementById("actual").addEventListener("input", checkTarget);
@@ -161,28 +89,23 @@
         document.getElementById("shiftTime").addEventListener("input", checkTarget);
 
         function checkTarget() {
-            const plannedTime = parseFloat(document.getElementById("shiftTime").value) || 0;
-            const idealCT = parseFloat(document.getElementById("target").value) || 0;
-            const totalCount = parseFloat(document.getElementById("actual").value) || 0;
-            
-            if(plannedTime > 0 && idealCT > 0 && totalCount > 0) {
-                if((idealCT * totalCount) < plannedTime) {
-                    document.getElementById("lossReasonDiv").classList.remove("hidden");
-                } else {
-                    document.getElementById("lossReasonDiv").classList.add("hidden");
-                }
+            let pTime = parseFloat(document.getElementById("shiftTime").value)||0;
+            let iCT = parseFloat(document.getElementById("target").value)||0;
+            let count = parseFloat(document.getElementById("actual").value)||0;
+            if(pTime>0 && iCT>0 && count>0 && ((iCT*count) < pTime)) {
+                document.getElementById("lossReasonDiv").classList.remove("hidden");
+            } else {
+                document.getElementById("lossReasonDiv").classList.add("hidden");
             }
         }
 
         document.getElementById("oeeForm").addEventListener("submit", function(e) {
             e.preventDefault(); 
-            
             const btn = document.getElementById("submitBtn");
-            btn.innerText = "Submitting... Please wait";
-            btn.disabled = true;
+            btn.innerText = "Submitting..."; btn.disabled = true;
             
             const data = {
-                formType: "dataEntry", // Master API ko batane ke liye
+                formType: "dataEntry",
                 manualDateTime: document.getElementById("entryDateTime").value,
                 barcode: document.getElementById("barcode").value,
                 operatorName: document.getElementById("operatorName").value,
@@ -201,32 +124,18 @@
             };
 
             fetch("https://script.google.com/macros/s/AKfycbyRkmh4_ofJjAftObCfnX9gmhqCa4xcsvSp143BXCUdQujfy4gaFkBMlEhsVrwa61HugQ/exec", {
-                method: "POST",
-                body: JSON.stringify(data)
+                method: "POST", body: JSON.stringify(data)
             })
-            .then(response => response.json()) 
-            .then(result => {
-                alert("Data Successfully Saved to Google Sheets!");
-                // Form reset karte waqt Barcode wapis lana agar wo QR se scan hua tha
-                let savedBarcode = document.getElementById("barcode").value;
+            .then(res => res.json()) 
+            .then(res => {
+                alert("Data Saved!");
+                let savedBc = document.getElementById("barcode").value;
                 document.getElementById("oeeForm").reset(); 
-                document.getElementById("barcode").value = savedBarcode;
-                
-                let now = new Date();
-                now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-                document.getElementById('entryDateTime').value = now.toISOString().slice(0,16);
-
-                toggleSections(); 
-                document.getElementById("lossReasonDiv").classList.add("hidden");
-                btn.innerText = "Submit Data";
-                btn.disabled = false;
+                document.getElementById("barcode").value = savedBc;
+                toggleSections();
+                btn.innerText = "Submit Data"; btn.disabled = false;
             })
-            .catch(error => {
-                console.error('Error:', error);
-                alert("Data save nahi ho saka. Internet connection check karein.");
-                btn.innerText = "Submit Data";
-                btn.disabled = false;
-            });
+            .catch(err => { alert("Error saving data"); btn.innerText = "Submit Data"; btn.disabled = false; });
         });
     </script>
 </body>
