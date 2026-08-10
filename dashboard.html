@@ -3,18 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enterprise OEE Dashboard</title>
+    <title>Enterprise MES Dashboard</title>
+    <!-- Chart.js Library -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; }
         .header { text-align: center; background: #2c3e50; color: #f1c40f; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-bottom: 5px solid #e74c3c; }
         .header h1 { margin: 0; font-size: 28px; color: white;}
         .controls { text-align: center; margin-bottom: 20px; }
-        select { padding: 10px; font-size: 16px; border-radius: 5px; width: 300px; border: 1px solid #ccc; }
+        select { padding: 10px; font-size: 16px; border-radius: 5px; width: 350px; border: 1px solid #ccc; font-weight: bold; color: #2c3e50; }
+        
+        /* Progress Bar Section */
+        .progress-wrapper { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin-bottom: 30px; border-left: 5px solid #27ae60; display: none; }
+        .progress-header { display: flex; justify-content: space-between; align-items: center; }
+        .progress-header h3 { margin: 0; color: #34495e; }
+        .progress-text { font-size: 18px; font-weight: bold; color: #2c3e50; }
+        .progress-bar-bg { background: #ecf0f1; border-radius: 10px; height: 30px; width: 100%; overflow: hidden; margin-top: 15px; position: relative; }
+        .progress-fill { background: #27ae60; height: 100%; width: 0%; transition: width 0.8s ease-in-out; display: flex; align-items: center; justify-content: flex-end; padding-right: 10px; box-sizing: border-box; color: white; font-weight: bold; }
+        
         .cards { display: flex; justify-content: center; flex-wrap: wrap; margin-bottom: 30px; gap: 15px; }
         .card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); width: 15%; text-align: center; min-width: 140px; border-top: 4px solid #3498db; }
         .card h3 { margin: 0 0 10px 0; color: #34495e; font-size: 14px; text-transform: uppercase; }
         .card .value { font-size: 24px; font-weight: bold; color: #27ae60; }
+        
         .charts-wrapper { display: flex; justify-content: space-between; flex-wrap: wrap; }
         .chart-container { width: 48%; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin-bottom: 20px; box-sizing: border-box; }
         .loading { text-align: center; font-size: 18px; color: #2980b9; font-weight: bold; margin-top: 50px; }
@@ -25,17 +36,29 @@
 
     <div class="header">
         <h1>Manufacturing Excellence - OEE Program</h1>
-        <p style="color: #bdc3c7; margin-top:5px;">Live Dashboard - OEE, MTTR & MTBF</p>
+        <p style="color: #bdc3c7; margin-top:5px;">MES Dashboard - Target vs Actual, OEE, MTTR & MTBF</p>
     </div>
 
     <div class="controls">
-        <label><strong>Select Machine: </strong></label>
-        <select id="machineSelect" onchange="calculateOEE()">
-            <option value="All">Factory Aggregate (All Machines)</option>
+        <label><strong>Select View: </strong></label>
+        <select id="viewSelect" onchange="calculateDashboard()">
+            <option value="All">🏭 Factory Aggregate (All Lines)</option>
+            <!-- Lines aur Machines automatically yahan load hongi -->
         </select>
     </div>
 
-    <div id="loadingMsg" class="loading">Fetching Live Data... Please wait.</div>
+    <div id="loadingMsg" class="loading">Fetching Live Data from Server... Please wait.</div>
+
+    <!-- Monthly Target Progress Bar -->
+    <div class="progress-wrapper" id="progressDiv">
+        <div class="progress-header">
+            <h3>Monthly Production Progress</h3>
+            <div class="progress-text" id="targetText">0 / 0 (0%)</div>
+        </div>
+        <div class="progress-bar-bg">
+            <div class="progress-fill" id="targetFill" style="width: 0%;">0%</div>
+        </div>
+    </div>
 
     <!-- Metrics Cards -->
     <div class="cards" id="dashboardCards" style="display:none;">
@@ -59,45 +82,117 @@
     </div>
 
     <script>
+        // Yahan Apna Apps Script URL hi rehne dein
         const API_URL = "https://script.google.com/macros/s/AKfycbyRkmh4_ofJjAftObCfnX9gmhqCa4xcsvSp143BXCUdQujfy4gaFkBMlEhsVrwa61HugQ/exec";
-        let allLogs = [];
+        
+        let allLogs = [], allTargets = [], allMachines = [];
+        let machineMap = {}; // Barcode ko Line ke sath link karne ke liye
+        
         let oeeChartInstance = null, downtimeChartInstance = null;
 
         fetch(API_URL)
             .then(response => response.json())
             .then(data => {
-                allLogs = data;
+                // Ab data naye JSON format (logs, targets, machines) mein araha hai
+                allLogs = data.logs || [];
+                allTargets = data.targets || [];
+                allMachines = data.machines || [];
+                
+                buildMachineMap();
+                
                 document.getElementById('loadingMsg').style.display = 'none';
+                document.getElementById('progressDiv').style.display = 'block';
                 document.getElementById('dashboardCards').style.display = 'flex';
                 document.getElementById('chartDiv').style.display = 'flex';
+                
                 populateDropdown();
-                calculateOEE();
+                calculateDashboard();
             })
             .catch(error => {
-                document.getElementById('loadingMsg').innerText = "Error loading data.";
+                document.getElementById('loadingMsg').innerText = "Error loading data. Check API link.";
                 document.getElementById('loadingMsg').style.color = "red";
+                console.error(error);
             });
 
-        function populateDropdown() {
-            const select = document.getElementById("machineSelect");
-            const machines = [...new Set(allLogs.map(item => item["Barcode #"]))].filter(b => b); 
-            machines.forEach(machine => {
-                let opt = document.createElement("option");
-                opt.value = machine;
-                opt.innerText = "Barcode: " + machine;
-                select.appendChild(opt);
+        function buildMachineMap() {
+            allMachines.forEach(m => {
+                machineMap[String(m["Asset Number"])] = m;
             });
         }
 
-        function calculateOEE() {
-            const selectedMachine = document.getElementById("machineSelect").value;
-            let filteredData = selectedMachine === "All" ? allLogs : allLogs.filter(item => String(item["Barcode #"]) === String(selectedMachine));
+        function populateDropdown() {
+            const select = document.getElementById("viewSelect");
+            
+            // 1. Production Lines nikalna
+            let uniqueLines = [...new Set(allMachines.map(m => m["Line Name"]))].filter(Boolean);
+            
+            // Lines ke Options add karna
+            let optGroupLine = document.createElement("optgroup");
+            optGroupLine.label = "--- Production Lines ---";
+            uniqueLines.forEach(line => {
+                let opt = document.createElement("option");
+                opt.value = "Line:" + line;
+                opt.innerText = "🛠️ Line: " + line;
+                optGroupLine.appendChild(opt);
+            });
+            select.appendChild(optGroupLine);
 
+            // 2. Individual Machines ke Options add karna
+            let optGroupMachine = document.createElement("optgroup");
+            optGroupMachine.label = "--- Individual Machines ---";
+            allMachines.forEach(m => {
+                let opt = document.createElement("option");
+                opt.value = "Machine:" + m["Asset Number"];
+                opt.innerText = "⚙️ Machine: " + m["Machine Name"] + " (" + m["Asset Number"] + ")";
+                optGroupMachine.appendChild(opt);
+            });
+            select.appendChild(optGroupMachine);
+        }
+
+        // Kisi line ka latest target nikalne ka function
+        function getLatestTarget(lineName) {
+            let lineTargets = allTargets.filter(t => t["Line Name"] === lineName);
+            if(lineTargets.length === 0) return 0;
+            // Aakhri entry (latest) target uthana hai
+            return Number(lineTargets[lineTargets.length - 1]["Target Qty"]) || 0;
+        }
+
+        function calculateDashboard() {
+            let selected = document.getElementById("viewSelect").value;
+            let filteredLogs = [];
+            let targetForView = 0;
+
+            // View ke hisaab se Data aur Target filter karna
+            if (selected === "All") {
+                filteredLogs = allLogs;
+                // Factory target (Sab lines ke latest targets ka sum)
+                let uniqueLines = [...new Set(allMachines.map(m => m["Line Name"]))].filter(Boolean);
+                uniqueLines.forEach(l => { targetForView += getLatestTarget(l); });
+                
+            } else if (selected.startsWith("Line:")) {
+                let lineName = selected.split(":")[1];
+                targetForView = getLatestTarget(lineName);
+                // Sirf us line ki machines ka data
+                filteredLogs = allLogs.filter(log => {
+                    let m = machineMap[String(log["Barcode #"])];
+                    return m && m["Line Name"] === lineName;
+                });
+                
+            } else if (selected.startsWith("Machine:")) {
+                let asset = selected.split(":")[1];
+                filteredLogs = allLogs.filter(log => String(log["Barcode #"]) === asset);
+                
+                // Machine ke liye hum target show kar sakte hain uski line ka
+                let m = machineMap[asset];
+                if(m) { targetForView = getLatestTarget(m["Line Name"]); }
+            }
+
+            // OEE aur MTTR Variables
             let totalPlannedTime = 0, totalDowntime = 0, totalIdealTime = 0, totalGood = 0, totalReject = 0;
-            let downtimeEventsCount = 0; // Breakdown count for MTTR/MTBF
+            let downtimeEventsCount = 0;
             let downtimeReasons = {};
 
-            filteredData.forEach(row => {
+            filteredLogs.forEach(row => {
                 if (row["Entry Type"] === "Production") {
                     totalPlannedTime += Number(row["Planned Time (Min)"]) || 0;
                     totalIdealTime += (Number(row["Ideal CT (Min)"]) || 0) * (Number(row["Total Count"]) || 0);
@@ -105,8 +200,7 @@
                     let dt = Number(row["Downtime (Min)"]) || 0;
                     if(dt > 0) {
                         totalDowntime += dt;
-                        downtimeEventsCount += 1; // Count each maintenance entry as 1 breakdown event
-                        
+                        downtimeEventsCount += 1; 
                         let reason = row["Maint. Reason"] || "Unspecified";
                         downtimeReasons[reason] = (downtimeReasons[reason] || 0) + dt;
                     }
@@ -116,10 +210,24 @@
                 }
             });
 
+            // Target vs Actual Update
+            let progressPct = targetForView > 0 ? ((totalGood / targetForView) * 100) : 0;
+            if(progressPct > 100) progressPct = 100; // Cap at 100% visually
+            
+            document.getElementById("targetText").innerText = `${totalGood} / ${targetForView} (${progressPct.toFixed(1)}%)`;
+            document.getElementById("targetFill").style.width = `${progressPct}%`;
+            document.getElementById("targetFill").innerText = `${progressPct.toFixed(1)}%`;
+            
+            // Bar color change logic
+            if(progressPct < 50) document.getElementById("targetFill").style.backgroundColor = "#e74c3c";
+            else if(progressPct < 85) document.getElementById("targetFill").style.backgroundColor = "#f1c40f";
+            else document.getElementById("targetFill").style.backgroundColor = "#27ae60";
+
+
+            // OEE Calculations
             let actualRunTime = totalPlannedTime - totalDowntime;
             if (actualRunTime < 0) actualRunTime = 0;
 
-            // OEE Formulas
             let availability = totalPlannedTime > 0 ? (actualRunTime / totalPlannedTime) : 0;
             let performance = actualRunTime > 0 ? (totalIdealTime / actualRunTime) : 0;
             let totalProduced = totalGood + totalReject;
@@ -133,7 +241,7 @@
             document.getElementById("valP").innerText = (performance * 100).toFixed(1) + "%";
             document.getElementById("valQ").innerText = (quality * 100).toFixed(1) + "%";
 
-            // MTTR & MTBF Calculations
+            // MTTR & MTBF
             let mttr = downtimeEventsCount > 0 ? (totalDowntime / downtimeEventsCount).toFixed(1) : 0;
             let mtbf = downtimeEventsCount > 0 ? (actualRunTime / downtimeEventsCount).toFixed(1) : actualRunTime.toFixed(1);
 
