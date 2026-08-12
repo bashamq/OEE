@@ -26,7 +26,7 @@
         <form id="oeeForm">
             <div class="form-group"><label>Date & Time</label><input type="datetime-local" id="entryDateTime" required></div>
             
-            <div id="loadingStatus" class="loading-text">Loading registered machines...</div>
+            <div id="loadingStatus" class="loading-text">Loading registered machines & logs...</div>
 
             <div class="selection-box">
                 <div class="form-group">
@@ -74,9 +74,10 @@
             </div>
 
             <div id="qualitySection" class="section-box hidden">
-                <div class="form-group"><label>Good Count</label><input type="number" id="goodParts"></div>
-                <div class="form-group"><label>Scrap Count</label><input type="number" id="rejectParts"></div>
-                <div class="form-group"><label>Reject Reason</label><input type="text" id="rejectReason"></div>
+                <p id="qualProdTarget" style="font-size:12px; color:#16a085; font-weight:bold; margin-top:0;"></p>
+                <div class="form-group"><label>Good Count</label><input type="number" id="goodParts" placeholder="Enter good parts"></div>
+                <div class="form-group"><label>Scrap Count (Auto calculated)</label><input type="number" id="rejectParts" readonly placeholder="0"></div>
+                <div class="form-group"><label>Reject Reason</label><input type="text" id="rejectReason" placeholder="e.g. Porosity, Undersize"></div>
             </div>
 
             <button type="submit" id="submitBtn">Submit Data</button>
@@ -86,6 +87,8 @@
     <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbyRkmh4_ofJjAftObCfnX9gmhqCa4xcsvSp143BXCUdQujfy4gaFkBMlEhsVrwa61HugQ/exec";
         let allRegisteredMachines = [];
+        let allLogs = [];
+        let currentTotalProduced = 0; // Quality checking ke liye
 
         function getSafeVal(obj, possibleKeys) {
             let lowerKeys = possibleKeys.map(k => k.toLowerCase().replace(/\s/g, ''));
@@ -99,30 +102,39 @@
             let now = new Date();
             now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
             document.getElementById('entryDateTime').value = now.toISOString().slice(0,16);
-            fetchRegisteredMachines();
+            fetchData(false);
         };
 
-        function fetchRegisteredMachines() {
-            let cachedData = localStorage.getItem("mes_machines");
-            if (cachedData) {
-                allRegisteredMachines = JSON.parse(cachedData);
-                document.getElementById('loadingStatus').style.display = 'none';
-                populateLineDropdown();
-                processQRScan();
+        function fetchData(isSilent) {
+            if (!isSilent) {
+                let cachedM = localStorage.getItem("mes_machines");
+                let cachedL = localStorage.getItem("mes_logs");
+                if (cachedM && cachedL) {
+                    allRegisteredMachines = JSON.parse(cachedM);
+                    allLogs = JSON.parse(cachedL);
+                    document.getElementById('loadingStatus').style.display = 'none';
+                    populateLineDropdown();
+                    processQRScan();
+                }
             }
 
             fetch(API_URL)
                 .then(res => res.json())
                 .then(data => {
                     allRegisteredMachines = data.machines || [];
+                    allLogs = data.logs || [];
                     localStorage.setItem("mes_machines", JSON.stringify(allRegisteredMachines)); 
-                    if (!cachedData) {
+                    localStorage.setItem("mes_logs", JSON.stringify(allLogs)); 
+                    
+                    if (!isSilent && !localStorage.getItem("mes_machines")) {
                         document.getElementById('loadingStatus').style.display = 'none';
                         populateLineDropdown();
                         processQRScan();
                     }
                 }).catch(err => {
-                    if(!cachedData) document.getElementById('loadingStatus').innerText = "⚠️ Error loading machines.";
+                    if(!isSilent && !localStorage.getItem("mes_machines")) {
+                        document.getElementById('loadingStatus').innerText = "⚠️ Error loading data.";
+                    }
                 });
         }
 
@@ -190,13 +202,69 @@
             document.getElementById("productionSection").classList.add("hidden");
             document.getElementById("maintenanceSection").classList.add("hidden");
             document.getElementById("qualitySection").classList.add("hidden");
+            
             if(type === "Production") document.getElementById("productionSection").classList.remove("hidden");
             if(type === "Maintenance") document.getElementById("maintenanceSection").classList.remove("hidden");
-            if(type === "Quality") document.getElementById("qualitySection").classList.remove("hidden");
+            if(type === "Quality") {
+                document.getElementById("qualitySection").classList.remove("hidden");
+                checkProductionForQuality();
+            }
+        }
+
+        // --- NAYA QUALITY VERIFICATION LOGIC ---
+        function checkProductionForQuality() {
+            const barcode = document.getElementById("barcode").value;
+            const shift = document.getElementById("shift").value;
+
+            if (!barcode || !shift) {
+                alert("⚠️ Please select Machine and Shift first before entering Quality.");
+                document.getElementById("entryType").value = "";
+                toggleSections();
+                return;
+            }
+
+            let todayStr = new Date().toDateString(); // e.g. "Wed Aug 12 2026"
+            
+            // Search latest production log for this machine and shift today
+            let prodLog = allLogs.slice().reverse().find(log => {
+                let logDate = new Date(getSafeVal(log, ["Timestamp", "Date"])).toDateString();
+                return (logDate === todayStr) && 
+                       (String(getSafeVal(log, ["Barcode#", "Barcode", "AssetNumber"])) === String(barcode)) && 
+                       (String(getSafeVal(log, ["Shift"])) === String(shift)) && 
+                       (String(getSafeVal(log, ["EntryType", "Type"])) === "Production");
+            });
+
+            if (!prodLog) {
+                alert("⚠️ Error: Production entry not found for this Machine and Shift today!\nPlease submit Production data first.");
+                document.getElementById("entryType").value = "";
+                toggleSections();
+                currentTotalProduced = 0;
+            } else {
+                currentTotalProduced = Number(getSafeVal(prodLog, ["TotalCount", "Actual", "TotalProduced"])) || 0;
+                document.getElementById("qualProdTarget").innerText = `Total Parts Produced in Shift: ${currentTotalProduced}`;
+                document.getElementById("goodParts").placeholder = `Max allowed: ${currentTotalProduced}`;
+                document.getElementById("goodParts").value = "";
+                document.getElementById("rejectParts").value = "";
+            }
+        }
+
+        // --- SCRAP AUTO-CALCULATION ---
+        document.getElementById("goodParts").addEventListener("input", calculateScrap);
+        
+        function calculateScrap() {
+            if(document.getElementById("entryType").value !== "Quality") return;
+            
+            let good = parseInt(document.getElementById("goodParts").value) || 0;
+            if (good > currentTotalProduced) {
+                alert(`⚠️ Good parts cannot be greater than Total Produced (${currentTotalProduced})!`);
+                document.getElementById("goodParts").value = currentTotalProduced;
+                good = currentTotalProduced;
+            }
+            let scrap = currentTotalProduced - good;
+            document.getElementById("rejectParts").value = scrap;
         }
 
         document.getElementById("actual").addEventListener("input", checkTarget);
-        
         function checkTarget() {
             let actual = parseFloat(document.getElementById("actual").value) || 0;
             let stdProd = parseFloat(document.getElementById("stdProd").value) || 0;
@@ -207,7 +275,6 @@
         document.getElementById("oeeForm").addEventListener("submit", function(e) {
             e.preventDefault(); 
             
-            // --- STRICT VALIDATION START ---
             const entryType = document.getElementById("entryType").value;
             
             if (!document.getElementById("barcode").value) {
@@ -220,28 +287,22 @@
                 const stdProd = parseFloat(document.getElementById("stdProd").value) || 0;
                 const lossReason = document.getElementById("lossReason").value;
                 
-                if (actual === "") {
-                    alert("⚠️ Error: Please enter Total Count (Parts Produced).");
-                    return;
-                }
+                if (actual === "") { alert("⚠️ Error: Please enter Total Count."); return; }
                 if (parseFloat(actual) < stdProd && lossReason.trim() === "") {
-                    alert("⚠️ Error: Target missed! Please enter a Performance Loss Reason.");
-                    return;
+                    alert("⚠️ Error: Target missed! Please enter a Performance Loss Reason."); return;
                 }
             } else if (entryType === "Maintenance") {
-                const downtime = document.getElementById("downtime").value;
-                if (downtime === "") {
-                    alert("⚠️ Error: Please enter Total Downtime (Mins).");
-                    return;
-                }
+                if (document.getElementById("downtime").value === "") { alert("⚠️ Error: Please enter Total Downtime."); return; }
             } else if (entryType === "Quality") {
                 const goodParts = document.getElementById("goodParts").value;
-                if (goodParts === "") {
-                    alert("⚠️ Error: Please enter Good Count.");
-                    return;
+                const rejectParts = document.getElementById("rejectParts").value;
+                const rejectReason = document.getElementById("rejectReason").value;
+                
+                if (goodParts === "") { alert("⚠️ Error: Please enter Good Count."); return; }
+                if (parseFloat(rejectParts) > 0 && rejectReason.trim() === "") {
+                    alert("⚠️ Error: Scrap parts detected! Please enter a Reject Reason."); return;
                 }
             }
-            // --- STRICT VALIDATION END ---
 
             const btn = document.getElementById("submitBtn");
             btn.innerText = "Submitting..."; btn.disabled = true;
@@ -275,6 +336,9 @@
                 document.getElementById('entryDateTime').value = now.toISOString().slice(0,16);
                 toggleSections();
                 btn.innerText = "Submit Data"; btn.disabled = false;
+                
+                // Silent Data Fetch takay next Quality check k liye current production logic update ho jaye
+                fetchData(true); 
             }).catch(err => { alert("Error saving data"); btn.innerText = "Submit Data"; btn.disabled = false; });
         });
     </script>
