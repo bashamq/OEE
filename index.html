@@ -17,11 +17,12 @@
         .hidden { display: none; }
         .section-box { background: #f8f9fa; padding: 15px; border-radius: 6px; border: 1px solid #dee2e6; margin-bottom: 15px; }
         
-        .machine-info-box { background-color: #e8f8f5; border: 1px solid #1abc9c; padding: 15px; border-radius: 6px; margin-bottom: 15px; }
+        /* Dropdown Highlight Style */
+        .selection-box { background-color: #f4f6f7; border: 1px solid #d5dbdb; padding: 12px; border-radius: 8px; margin-bottom: 15px; }
         
         button { width: 100%; padding: 12px; background: #27ae60; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s;}
         button:hover { background: #219150; }
-        .loading-text { font-size: 14px; font-weight: bold; margin-bottom: 15px; text-align: center; display: none; }
+        .loading-text { font-size: 13px; font-weight: bold; margin-bottom: 10px; text-align: center; color: #f39c12; }
     </style>
 </head>
 <body>
@@ -29,21 +30,29 @@
         <h2>OEE Data Entry Form</h2>
         <form id="oeeForm">
             <div class="form-group"><label>Date & Time</label><input type="datetime-local" id="entryDateTime" required></div>
-            <div class="form-group"><label>Barcode # (Asset Number)</label><input type="text" id="barcode" required placeholder="Enter Barcode / Scan QR"></div>
             
-            <div id="machineDataStatus" class="loading-text">Fetching machine parameters...</div>
+            <div id="loadingStatus" class="loading-text">Loading registered machines...</div>
 
-            <!-- Machine Details & Multi-Line Dropdown -->
-            <div id="machineDetailsSection" class="machine-info-box hidden">
-                <p style="font-size:12px; color:#16a085; margin-top:0; font-weight:bold;">* Machine Found. Select active line if shared.</p>
+            <!-- NAYE DROPDOWNS: Line & Machine Selection -->
+            <div class="selection-box">
                 <div class="form-group">
-                    <label style="color: #16a085;">Active Line / Department</label>
-                    <select id="activeLineSelect" onchange="updateMachineParams()" style="border-color: #1abc9c;"></select>
+                    <label style="color: #2980b9;">1. Select Line / Department</label>
+                    <select id="lineSelect" onchange="onLineChange()">
+                        <option value="">-- Choose Production Line --</option>
+                    </select>
                 </div>
+
                 <div class="form-group">
-                    <label style="color: #16a085;">Operation Name</label>
-                    <input type="text" id="activeOperation" readonly>
+                    <label style="color: #2980b9;">2. Select Machine (Name & Operation)</label>
+                    <select id="machineSelect" onchange="onMachineSelect()">
+                        <option value="">-- Select Line First --</option>
+                    </select>
                 </div>
+            </div>
+
+            <div class="form-group">
+                <label>Barcode # (Asset Number)</label>
+                <input type="text" id="barcode" required placeholder="Auto-filled or Scan QR" readonly>
             </div>
 
             <div class="form-group"><label>Operator Name</label><input type="text" id="operatorName" required></div>
@@ -93,29 +102,9 @@
     <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbyRkmh4_ofJjAftObCfnX9gmhqCa4xcsvSp143BXCUdQujfy4gaFkBMlEhsVrwa61HugQ/exec";
         
-        let currentMachineOptions = []; 
+        let allRegisteredMachines = [];
 
-        window.onload = function() {
-            let now = new Date();
-            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-            document.getElementById('entryDateTime').value = now.toISOString().slice(0,16);
-
-            const urlParams = new URLSearchParams(window.location.search);
-            const assetFromQR = urlParams.get('asset');
-            if(assetFromQR) {
-                document.getElementById('barcode').value = assetFromQR;
-                document.getElementById('barcode').readOnly = true; 
-                fetchMachineData(assetFromQR);
-            }
-
-            document.getElementById('barcode').addEventListener('blur', function() {
-                if(!this.readOnly && this.value) {
-                    fetchMachineData(this.value);
-                }
-            });
-        };
-
-        // Smart Helper: Space ya case ki ghalti ko theek parhne ke liye
+        // Safe getter helper
         function getSafeVal(obj, possibleKeys) {
             let lowerKeys = possibleKeys.map(k => k.toLowerCase().replace(/\s/g, ''));
             for(let key in obj) {
@@ -123,88 +112,112 @@
                     return obj[key];
                 }
             }
-            return null;
+            return "";
         }
 
-        function fetchMachineData(barcode) {
-            const statusDiv = document.getElementById('machineDataStatus');
-            const detailsSec = document.getElementById('machineDetailsSection');
-            
-            statusDiv.innerText = "Fetching machine parameters...";
-            statusDiv.style.color = "#f39c12";
-            statusDiv.style.display = "block";
-            detailsSec.classList.add("hidden");
+        window.onload = function() {
+            let now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            document.getElementById('entryDateTime').value = now.toISOString().slice(0,16);
 
+            // Fetch Registered Machines from Backend
+            fetchRegisteredMachines();
+        };
+
+        function fetchRegisteredMachines() {
             fetch(API_URL)
                 .then(res => res.json())
                 .then(data => {
-                    let allMachines = data.machines || [];
-                    
-                    // Filter machines by barcode (handling any header naming issues)
-                    let matchedMachines = allMachines.filter(m => 
-                        String(getSafeVal(m, ["AssetNumber", "Asset#", "Barcode"])) === String(barcode)
-                    );
-                    
-                    if(matchedMachines.length > 0) {
-                        // Remove duplicates (agar ek hi line 2 dafa ghalti se save ho gayi ho)
-                        let uniqueLines = new Set();
-                        currentMachineOptions = [];
-                        
-                        matchedMachines.forEach(m => {
-                            let ln = getSafeVal(m, ["LineName", "Line", "Department", "Dept"]) || "Unknown Line";
-                            if(!uniqueLines.has(ln)) {
-                                uniqueLines.add(ln);
-                                currentMachineOptions.push(m);
-                            }
-                        });
-                        
-                        let machineName = getSafeVal(currentMachineOptions[0], ["MachineName", "Machine"]) || "Machine";
-                        statusDiv.innerText = `✅ Loaded: ${machineName}`;
-                        statusDiv.style.color = "#27ae60";
+                    allRegisteredMachines = data.machines || [];
+                    document.getElementById('loadingStatus').style.display = 'none';
+                    populateLineDropdown();
 
-                        // Populate Dropdown
-                        let select = document.getElementById("activeLineSelect");
-                        select.innerHTML = "";
-                        
-                        currentMachineOptions.forEach((m, index) => {
-                            let lineName = getSafeVal(m, ["LineName", "Line", "Department", "Dept"]) || "Unknown Line";
-                            let opt = document.createElement("option");
-                            opt.value = index;
-                            opt.innerText = lineName;
-                            select.appendChild(opt);
-                        });
-
-                        detailsSec.classList.remove("hidden");
-                        updateMachineParams(); 
-
-                    } else {
-                        statusDiv.innerText = "⚠️ Machine not found in registered database.";
-                        statusDiv.style.color = "#e74c3c";
+                    // Check if page opened via QR Code scan (URL contains ?asset=...)
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const assetFromQR = urlParams.get('asset');
+                    if(assetFromQR) {
+                        autoSelectFromQR(assetFromQR);
                     }
                 })
                 .catch(err => {
-                    statusDiv.innerText = "⚠️ Error fetching data. Check internet.";
-                    statusDiv.style.color = "#e74c3c";
+                    document.getElementById('loadingStatus').innerText = "⚠️ Error loading machines list.";
+                    document.getElementById('loadingStatus').style.color = "red";
                 });
         }
 
-        function updateMachineParams() {
-            let select = document.getElementById("activeLineSelect");
-            let selectedIndex = select.value;
-            
-            if(currentMachineOptions[selectedIndex]) {
-                let m = currentMachineOptions[selectedIndex];
-                
-                // Smart key detection for parameters
-                let operation = getSafeVal(m, ["Operation", "Op", "OperationName"]) || "Unknown Operation";
-                let idealCT = getSafeVal(m, ["IdealCT", "IdealCT(Min)", "Target", "CycleTime"]) || 0;
-                let stdProd = getSafeVal(m, ["StdProduction", "StandardProduction", "TargetQty"]) || 0;
+        // 1. Populate Lines Dropdown
+        function populateLineDropdown() {
+            const lineSelect = document.getElementById("lineSelect");
+            lineSelect.innerHTML = '<option value="">-- Choose Production Line --</option>';
 
-                document.getElementById('activeOperation').value = operation;
-                document.getElementById('target').value = idealCT;
-                document.getElementById('stdProd').value = stdProd;
+            let uniqueLines = [...new Set(allRegisteredMachines.map(m => getSafeVal(m, ["LineName", "Line", "Department"])))].filter(Boolean);
+
+            uniqueLines.forEach(line => {
+                let opt = document.createElement("option");
+                opt.value = line;
+                opt.innerText = line;
+                lineSelect.appendChild(opt);
+            });
+        }
+
+        // 2. When Line is Selected -> Populate Machines
+        function onLineChange() {
+            const selectedLine = document.getElementById("lineSelect").value;
+            const machSelect = document.getElementById("machineSelect");
+            
+            machSelect.innerHTML = '<option value="">-- Select Machine --</option>';
+            document.getElementById("barcode").value = "";
+            document.getElementById("target").value = "";
+            document.getElementById("stdProd").value = "";
+
+            if (!selectedLine) return;
+
+            let lineMachines = allRegisteredMachines.filter(m => getSafeVal(m, ["LineName", "Line", "Department"]) === selectedLine);
+
+            lineMachines.forEach((m, index) => {
+                let name = getSafeVal(m, ["MachineName", "Machine"]);
+                let op = getSafeVal(m, ["Operation", "Op", "OperationName"]);
+                let asset = getSafeVal(m, ["AssetNumber", "Asset#", "Barcode"]);
+
+                let opt = document.createElement("option");
+                opt.value = asset; // Store Asset number in option value
+                opt.innerText = `${name} | Op: ${op} (${asset})`;
+                // Store machine object in dataset for fast access
+                opt.dataset.ct = getSafeVal(m, ["IdealCT", "IdealCT(Min)", "Target"]);
+                opt.dataset.std = getSafeVal(m, ["StdProduction", "StandardProduction", "TargetQty"]);
                 
+                machSelect.appendChild(opt);
+            });
+        }
+
+        // 3. When Machine is Selected -> Auto-fill Barcode & CT
+        function onMachineSelect() {
+            const machSelect = document.getElementById("machineSelect");
+            const selectedOpt = machSelect.options[machSelect.selectedIndex];
+
+            if (selectedOpt && selectedOpt.value) {
+                document.getElementById("barcode").value = selectedOpt.value; // Asset Number
+                document.getElementById("target").value = selectedOpt.dataset.ct || 0; // Ideal CT
+                document.getElementById("stdProd").value = selectedOpt.dataset.std || 0; // Std Production
                 checkTarget();
+            } else {
+                document.getElementById("barcode").value = "";
+                document.getElementById("target").value = "";
+                document.getElementById("stdProd").value = "";
+            }
+        }
+
+        // If Scanned via QR Code
+        function autoSelectFromQR(asset) {
+            let m = allRegisteredMachines.find(x => String(getSafeVal(x, ["AssetNumber", "Asset#", "Barcode"])) === String(asset));
+            if (m) {
+                let line = getSafeVal(m, ["LineName", "Line", "Department"]);
+                document.getElementById("lineSelect").value = line;
+                onLineChange();
+                document.getElementById("machineSelect").value = asset;
+                onMachineSelect();
+            } else {
+                document.getElementById("barcode").value = asset;
             }
         }
 
@@ -236,13 +249,6 @@
             const btn = document.getElementById("submitBtn");
             btn.innerText = "Submitting..."; btn.disabled = true;
             
-            // Ab submission mein selected Line Name bhi attach kar ke bhejenge (optional for backend)
-            let selectedLineText = "";
-            let selectElem = document.getElementById("activeLineSelect");
-            if(selectElem.options.length > 0) {
-                selectedLineText = selectElem.options[selectElem.selectedIndex].text;
-            }
-
             const data = {
                 formType: "dataEntry",
                 manualDateTime: document.getElementById("entryDateTime").value,
@@ -260,7 +266,7 @@
                 goodParts: document.getElementById("goodParts").value,
                 rejectParts: document.getElementById("rejectParts").value,
                 rejectReason: document.getElementById("rejectReason").value,
-                lineName: selectedLineText
+                lineName: document.getElementById("lineSelect").value
             };
 
             fetch(API_URL, {
@@ -269,18 +275,13 @@
             .then(res => res.json()) 
             .then(res => {
                 alert("Data Saved Successfully!");
-                let savedBc = document.getElementById("barcode").value;
                 document.getElementById("oeeForm").reset(); 
-                document.getElementById("barcode").value = savedBc;
                 
                 let now = new Date();
                 now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
                 document.getElementById('entryDateTime').value = now.toISOString().slice(0,16);
 
                 toggleSections();
-                
-                if(savedBc) fetchMachineData(savedBc);
-
                 btn.innerText = "Submit Data"; btn.disabled = false;
             })
             .catch(err => { alert("Error saving data"); btn.innerText = "Submit Data"; btn.disabled = false; });
