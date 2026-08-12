@@ -30,10 +30,17 @@
         .save-btn { width: 100%; padding: 12px; background: #8e44ad; color: white; border: none; border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px;}
         .save-btn:hover { background: #732d91; }
 
-        /* Dashboard Controls */
-        .controls { text-align: center; margin-bottom: 20px; }
-        select#viewSelect { padding: 10px; font-size: 16px; border-radius: 5px; width: 350px; border: 1px solid #ccc; font-weight: bold; }
+        /* Dashboard Controls (2-Step Dropdowns) */
+        .controls { text-align: center; margin-bottom: 20px; display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; }
+        select.filter-select { padding: 12px; font-size: 16px; border-radius: 5px; width: 320px; border: 2px solid #bdc3c7; font-weight: bold; color: #2c3e50; background-color: #fff; outline: none; cursor: pointer; }
+        select.filter-select:focus { border-color: #3498db; }
         
+        /* Machine Info Banner */
+        .info-banner { background: #e8f8f5; border: 2px solid #1abc9c; padding: 15px 25px; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; color: #2c3e50; box-shadow: 0 4px 8px rgba(0,0,0,0.05); }
+        .info-item { text-align: center; }
+        .info-item span { display: block; font-size: 14px; color: #7f8c8d; text-transform: uppercase; font-weight: bold; margin-bottom: 4px; }
+        .info-item strong { font-size: 20px; color: #16a085; }
+
         /* Progress Bar */
         .progress-wrapper { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin-bottom: 30px; border-left: 5px solid #27ae60; display: none; }
         .progress-header { display: flex; justify-content: space-between; }
@@ -51,15 +58,13 @@
         .charts-wrapper { display: flex; justify-content: space-between; flex-wrap: wrap; }
         .chart-container { width: 48%; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin-bottom: 20px; box-sizing: border-box; }
         .loading { text-align: center; font-size: 18px; color: #2980b9; font-weight: bold; margin-top: 50px; }
-        @media (max-width: 900px) { .chart-container { width: 100%; } .card { width: 30%; } }
+        @media (max-width: 900px) { .chart-container { width: 100%; } .card { width: 30%; } .info-banner { flex-direction: column; gap: 15px; } }
     </style>
 </head>
 <body>
 
-    <!-- Sidebar Overlay -->
+    <!-- Sidebar Overlay & Panel -->
     <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleAdmin()"></div>
-
-    <!-- Admin Sidebar Panel -->
     <div class="admin-sidebar" id="adminSidebar">
         <button class="close-btn" onclick="toggleAdmin()">✖</button>
         <h2>Set Targets</h2>
@@ -67,7 +72,8 @@
             <div class="form-group"><label>Select Month</label><input type="month" id="targetMonth" required></div>
             <div class="form-group">
                 <label>Production Line</label>
-                <select id="lineName" required>
+                <!-- Target hamesha Line ke liye set hota hai, isliye yahan lines fix hain -->
+                <select id="targetLineName" required>
                     <option value="">-- Select Line --</option>
                     <option value="Axle 385">1. Axle 385</option>
                     <option value="Sump 385">2. Sump 385</option>
@@ -102,15 +108,38 @@
         <p style="color: #bdc3c7; margin-top:5px;">Target vs Actual, OEE, MTTR & MTBF</p>
     </div>
 
+    <!-- 2-Step Cascading Filter -->
     <div class="controls">
-        <label><strong>Select View: </strong></label>
-        <select id="viewSelect" onchange="calculateDashboard()">
+        <select id="lineSelect" class="filter-select" onchange="onLineChange()">
             <option value="All">🏭 Factory Aggregate (All Lines)</option>
+            <!-- Lines will be populated here dynamically -->
+        </select>
+        
+        <select id="machineSelect" class="filter-select" onchange="calculateDashboard()" style="display:none;">
+            <option value="All">All Machines in this Line</option>
+            <!-- Machines will be populated here dynamically -->
         </select>
     </div>
 
     <div id="loadingMsg" class="loading">Fetching Data... Please wait.</div>
 
+    <!-- Machine Operation Layout (Banner) -->
+    <div id="machineInfoBanner" class="info-banner" style="display: none;">
+        <div class="info-item">
+            <span>Machine Name</span>
+            <strong id="lblMachName">-</strong>
+        </div>
+        <div class="info-item">
+            <span>Asset (Barcode) #</span>
+            <strong id="lblMachAsset">-</strong>
+        </div>
+        <div class="info-item">
+            <span>Operation</span>
+            <strong id="lblMachOp">-</strong>
+        </div>
+    </div>
+
+    <!-- Progress Bar -->
     <div class="progress-wrapper" id="progressDiv">
         <div class="progress-header">
             <h3>Monthly Target Progress</h3>
@@ -121,6 +150,7 @@
         </div>
     </div>
 
+    <!-- Cards -->
     <div class="cards" id="dashboardCards" style="display:none;">
         <div class="card"><h3>OEE</h3><div class="value" id="valOEE">0%</div></div>
         <div class="card"><h3>Availability</h3><div class="value" id="valA">0%</div></div>
@@ -130,6 +160,7 @@
         <div class="card"><h3>MTBF (Min)</h3><div class="value" style="color:#16a085;" id="valMTBF">0</div></div>
     </div>
 
+    <!-- Charts -->
     <div class="charts-wrapper" id="chartDiv" style="display:none;">
         <div class="chart-container"><canvas id="oeeChart"></canvas></div>
         <div class="chart-container"><canvas id="downtimeChart"></canvas></div>
@@ -137,8 +168,19 @@
 
     <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbyRkmh4_ofJjAftObCfnX9gmhqCa4xcsvSp143BXCUdQujfy4gaFkBMlEhsVrwa61HugQ/exec";
-        let allLogs = [], allTargets = [], allMachines = [], machineMap = {};
+        let allLogs = [], allTargets = [], allMachines = [];
         let oeeChartInstance = null, downtimeChartInstance = null;
+
+        // Smart Helper function for safe sheet reading
+        function getSafeVal(obj, possibleKeys) {
+            let lowerKeys = possibleKeys.map(k => k.toLowerCase().replace(/\s/g, ''));
+            for(let key in obj) {
+                if(lowerKeys.includes(key.toLowerCase().replace(/\s/g, ''))) {
+                    return obj[key];
+                }
+            }
+            return null;
+        }
 
         // Fetch Data on Load
         function fetchAllData() {
@@ -146,23 +188,22 @@
                 .then(res => res.json())
                 .then(data => {
                     allLogs = data.logs || []; allTargets = data.targets || []; allMachines = data.machines || [];
-                    allMachines.forEach(m => machineMap[String(m["Asset Number"])] = m);
+                    
                     document.getElementById('loadingMsg').style.display = 'none';
                     document.getElementById('progressDiv').style.display = 'block';
                     document.getElementById('dashboardCards').style.display = 'flex';
                     document.getElementById('chartDiv').style.display = 'flex';
                     
-                    // Only populate dropdown once to avoid duplicates
-                    if(document.getElementById("viewSelect").options.length === 1) {
-                        populateDropdown();
+                    if(document.getElementById("lineSelect").options.length === 1) {
+                        populateLineDropdown();
                     }
                     calculateDashboard();
                 }).catch(e => { document.getElementById('loadingMsg').innerText = "Error loading data."; });
         }
         
-        fetchAllData(); // Initial Call
+        fetchAllData();
 
-        // Toggle Sidebar
+        // Toggle Admin Sidebar
         function toggleAdmin() {
             const sidebar = document.getElementById('adminSidebar');
             const overlay = document.getElementById('sidebarOverlay');
@@ -175,7 +216,7 @@
             }
         }
 
-        // Admin Form Submit (Save Target)
+        // Admin Form Submit
         document.getElementById("adminForm").addEventListener("submit", function(e) {
             e.preventDefault();
             const btn = document.getElementById("submitTargetBtn");
@@ -184,82 +225,156 @@
             const data = {
                 formType: "adminTarget", 
                 month: document.getElementById("targetMonth").value,
-                lineName: document.getElementById("lineName").value,
+                lineName: document.getElementById("targetLineName").value,
                 targetQty: document.getElementById("targetQty").value
             };
 
             fetch(API_URL, { method: "POST", body: JSON.stringify(data) })
-            .then(response => response.json())
+            .then(res => res.json())
             .then(result => {
                 alert("Target Saved Successfully!");
                 document.getElementById("adminForm").reset();
                 btn.innerText = "Save Target"; btn.disabled = false;
-                toggleAdmin(); // Close sidebar
-                
-                // Refresh dashboard data silently
+                toggleAdmin(); 
                 fetchAllData(); 
-            })
-            .catch(error => {
+            }).catch(e => {
                 alert("Error saving data!");
                 btn.innerText = "Save Target"; btn.disabled = false;
             });
         });
 
-        // Populate Dropdown
-        function populateDropdown() {
-            const select = document.getElementById("viewSelect");
-            let uniqueLines = [...new Set(allMachines.map(m => m["Line Name"]))].filter(Boolean);
-            let optGroupLine = document.createElement("optgroup"); optGroupLine.label = "Lines";
-            uniqueLines.forEach(l => { let o = document.createElement("option"); o.value = "Line:"+l; o.innerText = "🛠️ Line: "+l; optGroupLine.appendChild(o); });
-            select.appendChild(optGroupLine);
-            let optGroupMachine = document.createElement("optgroup"); optGroupMachine.label = "Machines";
-            allMachines.forEach(m => { let o = document.createElement("option"); o.value = "Machine:"+m["Asset Number"]; o.innerText = "⚙️ "+m["Machine Name"]; optGroupMachine.appendChild(o); });
-            select.appendChild(optGroupMachine);
+        // 1. Populate Only Line Dropdown
+        function populateLineDropdown() {
+            const select = document.getElementById("lineSelect");
+            let uniqueLines = [...new Set(allMachines.map(m => getSafeVal(m, ["LineName", "Line", "Department"])))].filter(Boolean);
+            
+            uniqueLines.forEach(l => { 
+                let o = document.createElement("option"); 
+                o.value = l; 
+                o.innerText = "🛠️ Line: " + l; 
+                select.appendChild(o); 
+            });
+        }
+
+        // 2. On Line Change: Populate Machine Dropdown
+        function onLineChange() {
+            const lineSel = document.getElementById("lineSelect").value;
+            const machSel = document.getElementById("machineSelect");
+            
+            if (lineSel === "All") {
+                machSel.style.display = "none";
+                machSel.value = "All";
+            } else {
+                machSel.style.display = "inline-block";
+                machSel.innerHTML = '<option value="All">⚙️ All Machines in this Line</option>';
+                
+                // Get machines only for selected line
+                let lineMachines = allMachines.filter(m => getSafeVal(m, ["LineName", "Line", "Department"]) === lineSel);
+                
+                // Filter out duplicates (if machine registered multiple times for same line)
+                let uniqueAssets = new Set();
+                lineMachines.forEach(m => {
+                    let asset = getSafeVal(m, ["AssetNumber", "Asset#", "Barcode"]);
+                    let name = getSafeVal(m, ["MachineName", "Machine"]);
+                    if(!uniqueAssets.has(asset)) {
+                        uniqueAssets.add(asset);
+                        let o = document.createElement("option"); 
+                        o.value = asset; 
+                        o.innerText = `⚙️ ${name} (${asset})`; 
+                        machSel.appendChild(o);
+                    }
+                });
+            }
+            calculateDashboard();
         }
 
         function getLatestTarget(lineName) {
-            let trgs = allTargets.filter(t => t["Line Name"] === lineName);
-            return trgs.length ? Number(trgs[trgs.length - 1]["Target Qty"]) : 0;
+            let trgs = allTargets.filter(t => getSafeVal(t, ["LineName", "Line"]) === lineName);
+            return trgs.length ? Number(getSafeVal(trgs[trgs.length - 1], ["TargetQty", "Target"])) : 0;
         }
 
+        // Main Calculation
         function calculateDashboard() {
-            let sel = document.getElementById("viewSelect").value;
+            let lineVal = document.getElementById("lineSelect").value;
+            let machVal = document.getElementById("machineSelect").value;
+            
             let fLogs = [], trg = 0;
-
-            if (sel === "All") {
-                fLogs = allLogs;
-                [...new Set(allMachines.map(m => m["Line Name"]))].forEach(l => trg += getLatestTarget(l));
-            } else if (sel.startsWith("Line:")) {
-                let l = sel.split(":")[1]; trg = getLatestTarget(l);
-                fLogs = allLogs.filter(log => machineMap[String(log["Barcode #"])]?.["Line Name"] === l);
-            } else if (sel.startsWith("Machine:")) {
-                let a = sel.split(":")[1]; fLogs = allLogs.filter(log => String(log["Barcode #"]) === a);
-                trg = machineMap[a] ? getLatestTarget(machineMap[a]["Line Name"]) : 0;
+            
+            // Handle Banner Display
+            let banner = document.getElementById("machineInfoBanner");
+            if (machVal !== "All" && lineVal !== "All") {
+                // Ek specific machine select ki gayi hai
+                let m = allMachines.find(x => String(getSafeVal(x, ["AssetNumber", "Asset#", "Barcode"])) === machVal && getSafeVal(x, ["LineName", "Line", "Department"]) === lineVal);
+                if(m) {
+                    document.getElementById("lblMachName").innerText = getSafeVal(m, ["MachineName", "Machine"]) || "N/A";
+                    document.getElementById("lblMachAsset").innerText = machVal;
+                    document.getElementById("lblMachOp").innerText = getSafeVal(m, ["Operation", "Op", "OperationName"]) || "N/A";
+                    banner.style.display = "flex";
+                }
+            } else {
+                // Factory ya poori line select ki gayi hai
+                banner.style.display = "none";
             }
 
+            // Data Filter Logic
+            if (lineVal === "All") {
+                fLogs = allLogs;
+                let uLines = [...new Set(allMachines.map(m => getSafeVal(m, ["LineName", "Line"])))].filter(Boolean);
+                uLines.forEach(l => trg += getLatestTarget(l));
+                
+            } else if (lineVal !== "All" && machVal === "All") {
+                // Specific Line
+                trg = getLatestTarget(lineVal);
+                // Sirf us line ki sari machines ka data
+                let lineAssets = allMachines.filter(m => getSafeVal(m, ["LineName", "Line"]) === lineVal).map(m => String(getSafeVal(m, ["AssetNumber", "Asset#", "Barcode"])));
+                fLogs = allLogs.filter(log => lineAssets.includes(String(getSafeVal(log, ["Barcode#", "Barcode", "AssetNumber"]))));
+                
+            } else if (machVal !== "All") {
+                // Specific Machine
+                trg = getLatestTarget(lineVal); // Target usually line ka hi hota hai
+                fLogs = allLogs.filter(log => String(getSafeVal(log, ["Barcode#", "Barcode"])) === machVal);
+            }
+
+            // Calculations
             let pt = 0, dt = 0, it = 0, g = 0, r = 0, dtC = 0, dtR = {};
             fLogs.forEach(row => {
-                if (row["Entry Type"] === "Production") { pt += Number(row["Planned Time (Min)"])||0; it += (Number(row["Ideal CT (Min)"])||0)*(Number(row["Total Count"])||0); }
-                else if (row["Entry Type"] === "Maintenance") { let d = Number(row["Downtime (Min)"])||0; if(d>0){ dt+=d; dtC++; let rn = row["Maint. Reason"]||"N/A"; dtR[rn]=(dtR[rn]||0)+d; } }
-                else if (row["Entry Type"] === "Quality") { g += Number(row["Good Count"])||0; r += Number(row["Scrap Count"])||0; }
+                let entryType = getSafeVal(row, ["EntryType"]);
+                if (entryType === "Production") { 
+                    pt += Number(getSafeVal(row, ["PlannedTime(Min)", "ShiftTime"])) || 0; 
+                    it += (Number(getSafeVal(row, ["IdealCT(Min)", "IdealCT", "Target"])) || 0) * (Number(getSafeVal(row, ["TotalCount", "Actual"])) || 0); 
+                }
+                else if (entryType === "Maintenance") { 
+                    let d = Number(getSafeVal(row, ["Downtime(Min)", "Downtime"])) || 0; 
+                    if(d > 0) { 
+                        dt += d; dtC++; 
+                        let rn = getSafeVal(row, ["Maint.Reason", "MaintReason"]) || "N/A"; 
+                        dtR[rn] = (dtR[rn] || 0) + d; 
+                    } 
+                }
+                else if (entryType === "Quality") { 
+                    g += Number(getSafeVal(row, ["GoodCount", "GoodParts"])) || 0; 
+                    r += Number(getSafeVal(row, ["ScrapCount", "RejectParts"])) || 0; 
+                }
             });
 
+            // Target Update
             let pct = trg > 0 ? (g/trg)*100 : 0; if(pct>100) pct=100;
             document.getElementById("targetText").innerText = `${g} / ${trg} (${pct.toFixed(1)}%)`;
             document.getElementById("targetFill").style.width = `${pct}%`;
             document.getElementById("targetFill").innerText = `${pct.toFixed(1)}%`;
             document.getElementById("targetFill").style.backgroundColor = pct<50?"#e74c3c":pct<85?"#f1c40f":"#27ae60";
 
+            // OEE Formulas
             let rt = pt - dt; if(rt<0) rt=0;
-            let a = pt>0?rt/pt:0, p = rt>0?it/rt:0, q = (g+r)>0?g/(g+r):0;
+            let a = pt>0 ? rt/pt : 0, p = rt>0 ? it/rt : 0, q = (g+r)>0 ? g/(g+r) : 0;
             if(p>1) p=1; let oee = a*p*q;
 
             document.getElementById("valOEE").innerText = (oee*100).toFixed(1)+"%";
             document.getElementById("valA").innerText = (a*100).toFixed(1)+"%";
             document.getElementById("valP").innerText = (p*100).toFixed(1)+"%";
             document.getElementById("valQ").innerText = (q*100).toFixed(1)+"%";
-            document.getElementById("valMTTR").innerText = dtC>0?(dt/dtC).toFixed(1):0;
-            document.getElementById("valMTBF").innerText = dtC>0?(rt/dtC).toFixed(1):rt.toFixed(1);
+            document.getElementById("valMTTR").innerText = dtC>0 ? (dt/dtC).toFixed(1) : 0;
+            document.getElementById("valMTBF").innerText = dtC>0 ? (rt/dtC).toFixed(1) : rt.toFixed(1);
 
             let sDt = Object.keys(dtR).map(k => ({r:k, t:dtR[k]})).sort((x,y)=>y.t-x.t);
             updateCharts(a*100, p*100, q*100, oee*100, sDt.map(i=>i.r), sDt.map(i=>i.t));
@@ -268,6 +383,7 @@
         function updateCharts(a, p, q, o, l, d) {
             if (oeeChartInstance) oeeChartInstance.destroy();
             oeeChartInstance = new Chart(document.getElementById('oeeChart'), { type: 'bar', data: { labels: ['A', 'P', 'Q', 'OEE'], datasets: [{ data: [a, p, q, o], backgroundColor: ['#3498db', '#f1c40f', '#e74c3c', '#2c3e50'] }] }, options: { scales: { y: { max: 100 } }, plugins: { legend: { display: false } } } });
+            
             if (downtimeChartInstance) downtimeChartInstance.destroy();
             downtimeChartInstance = new Chart(document.getElementById('downtimeChart'), { type: 'bar', data: { labels: l, datasets: [{ data: d, backgroundColor: '#95a5a6' }] }, options: { indexAxis: 'y', plugins: { legend: { display: false } } } });
         }
