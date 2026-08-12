@@ -55,7 +55,6 @@
                 </select>
             </div>
             
-            <!-- DROPDOWN ORDER CHANGED HERE -->
             <div class="form-group">
                 <label>Entry Type (Follow Sequence)</label>
                 <select id="entryType" required onchange="toggleSections()">
@@ -76,7 +75,10 @@
 
             <!-- Production Section -->
             <div id="productionSection" class="section-box hidden">
-                <div class="form-group"><label>Planned Time (Mins)</label><input type="number" id="shiftTime" value="480" readonly></div>
+                <div class="form-group">
+                    <label id="lblShiftTime">Available Time (Mins)</label>
+                    <input type="number" id="shiftTime" value="480" readonly>
+                </div>
                 <div class="form-group"><label>Ideal CT (Min/part)</label><input type="number" step="0.01" id="target" readonly></div>
                 <div class="form-group"><label>Standard Production (Shift Target)</label><input type="number" id="stdProd" readonly></div>
                 <hr style="border: 0; border-top: 1px solid #ccc; margin: 20px 0;">
@@ -195,6 +197,16 @@
                 document.getElementById("barcode").value = selectedOpt.value; 
                 document.getElementById("target").value = selectedOpt.dataset.ct || 0; 
                 document.getElementById("stdProd").value = selectedOpt.dataset.std || 0; 
+                
+                // Reset Shift Time & Label just in case
+                document.getElementById("shiftTime").value = 480;
+                document.getElementById("lblShiftTime").innerHTML = `Available Time (Mins)`;
+
+                // Re-trigger validations if entry type is already selected
+                let eType = document.getElementById("entryType").value;
+                if(eType === "Production") checkMaintenanceForProduction();
+                if(eType === "Quality") checkProductionForQuality();
+
                 checkTarget();
             }
         }
@@ -226,7 +238,7 @@
             }
         }
 
-        // --- PRODUCTION INTERLOCK LOGIC (Check for Maintenance First) ---
+        // --- PRODUCTION INTERLOCK WITH DYNAMIC TARGET & DOWNTIME DEDUCTION ---
         function checkMaintenanceForProduction() {
             const barcode = document.getElementById("barcode").value;
             const shift = document.getElementById("shift").value;
@@ -251,7 +263,27 @@
                 alert("⚠️ Error: Maintenance entry NOT FOUND for this Machine and Shift today!\nPlease submit a Maintenance entry first (Enter 0 downtime if machine is okay).");
                 document.getElementById("entryType").value = "";
             } else {
+                // Downtime Extract and Minus Logic
+                let downtime = Number(getSafeVal(maintLog, ["Downtime(Min)", "Downtime"])) || 0;
+                let availableTime = 480 - downtime;
+                
+                document.getElementById("shiftTime").value = availableTime;
+                
+                if(downtime > 0) {
+                    document.getElementById("lblShiftTime").innerHTML = `Available Time (Mins) <span style="color:#e74c3c; font-size:12px;">(-${downtime}m Maint)</span>`;
+                } else {
+                    document.getElementById("lblShiftTime").innerHTML = `Available Time (Mins)`;
+                }
+
+                // Dynamic Shift Target Calculation based on Available Time
+                let idealCT = parseFloat(document.getElementById("target").value) || 0;
+                if (idealCT > 0) {
+                    let newTarget = Math.floor(availableTime / idealCT);
+                    document.getElementById("stdProd").value = newTarget;
+                }
+
                 document.getElementById("productionSection").classList.remove("hidden");
+                checkTarget();
             }
         }
 
