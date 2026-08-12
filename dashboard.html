@@ -72,7 +72,6 @@
             <div class="form-group"><label>Select Month</label><input type="month" id="targetMonth" required></div>
             <div class="form-group">
                 <label>Production Line</label>
-                <!-- Target hamesha Line ke liye set hota hai, isliye yahan lines fix hain -->
                 <select id="targetLineName" required>
                     <option value="">-- Select Line --</option>
                     <option value="Axle 385">1. Axle 385</option>
@@ -171,7 +170,6 @@
         let allLogs = [], allTargets = [], allMachines = [];
         let oeeChartInstance = null, downtimeChartInstance = null;
 
-        // Smart Helper function for safe sheet reading
         function getSafeVal(obj, possibleKeys) {
             let lowerKeys = possibleKeys.map(k => k.toLowerCase().replace(/\s/g, ''));
             for(let key in obj) {
@@ -182,7 +180,6 @@
             return null;
         }
 
-        // Fetch Data on Load
         function fetchAllData() {
             fetch(API_URL)
                 .then(res => res.json())
@@ -190,7 +187,7 @@
                     allLogs = data.logs || []; allTargets = data.targets || []; allMachines = data.machines || [];
                     
                     document.getElementById('loadingMsg').style.display = 'none';
-                    document.getElementById('progressDiv').style.display = 'block';
+                    // Progress bar display logic is now handled strictly inside calculateDashboard
                     document.getElementById('dashboardCards').style.display = 'flex';
                     document.getElementById('chartDiv').style.display = 'flex';
                     
@@ -203,7 +200,6 @@
         
         fetchAllData();
 
-        // Toggle Admin Sidebar
         function toggleAdmin() {
             const sidebar = document.getElementById('adminSidebar');
             const overlay = document.getElementById('sidebarOverlay');
@@ -216,7 +212,6 @@
             }
         }
 
-        // Admin Form Submit
         document.getElementById("adminForm").addEventListener("submit", function(e) {
             e.preventDefault();
             const btn = document.getElementById("submitTargetBtn");
@@ -243,7 +238,6 @@
             });
         });
 
-        // 1. Populate Only Line Dropdown
         function populateLineDropdown() {
             const select = document.getElementById("lineSelect");
             let uniqueLines = [...new Set(allMachines.map(m => getSafeVal(m, ["LineName", "Line", "Department"])))].filter(Boolean);
@@ -256,7 +250,6 @@
             });
         }
 
-        // 2. On Line Change: Populate Machine Dropdown
         function onLineChange() {
             const lineSel = document.getElementById("lineSelect").value;
             const machSel = document.getElementById("machineSelect");
@@ -268,10 +261,8 @@
                 machSel.style.display = "inline-block";
                 machSel.innerHTML = '<option value="All">⚙️ All Machines in this Line</option>';
                 
-                // Get machines only for selected line
                 let lineMachines = allMachines.filter(m => getSafeVal(m, ["LineName", "Line", "Department"]) === lineSel);
                 
-                // Filter out duplicates (if machine registered multiple times for same line)
                 let uniqueAssets = new Set();
                 lineMachines.forEach(m => {
                     let asset = getSafeVal(m, ["AssetNumber", "Asset#", "Barcode"]);
@@ -293,17 +284,19 @@
             return trgs.length ? Number(getSafeVal(trgs[trgs.length - 1], ["TargetQty", "Target"])) : 0;
         }
 
-        // Main Calculation
         function calculateDashboard() {
             let lineVal = document.getElementById("lineSelect").value;
             let machVal = document.getElementById("machineSelect").value;
             
             let fLogs = [], trg = 0;
-            
-            // Handle Banner Display
             let banner = document.getElementById("machineInfoBanner");
+            let progressDiv = document.getElementById("progressDiv");
+            
+            // Handle Banner and Progress Bar Display
             if (machVal !== "All" && lineVal !== "All") {
-                // Ek specific machine select ki gayi hai
+                // Specific Machine Selected: Hide Progress Bar, Show Banner
+                progressDiv.style.display = "none";
+                
                 let m = allMachines.find(x => String(getSafeVal(x, ["AssetNumber", "Asset#", "Barcode"])) === machVal && getSafeVal(x, ["LineName", "Line", "Department"]) === lineVal);
                 if(m) {
                     document.getElementById("lblMachName").innerText = getSafeVal(m, ["MachineName", "Machine"]) || "N/A";
@@ -312,7 +305,8 @@
                     banner.style.display = "flex";
                 }
             } else {
-                // Factory ya poori line select ki gayi hai
+                // Factory ("All Lines") OR "All Machines in Line" selected: Show Progress Bar, Hide Banner
+                progressDiv.style.display = "block";
                 banner.style.display = "none";
             }
 
@@ -323,15 +317,13 @@
                 uLines.forEach(l => trg += getLatestTarget(l));
                 
             } else if (lineVal !== "All" && machVal === "All") {
-                // Specific Line
                 trg = getLatestTarget(lineVal);
-                // Sirf us line ki sari machines ka data
                 let lineAssets = allMachines.filter(m => getSafeVal(m, ["LineName", "Line"]) === lineVal).map(m => String(getSafeVal(m, ["AssetNumber", "Asset#", "Barcode"])));
                 fLogs = allLogs.filter(log => lineAssets.includes(String(getSafeVal(log, ["Barcode#", "Barcode", "AssetNumber"]))));
                 
             } else if (machVal !== "All") {
-                // Specific Machine
-                trg = getLatestTarget(lineVal); // Target usually line ka hi hota hai
+                // Target zero rakhein ya calculate hi na karein kyunke bar hidden hai
+                trg = 0; 
                 fLogs = allLogs.filter(log => String(getSafeVal(log, ["Barcode#", "Barcode"])) === machVal);
             }
 
@@ -357,12 +349,14 @@
                 }
             });
 
-            // Target Update
-            let pct = trg > 0 ? (g/trg)*100 : 0; if(pct>100) pct=100;
-            document.getElementById("targetText").innerText = `${g} / ${trg} (${pct.toFixed(1)}%)`;
-            document.getElementById("targetFill").style.width = `${pct}%`;
-            document.getElementById("targetFill").innerText = `${pct.toFixed(1)}%`;
-            document.getElementById("targetFill").style.backgroundColor = pct<50?"#e74c3c":pct<85?"#f1c40f":"#27ae60";
+            // Target Update (Sirf tab chalega jab bar visible ho)
+            if (progressDiv.style.display === "block") {
+                let pct = trg > 0 ? (g/trg)*100 : 0; if(pct>100) pct=100;
+                document.getElementById("targetText").innerText = `${g} / ${trg} (${pct.toFixed(1)}%)`;
+                document.getElementById("targetFill").style.width = `${pct}%`;
+                document.getElementById("targetFill").innerText = `${pct.toFixed(1)}%`;
+                document.getElementById("targetFill").style.backgroundColor = pct<50?"#e74c3c":pct<85?"#f1c40f":"#27ae60";
+            }
 
             // OEE Formulas
             let rt = pt - dt; if(rt<0) rt=0;
