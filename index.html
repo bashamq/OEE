@@ -68,7 +68,10 @@
             <!-- Maintenance Section -->
             <div id="maintenanceSection" class="section-box hidden">
                 <p style="font-size:12px; color:#e74c3c; font-weight:bold; margin-top:0;">* Required first. Enter 0 if no downtime.</p>
+                <div class="form-group"><label>Planned Time (Mins)</label><input type="number" id="maintPlannedTime" value="480" readonly></div>
                 <div class="form-group"><label>Total Downtime (Mins)</label><input type="number" id="downtime" placeholder="Enter 0 if machine ran fine"></div>
+                <div class="form-group"><label style="color:#2980b9;">Run Time (Mins)</label><input type="number" id="maintRunTime" value="480" readonly></div>
+                <hr style="border: 0; border-top: 1px solid #ccc; margin: 20px 0;">
                 <div class="form-group"><label>Maintenance Reason</label><input type="text" id="maintReason" placeholder="e.g. Motor Heat, or 'No Issue'"></div>
                 <div class="form-group"><label>Technician Name</label><input type="text" id="techName" placeholder="Leave blank if no issue"></div>
             </div>
@@ -198,11 +201,9 @@
                 document.getElementById("target").value = selectedOpt.dataset.ct || 0; 
                 document.getElementById("stdProd").value = selectedOpt.dataset.std || 0; 
                 
-                // Reset Shift Time & Label just in case
                 document.getElementById("shiftTime").value = 480;
                 document.getElementById("lblShiftTime").innerHTML = `Available Time (Mins)`;
 
-                // Re-trigger validations if entry type is already selected
                 let eType = document.getElementById("entryType").value;
                 if(eType === "Production") checkMaintenanceForProduction();
                 if(eType === "Quality") checkProductionForQuality();
@@ -238,6 +239,15 @@
             }
         }
 
+        // --- MAINTENANCE RUN TIME AUTO-CALCULATION ---
+        document.getElementById("downtime").addEventListener("input", function() {
+            let planned = parseFloat(document.getElementById("maintPlannedTime").value) || 480;
+            let down = parseFloat(this.value) || 0;
+            let run = planned - down;
+            if (run < 0) run = 0;
+            document.getElementById("maintRunTime").value = run;
+        });
+
         // --- PRODUCTION INTERLOCK WITH DYNAMIC TARGET & DOWNTIME DEDUCTION ---
         function checkMaintenanceForProduction() {
             const barcode = document.getElementById("barcode").value;
@@ -263,7 +273,6 @@
                 alert("⚠️ Error: Maintenance entry NOT FOUND for this Machine and Shift today!\nPlease submit a Maintenance entry first (Enter 0 downtime if machine is okay).");
                 document.getElementById("entryType").value = "";
             } else {
-                // Downtime Extract and Minus Logic
                 let downtime = Number(getSafeVal(maintLog, ["Downtime(Min)", "Downtime"])) || 0;
                 let availableTime = 480 - downtime;
                 
@@ -275,7 +284,6 @@
                     document.getElementById("lblShiftTime").innerHTML = `Available Time (Mins)`;
                 }
 
-                // Dynamic Shift Target Calculation based on Available Time
                 let idealCT = parseFloat(document.getElementById("target").value) || 0;
                 if (idealCT > 0) {
                     let newTarget = Math.floor(availableTime / idealCT);
@@ -387,7 +395,7 @@
                 operatorName: document.getElementById("operatorName").value,
                 shift: document.getElementById("shift").value,
                 entryType: document.getElementById("entryType").value,
-                shiftTime: document.getElementById("shiftTime").value,
+                shiftTime: document.getElementById("shiftTime").value, // Planned Time / Available Time
                 target: document.getElementById("target").value, 
                 actual: document.getElementById("actual").value,
                 lossReason: document.getElementById("lossReason").value,
