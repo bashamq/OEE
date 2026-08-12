@@ -48,16 +48,33 @@
             <div class="form-group">
                 <label>Shift</label>
                 <select id="shift" required>
-                    <option value="">Select Shift</option><option value="Morning">Morning</option><option value="Evening">Evening</option><option value="Night">Night</option>
+                    <option value="">Select Shift</option>
+                    <option value="Morning">Morning</option>
+                    <option value="Evening">Evening</option>
+                    <option value="Night">Night</option>
                 </select>
             </div>
+            
+            <!-- DROPDOWN ORDER CHANGED HERE -->
             <div class="form-group">
-                <label>Entry Type</label>
+                <label>Entry Type (Follow Sequence)</label>
                 <select id="entryType" required onchange="toggleSections()">
-                    <option value="">Select Type...</option><option value="Production">Production</option><option value="Maintenance">Maintenance</option><option value="Quality">Quality</option>
+                    <option value="">Select Type...</option>
+                    <option value="Maintenance">1. Maintenance</option>
+                    <option value="Production">2. Production</option>
+                    <option value="Quality">3. Quality</option>
                 </select>
             </div>
 
+            <!-- Maintenance Section -->
+            <div id="maintenanceSection" class="section-box hidden">
+                <p style="font-size:12px; color:#e74c3c; font-weight:bold; margin-top:0;">* Required first. Enter 0 if no downtime.</p>
+                <div class="form-group"><label>Total Downtime (Mins)</label><input type="number" id="downtime" placeholder="Enter 0 if machine ran fine"></div>
+                <div class="form-group"><label>Maintenance Reason</label><input type="text" id="maintReason" placeholder="e.g. Motor Heat, or 'No Issue'"></div>
+                <div class="form-group"><label>Technician Name</label><input type="text" id="techName" placeholder="Leave blank if no issue"></div>
+            </div>
+
+            <!-- Production Section -->
             <div id="productionSection" class="section-box hidden">
                 <div class="form-group"><label>Planned Time (Mins)</label><input type="number" id="shiftTime" value="480" readonly></div>
                 <div class="form-group"><label>Ideal CT (Min/part)</label><input type="number" step="0.01" id="target" readonly></div>
@@ -67,12 +84,7 @@
                 <div class="form-group hidden" id="lossReasonDiv"><label style="color:#e74c3c;">Performance Loss Reason (Why less?)</label><input type="text" id="lossReason" placeholder="e.g. Tool change, low speed"></div>
             </div>
 
-            <div id="maintenanceSection" class="section-box hidden">
-                <div class="form-group"><label>Total Downtime (Mins)</label><input type="number" id="downtime"></div>
-                <div class="form-group"><label>Maintenance Reason</label><input type="text" id="maintReason"></div>
-                <div class="form-group"><label>Technician Name</label><input type="text" id="techName"></div>
-            </div>
-
+            <!-- Quality Section -->
             <div id="qualitySection" class="section-box hidden">
                 <p id="qualProdTarget" style="font-size:12px; color:#16a085; font-weight:bold; margin-top:0;"></p>
                 <div class="form-group"><label>Good Count</label><input type="number" id="goodParts" placeholder="Enter good parts"></div>
@@ -88,7 +100,7 @@
         const API_URL = "https://script.google.com/macros/s/AKfycbyRkmh4_ofJjAftObCfnX9gmhqCa4xcsvSp143BXCUdQujfy4gaFkBMlEhsVrwa61HugQ/exec";
         let allRegisteredMachines = [];
         let allLogs = [];
-        let currentTotalProduced = 0; // Quality checking ke liye
+        let currentTotalProduced = 0; 
 
         function getSafeVal(obj, possibleKeys) {
             let lowerKeys = possibleKeys.map(k => k.toLowerCase().replace(/\s/g, ''));
@@ -203,15 +215,47 @@
             document.getElementById("maintenanceSection").classList.add("hidden");
             document.getElementById("qualitySection").classList.add("hidden");
             
-            if(type === "Production") document.getElementById("productionSection").classList.remove("hidden");
-            if(type === "Maintenance") document.getElementById("maintenanceSection").classList.remove("hidden");
+            if(type === "Maintenance") {
+                document.getElementById("maintenanceSection").classList.remove("hidden");
+            }
+            if(type === "Production") {
+                checkMaintenanceForProduction();
+            }
             if(type === "Quality") {
-                document.getElementById("qualitySection").classList.remove("hidden");
                 checkProductionForQuality();
             }
         }
 
-        // --- NAYA QUALITY VERIFICATION LOGIC ---
+        // --- PRODUCTION INTERLOCK LOGIC (Check for Maintenance First) ---
+        function checkMaintenanceForProduction() {
+            const barcode = document.getElementById("barcode").value;
+            const shift = document.getElementById("shift").value;
+
+            if (!barcode || !shift) {
+                alert("⚠️ Please select Machine and Shift first before entering Production.");
+                document.getElementById("entryType").value = "";
+                return;
+            }
+
+            let todayStr = new Date().toDateString(); 
+            
+            let maintLog = allLogs.slice().reverse().find(log => {
+                let logDate = new Date(getSafeVal(log, ["Timestamp", "Date"])).toDateString();
+                return (logDate === todayStr) && 
+                       (String(getSafeVal(log, ["Barcode#", "Barcode", "AssetNumber"])) === String(barcode)) && 
+                       (String(getSafeVal(log, ["Shift"])) === String(shift)) && 
+                       (String(getSafeVal(log, ["EntryType", "Type"])) === "Maintenance");
+            });
+
+            if (!maintLog) {
+                alert("⚠️ Error: Maintenance entry NOT FOUND for this Machine and Shift today!\nPlease submit a Maintenance entry first (Enter 0 downtime if machine is okay).");
+                document.getElementById("entryType").value = "";
+            } else {
+                document.getElementById("productionSection").classList.remove("hidden");
+            }
+        }
+
+        // --- QUALITY INTERLOCK LOGIC (Check for Production First) ---
         function checkProductionForQuality() {
             const barcode = document.getElementById("barcode").value;
             const shift = document.getElementById("shift").value;
@@ -219,13 +263,11 @@
             if (!barcode || !shift) {
                 alert("⚠️ Please select Machine and Shift first before entering Quality.");
                 document.getElementById("entryType").value = "";
-                toggleSections();
                 return;
             }
 
-            let todayStr = new Date().toDateString(); // e.g. "Wed Aug 12 2026"
+            let todayStr = new Date().toDateString(); 
             
-            // Search latest production log for this machine and shift today
             let prodLog = allLogs.slice().reverse().find(log => {
                 let logDate = new Date(getSafeVal(log, ["Timestamp", "Date"])).toDateString();
                 return (logDate === todayStr) && 
@@ -235,9 +277,8 @@
             });
 
             if (!prodLog) {
-                alert("⚠️ Error: Production entry not found for this Machine and Shift today!\nPlease submit Production data first.");
+                alert("⚠️ Error: Production entry NOT FOUND for this Machine and Shift today!\nPlease submit Production data first.");
                 document.getElementById("entryType").value = "";
-                toggleSections();
                 currentTotalProduced = 0;
             } else {
                 currentTotalProduced = Number(getSafeVal(prodLog, ["TotalCount", "Actual", "TotalProduced"])) || 0;
@@ -245,10 +286,10 @@
                 document.getElementById("goodParts").placeholder = `Max allowed: ${currentTotalProduced}`;
                 document.getElementById("goodParts").value = "";
                 document.getElementById("rejectParts").value = "";
+                document.getElementById("qualitySection").classList.remove("hidden");
             }
         }
 
-        // --- SCRAP AUTO-CALCULATION ---
         document.getElementById("goodParts").addEventListener("input", calculateScrap);
         
         function calculateScrap() {
@@ -292,7 +333,7 @@
                     alert("⚠️ Error: Target missed! Please enter a Performance Loss Reason."); return;
                 }
             } else if (entryType === "Maintenance") {
-                if (document.getElementById("downtime").value === "") { alert("⚠️ Error: Please enter Total Downtime."); return; }
+                if (document.getElementById("downtime").value === "") { alert("⚠️ Error: Please enter Total Downtime (Enter 0 if none)."); return; }
             } else if (entryType === "Quality") {
                 const goodParts = document.getElementById("goodParts").value;
                 const rejectParts = document.getElementById("rejectParts").value;
@@ -336,8 +377,6 @@
                 document.getElementById('entryDateTime').value = now.toISOString().slice(0,16);
                 toggleSections();
                 btn.innerText = "Submit Data"; btn.disabled = false;
-                
-                // Silent Data Fetch takay next Quality check k liye current production logic update ho jaye
                 fetchData(true); 
             }).catch(err => { alert("Error saving data"); btn.innerText = "Submit Data"; btn.disabled = false; });
         });
