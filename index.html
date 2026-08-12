@@ -103,7 +103,6 @@
         };
 
         function fetchRegisteredMachines() {
-            // Speed Trick: Check if machines are saved in local memory
             let cachedData = localStorage.getItem("mes_machines");
             if (cachedData) {
                 allRegisteredMachines = JSON.parse(cachedData);
@@ -112,12 +111,11 @@
                 processQRScan();
             }
 
-            // Always fetch in background to keep data fresh for next time
             fetch(API_URL)
                 .then(res => res.json())
                 .then(data => {
                     allRegisteredMachines = data.machines || [];
-                    localStorage.setItem("mes_machines", JSON.stringify(allRegisteredMachines)); // Save for next time
+                    localStorage.setItem("mes_machines", JSON.stringify(allRegisteredMachines)); 
                     if (!cachedData) {
                         document.getElementById('loadingStatus').style.display = 'none';
                         populateLineDropdown();
@@ -198,6 +196,7 @@
         }
 
         document.getElementById("actual").addEventListener("input", checkTarget);
+        
         function checkTarget() {
             let actual = parseFloat(document.getElementById("actual").value) || 0;
             let stdProd = parseFloat(document.getElementById("stdProd").value) || 0;
@@ -207,6 +206,43 @@
 
         document.getElementById("oeeForm").addEventListener("submit", function(e) {
             e.preventDefault(); 
+            
+            // --- STRICT VALIDATION START ---
+            const entryType = document.getElementById("entryType").value;
+            
+            if (!document.getElementById("barcode").value) {
+                alert("⚠️ Error: Please select a Line and Machine first!");
+                return;
+            }
+
+            if (entryType === "Production") {
+                const actual = document.getElementById("actual").value;
+                const stdProd = parseFloat(document.getElementById("stdProd").value) || 0;
+                const lossReason = document.getElementById("lossReason").value;
+                
+                if (actual === "") {
+                    alert("⚠️ Error: Please enter Total Count (Parts Produced).");
+                    return;
+                }
+                if (parseFloat(actual) < stdProd && lossReason.trim() === "") {
+                    alert("⚠️ Error: Target missed! Please enter a Performance Loss Reason.");
+                    return;
+                }
+            } else if (entryType === "Maintenance") {
+                const downtime = document.getElementById("downtime").value;
+                if (downtime === "") {
+                    alert("⚠️ Error: Please enter Total Downtime (Mins).");
+                    return;
+                }
+            } else if (entryType === "Quality") {
+                const goodParts = document.getElementById("goodParts").value;
+                if (goodParts === "") {
+                    alert("⚠️ Error: Please enter Good Count.");
+                    return;
+                }
+            }
+            // --- STRICT VALIDATION END ---
+
             const btn = document.getElementById("submitBtn");
             btn.innerText = "Submitting..."; btn.disabled = true;
             
