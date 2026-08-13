@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Machine Registration & QR Label</title>
-    <!-- QR Code Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <!-- HTML to Image Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background-color: #e9ecef; padding: 20px; }
@@ -15,21 +13,12 @@
         .form-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 5px; font-weight: bold; color: #34495e; }
         input, select { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 5px; }
+        .hint { font-size: 12px; color: #7f8c8d; margin-top: 3px; display: block; }
         button { width: 100%; padding: 12px; background: #2980b9; color: white; border: none; border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px;}
         button:hover { background: #2471a3; }
         
-        /* ---------------- QR Label Professional Design ---------------- */
         #qrSection { text-align: center; display: none; margin-top: 20px; }
-        .label-card {
-            width: 320px;
-            margin: 0 auto;
-            padding: 25px 20px;
-            background: #ffffff;
-            border: 3px solid #2c3e50;
-            border-radius: 12px;
-            text-align: center;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
+        .label-card { width: 320px; margin: 0 auto; padding: 25px 20px; background: #ffffff; border: 3px solid #2c3e50; border-radius: 12px; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
         .label-card h2 { margin: 0; font-size: 26px; color: #000; text-transform: uppercase; letter-spacing: 1px; }
         .asset-text { font-size: 18px; font-weight: bold; color: #333; margin: 5px 0 5px 0; }
         .line-text { font-size: 16px; font-weight: 600; color: #16a085; margin: 0 0 15px 0; text-transform: uppercase; }
@@ -43,19 +32,11 @@
         .btn-save:hover { background: #d68910; }
         .btn-back { background: #7f8c8d; margin-top: 15px; }
 
-        /* ---------------- Print Mode Layout ---------------- */
         @media print {
             body { background: white; margin: 0; padding: 0; }
             body * { visibility: hidden; }
             #printLabel, #printLabel * { visibility: visible; }
-            #printLabel {
-                position: absolute;
-                left: 50%;
-                top: 50%;
-                transform: translate(-50%, -50%);
-                box-shadow: none;
-                border: 2px solid #000;
-            }
+            #printLabel { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); box-shadow: none; border: 2px solid #000; }
             @page { margin: 0; }
         }
     </style>
@@ -97,6 +78,25 @@
             <div class="form-group"><label>Ideal Cycle Time (Min)</label><input type="number" step="0.01" id="idealCT" required></div>
             <div class="form-group"><label>Standard Production (Shift)</label><input type="number" id="stdProduction" required></div>
             
+            <hr style="border: 0; border-top: 1px solid #ccc; margin: 20px 0;">
+            <h3 style="color:#2c3e50; font-size:16px;">Set Common Reasons (Optional)</h3>
+            
+            <div class="form-group">
+                <label>Maintenance Reasons</label>
+                <input type="text" id="maintReasons" placeholder="e.g. Motor Heat, Oil Leak, Sensor Issue">
+                <span class="hint">Use commas (,) to separate multiple reasons.</span>
+            </div>
+            <div class="form-group">
+                <label>Performance Loss (Production) Reasons</label>
+                <input type="text" id="prodReasons" placeholder="e.g. Tool Change, Low Speed, Setup">
+                <span class="hint">Use commas (,) to separate multiple reasons.</span>
+            </div>
+            <div class="form-group">
+                <label>Quality (Reject) Reasons</label>
+                <input type="text" id="qualReasons" placeholder="e.g. Porosity, Undersize, Dent">
+                <span class="hint">Use commas (,) to separate multiple reasons.</span>
+            </div>
+
             <button type="submit" id="submitBtn">Register Machine & Generate QR</button>
         </form>
 
@@ -104,7 +104,6 @@
             <div id="printLabel" class="label-card">
                 <h2 id="lblMachineName">Machine Name</h2>
                 <p id="lblAssetNum" class="asset-text">Asset #: 00000</p>
-                <!-- Line/Department name added here -->
                 <p id="lblLineName" class="line-text">Line Name</p> 
                 <div id="qrcode" class="qr-wrapper"></div>
                 <p id="lblOperation" class="op-text">Operation Name</p>
@@ -134,7 +133,10 @@
                 assetNumber: document.getElementById("assetNumber").value,
                 operation: document.getElementById("operation").value,
                 idealCT: document.getElementById("idealCT").value,
-                stdProduction: document.getElementById("stdProduction").value
+                stdProduction: document.getElementById("stdProduction").value,
+                maintReasons: document.getElementById("maintReasons").value, // NEW
+                prodReasons: document.getElementById("prodReasons").value,   // NEW
+                qualReasons: document.getElementById("qualReasons").value    // NEW
             };
 
             fetch("https://script.google.com/macros/s/AKfycbyRkmh4_ofJjAftObCfnX9gmhqCa4xcsvSp143BXCUdQujfy4gaFkBMlEhsVrwa61HugQ/exec", {
@@ -144,7 +146,6 @@
             .then(response => response.json())
             .then(result => {
                 alert("Machine Registered Successfully!");
-                // Ab Line Name bhi function mein pass kar rahe hain
                 generateQR(data.assetNumber, data.machineName, data.operation, data.lineName);
             })
             .catch(error => {
@@ -158,31 +159,23 @@
             document.querySelector("h2").style.display = "none"; 
             document.getElementById("qrSection").style.display = "block";
             
-            // Label Values
             document.getElementById("lblMachineName").innerText = name;
             document.getElementById("lblAssetNum").innerText = "Asset #: " + asset;
-            document.getElementById("lblLineName").innerText = "Line: " + lineName; // Line Name update ho gaya
+            document.getElementById("lblLineName").innerText = "Line: " + lineName;
             document.getElementById("lblOperation").innerText = "Op: " + operation;
             
             const qrText = ENTRY_FORM_URL + "?asset=" + asset;
             document.getElementById("qrcode").innerHTML = ""; 
             new QRCode(document.getElementById("qrcode"), { 
-                text: qrText, 
-                width: 180, 
-                height: 180,
-                colorDark : "#000000",
-                colorLight : "#ffffff"
+                text: qrText, width: 180, height: 180, colorDark : "#000000", colorLight : "#ffffff"
             });
         }
 
-        function printQR() {
-            window.print();
-        }
+        function printQR() { window.print(); }
 
         function saveQR() {
             const label = document.getElementById("printLabel");
             const assetName = document.getElementById("lblAssetNum").innerText.split(": ")[1];
-            
             html2canvas(label).then(canvas => {
                 const link = document.createElement('a');
                 link.download = `Machine_${assetName}_QR.png`;
