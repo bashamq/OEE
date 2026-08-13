@@ -72,7 +72,16 @@
                 <div class="form-group"><label>Total Downtime (Mins)</label><input type="number" id="downtime" placeholder="Enter 0 if machine ran fine"></div>
                 <div class="form-group"><label style="color:#2980b9;">Run Time (Mins)</label><input type="number" id="maintRunTime" value="480" readonly></div>
                 <hr style="border: 0; border-top: 1px solid #ccc; margin: 20px 0;">
-                <div class="form-group"><label>Maintenance Reason</label><input type="text" id="maintReason" placeholder="e.g. Motor Heat, or 'No Issue'"></div>
+                
+                <div class="form-group">
+                    <label>Maintenance Reason</label>
+                    <select id="maintReasonSelect" onchange="handleOther('maintReason')">
+                        <option value="No Issue">No Issue</option>
+                        <option value="Other">Other (Type manually)</option>
+                    </select>
+                    <input type="text" id="maintReasonOther" class="hidden" placeholder="Type specific reason here..." style="margin-top:8px;">
+                </div>
+
                 <div class="form-group"><label>Technician Name</label><input type="text" id="techName" placeholder="Leave blank if no issue"></div>
             </div>
 
@@ -86,7 +95,15 @@
                 <div class="form-group"><label>Standard Production (Shift Target)</label><input type="number" id="stdProd" readonly></div>
                 <hr style="border: 0; border-top: 1px solid #ccc; margin: 20px 0;">
                 <div class="form-group"><label style="color:#2980b9;">Total Count (Parts Produced)</label><input type="number" id="actual" placeholder="Enter parts produced today"></div>
-                <div class="form-group hidden" id="lossReasonDiv"><label style="color:#e74c3c;">Performance Loss Reason (Why less?)</label><input type="text" id="lossReason" placeholder="e.g. Tool change, low speed"></div>
+                
+                <div class="form-group hidden" id="lossReasonDiv">
+                    <label style="color:#e74c3c;">Performance Loss Reason (Why less?)</label>
+                    <select id="lossReasonSelect" onchange="handleOther('lossReason')">
+                        <option value="">-- Select Reason --</option>
+                        <option value="Other">Other (Type manually)</option>
+                    </select>
+                    <input type="text" id="lossReasonOther" class="hidden" placeholder="Type specific reason here..." style="margin-top:8px;">
+                </div>
             </div>
 
             <!-- Quality Section -->
@@ -94,7 +111,15 @@
                 <p id="qualProdTarget" style="font-size:12px; color:#16a085; font-weight:bold; margin-top:0;"></p>
                 <div class="form-group"><label>Good Count</label><input type="number" id="goodParts" placeholder="Enter good parts"></div>
                 <div class="form-group"><label>Scrap Count (Auto calculated)</label><input type="number" id="rejectParts" readonly placeholder="0"></div>
-                <div class="form-group"><label>Reject Reason</label><input type="text" id="rejectReason" placeholder="e.g. Porosity, Undersize"></div>
+                
+                <div class="form-group" id="rejectReasonDiv">
+                    <label>Reject Reason</label>
+                    <select id="rejectReasonSelect" onchange="handleOther('rejectReason')">
+                        <option value="">-- Select Reason --</option>
+                        <option value="Other">Other (Type manually)</option>
+                    </select>
+                    <input type="text" id="rejectReasonOther" class="hidden" placeholder="Type specific reason here..." style="margin-top:8px;">
+                </div>
             </div>
 
             <button type="submit" id="submitBtn">Submit Data</button>
@@ -187,10 +212,57 @@
                 let opt = document.createElement("option");
                 opt.value = asset; 
                 opt.innerText = `${name} | Op: ${op} (${asset})`;
+                
+                // Store machine variables for easy access
                 opt.dataset.ct = getSafeVal(m, ["IdealCT", "IdealCT(Min)", "Target"]);
                 opt.dataset.std = getSafeVal(m, ["StdProduction", "StandardProduction", "TargetQty"]);
+                opt.dataset.maintReasons = getSafeVal(m, ["MaintReasons", "MaintenanceReasons", "MaintReason"]);
+                opt.dataset.prodReasons = getSafeVal(m, ["ProdReasons", "ProductionReasons"]);
+                opt.dataset.qualReasons = getSafeVal(m, ["QualReasons", "QualityReasons", "RejectReasons"]);
+                
                 machSelect.appendChild(opt);
             });
+        }
+
+        // --- POPULATE DROPDOWNS DYNAMICALLY ---
+        function populateDropdownList(selectId, commaSeparatedString, defaultText) {
+            const selectElem = document.getElementById(selectId);
+            selectElem.innerHTML = `<option value="">-- ${defaultText} --</option>`;
+            
+            if (selectId === 'maintReasonSelect') {
+                selectElem.innerHTML = `<option value="No Issue">No Issue</option>`; // default for maint
+            }
+
+            if (commaSeparatedString && commaSeparatedString.trim() !== "") {
+                let reasons = commaSeparatedString.split(',');
+                reasons.forEach(r => {
+                    let cleanedReason = r.trim();
+                    if (cleanedReason) {
+                        let opt = document.createElement("option");
+                        opt.value = cleanedReason;
+                        opt.innerText = cleanedReason;
+                        selectElem.appendChild(opt);
+                    }
+                });
+            }
+            // Add 'Other' at the end
+            let otherOpt = document.createElement("option");
+            otherOpt.value = "Other";
+            otherOpt.innerText = "Other (Type manually)";
+            selectElem.appendChild(otherOpt);
+        }
+
+        function handleOther(reasonType) {
+            let selectVal = document.getElementById(reasonType + "Select").value;
+            let otherInput = document.getElementById(reasonType + "Other");
+            if (selectVal === "Other") {
+                otherInput.classList.remove("hidden");
+                otherInput.required = true;
+            } else {
+                otherInput.classList.add("hidden");
+                otherInput.required = false;
+                otherInput.value = "";
+            }
         }
 
         function onMachineSelect() {
@@ -203,6 +275,16 @@
                 
                 document.getElementById("shiftTime").value = 480;
                 document.getElementById("lblShiftTime").innerHTML = `Available Time (Mins)`;
+
+                // Fill dynamic dropdowns
+                populateDropdownList('maintReasonSelect', selectedOpt.dataset.maintReasons, "Select Reason");
+                populateDropdownList('lossReasonSelect', selectedOpt.dataset.prodReasons, "Select Reason");
+                populateDropdownList('rejectReasonSelect', selectedOpt.dataset.qualReasons, "Select Reason");
+                
+                // Hide other inputs by default
+                document.getElementById('maintReasonOther').classList.add("hidden");
+                document.getElementById('lossReasonOther').classList.add("hidden");
+                document.getElementById('rejectReasonOther').classList.add("hidden");
 
                 let eType = document.getElementById("entryType").value;
                 if(eType === "Production") checkMaintenanceForProduction();
@@ -353,6 +435,15 @@
             else document.getElementById("lossReasonDiv").classList.add("hidden");
         }
 
+        // --- FINAL SUBMISSION LOGIC ---
+        function getFinalReason(reasonType) {
+            let selectVal = document.getElementById(reasonType + "Select").value;
+            if (selectVal === "Other") {
+                return document.getElementById(reasonType + "Other").value;
+            }
+            return selectVal;
+        }
+
         document.getElementById("oeeForm").addEventListener("submit", function(e) {
             e.preventDefault(); 
             
@@ -366,22 +457,22 @@
             if (entryType === "Production") {
                 const actual = document.getElementById("actual").value;
                 const stdProd = parseFloat(document.getElementById("stdProd").value) || 0;
-                const lossReason = document.getElementById("lossReason").value;
+                const finalLossReason = getFinalReason("lossReason");
                 
                 if (actual === "") { alert("⚠️ Error: Please enter Total Count."); return; }
-                if (parseFloat(actual) < stdProd && lossReason.trim() === "") {
-                    alert("⚠️ Error: Target missed! Please enter a Performance Loss Reason."); return;
+                if (parseFloat(actual) < stdProd && finalLossReason.trim() === "") {
+                    alert("⚠️ Error: Target missed! Please select or type a Performance Loss Reason."); return;
                 }
             } else if (entryType === "Maintenance") {
                 if (document.getElementById("downtime").value === "") { alert("⚠️ Error: Please enter Total Downtime (Enter 0 if none)."); return; }
             } else if (entryType === "Quality") {
                 const goodParts = document.getElementById("goodParts").value;
                 const rejectParts = document.getElementById("rejectParts").value;
-                const rejectReason = document.getElementById("rejectReason").value;
+                const finalRejectReason = getFinalReason("rejectReason");
                 
                 if (goodParts === "") { alert("⚠️ Error: Please enter Good Count."); return; }
-                if (parseFloat(rejectParts) > 0 && rejectReason.trim() === "") {
-                    alert("⚠️ Error: Scrap parts detected! Please enter a Reject Reason."); return;
+                if (parseFloat(rejectParts) > 0 && finalRejectReason.trim() === "") {
+                    alert("⚠️ Error: Scrap parts detected! Please select or type a Reject Reason."); return;
                 }
             }
 
@@ -395,16 +486,16 @@
                 operatorName: document.getElementById("operatorName").value,
                 shift: document.getElementById("shift").value,
                 entryType: document.getElementById("entryType").value,
-                shiftTime: document.getElementById("shiftTime").value, // Planned Time / Available Time
+                shiftTime: document.getElementById("shiftTime").value, 
                 target: document.getElementById("target").value, 
                 actual: document.getElementById("actual").value,
-                lossReason: document.getElementById("lossReason").value,
-                maintReason: document.getElementById("maintReason").value,
+                lossReason: getFinalReason("lossReason"),       // Picked dynamically
+                maintReason: getFinalReason("maintReason"),     // Picked dynamically
                 downtime: document.getElementById("downtime").value,
                 techName: document.getElementById("techName").value,
                 goodParts: document.getElementById("goodParts").value,
                 rejectParts: document.getElementById("rejectParts").value,
-                rejectReason: document.getElementById("rejectReason").value,
+                rejectReason: getFinalReason("rejectReason"),   // Picked dynamically
                 lineName: document.getElementById("lineSelect").value
             };
 
@@ -415,6 +506,12 @@
                 document.getElementById("oeeForm").reset(); 
                 let now = new Date(); now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
                 document.getElementById('entryDateTime').value = now.toISOString().slice(0,16);
+                
+                // Hide specific reason boxes on reset
+                document.getElementById('maintReasonOther').classList.add("hidden");
+                document.getElementById('lossReasonOther').classList.add("hidden");
+                document.getElementById('rejectReasonOther').classList.add("hidden");
+
                 toggleSections();
                 btn.innerText = "Submit Data"; btn.disabled = false;
                 fetchData(true); 
