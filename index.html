@@ -3,136 +3,171 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OEE Data Entry</title>
+    <title>OEE Data Entry Wizard</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #e9ecef; padding: 20px; margin: 0; }
-        .container { max-width: 500px; margin: 0 auto; background: #ffffff; padding: 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        h2 { text-align: center; color: #2c3e50; margin-bottom: 20px; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #e9ecef; padding: 15px; margin: 0; }
+        .container { max-width: 450px; margin: 0 auto; background: #ffffff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #2c3e50; margin-bottom: 15px; font-size: 22px; }
+        
+        /* Wizard Steps Indicator */
+        .step-indicator { display: flex; justify-content: space-between; margin-bottom: 20px; padding: 0 10px; }
+        .step-dot { width: 25px; height: 25px; border-radius: 50%; background-color: #bdc3c7; color: white; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; position: relative; z-index: 2; transition: 0.3s; }
+        .step-dot.active { background-color: #3498db; transform: scale(1.1); box-shadow: 0 0 8px rgba(52,152,219,0.5); }
+        .step-dot.completed { background-color: #27ae60; }
+        .step-line { flex: 1; height: 3px; background-color: #bdc3c7; margin-top: 11px; z-index: 1; margin-left: -5px; margin-right: -5px; transition: 0.3s; }
+        .step-line.completed { background-color: #27ae60; }
+        .step-labels { display: flex; justify-content: space-between; font-size: 11px; color: #7f8c8d; font-weight: 600; margin-top: -15px; margin-bottom: 20px; padding: 0 5px; }
+
         .form-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 6px; font-weight: 600; color: #34495e; font-size: 14px; }
-        input, select { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 6px; font-size: 15px; }
+        input, select { width: 100%; padding: 12px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 6px; font-size: 15px; transition: 0.3s; }
+        input:focus, select:focus { border-color: #3498db; outline: none; }
         input[readonly], select:disabled, input:disabled { background-color: #e8f8f5; border-color: #1abc9c; color: #16a085; font-weight: bold; cursor: not-allowed; }
         
-        .hidden { display: none; }
-        .section-box { background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #dee2e6; margin-bottom: 20px; position: relative;}
-        .section-title { position: absolute; top: -12px; left: 15px; background: #34495e; color: white; padding: 2px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; }
-        
-        /* Completed Section Style */
+        .step-content { display: none; animation: fadeIn 0.4s; }
+        .step-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Badge and Info Box */
+        .info-box { background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #dee2e6; margin-bottom: 15px; }
         .completed-box { background-color: #d5f5e3; border-color: #2ecc71; }
-        .completed-box .section-title { background: #27ae60; }
-        
-        .selection-box { background-color: #f4f6f7; border: 1px solid #d5dbdb; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
-        button { width: 100%; padding: 14px; background: #27ae60; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s;}
-        button:hover { background: #219150; }
-        button:disabled { background: #95a5a6; cursor: not-allowed; }
-        .loading-text { font-size: 13px; font-weight: bold; margin-bottom: 10px; text-align: center; color: #f39c12; }
-        .status-badge { float: right; font-size: 11px; background: #e74c3c; color: white; padding: 2px 6px; border-radius: 4px; }
+        .status-badge { float: right; font-size: 11px; background: #e74c3c; color: white; padding: 3px 8px; border-radius: 12px; }
         .completed-box .status-badge { background: #27ae60; }
+
+        /* Buttons Navigation */
+        .nav-buttons { display: flex; justify-content: space-between; gap: 10px; margin-top: 25px; }
+        button { flex: 1; padding: 14px; color: white; border: none; border-radius: 6px; font-size: 15px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .btn-prev { background: #95a5a6; } .btn-prev:hover { background: #7f8c8d; }
+        .btn-next { background: #3498db; } .btn-next:hover { background: #2980b9; }
+        .btn-submit { background: #27ae60; } .btn-submit:hover { background: #219150; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .hidden { display: none !important; }
+        .loading-text { font-size: 13px; font-weight: bold; margin-bottom: 15px; text-align: center; color: #f39c12; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2>OEE Data Entry Form</h2>
+        <h2>OEE Data Entry</h2>
+        
+        <!-- Progress Indicator -->
+        <div class="step-indicator">
+            <div class="step-dot active" id="dot1">1</div><div class="step-line" id="line1"></div>
+            <div class="step-dot" id="dot2">2</div><div class="step-line" id="line2"></div>
+            <div class="step-dot" id="dot3">3</div><div class="step-line" id="line3"></div>
+            <div class="step-dot" id="dot4">4</div>
+        </div>
+        <div class="step-labels">
+            <span>Setup</span><span>Maint</span><span>Prod</span><span>Qual</span>
+        </div>
+
+        <div id="loadingStatus" class="loading-text">Loading registered machines & logs...</div>
+
         <form id="oeeForm">
-            
-            <div class="form-group"><label>Date & Time</label><input type="datetime-local" id="entryDateTime" required onchange="checkExistingData()"></div>
-            
-            <div id="loadingStatus" class="loading-text">Loading registered machines & logs...</div>
-
-            <div class="selection-box">
+            <!-- ================= STEP 1: SETUP ================= -->
+            <div class="step-content active" id="step1">
+                <div class="info-box">
+                    <div class="form-group"><label>Date & Time</label><input type="datetime-local" id="entryDateTime" required></div>
+                    <div class="form-group">
+                        <label style="color: #2980b9;">Select Line / Department</label>
+                        <select id="lineSelect" onchange="onLineChange()">
+                            <option value="">-- Choose Production Line --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label style="color: #2980b9;">Select Machine (Name & Operation)</label>
+                        <select id="machineSelect" onchange="onMachineSelect()">
+                            <option value="">-- Select Line First --</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Barcode # (Asset Number)</label><input type="text" id="barcode" placeholder="Auto-filled" readonly></div>
+                </div>
+                <div class="form-group"><label>Operator Name</label><input type="text" id="operatorName" required></div>
                 <div class="form-group">
-                    <label style="color: #2980b9;">1. Select Line / Department</label>
-                    <select id="lineSelect" onchange="onLineChange()">
-                        <option value="">-- Choose Production Line --</option>
+                    <label>Shift</label>
+                    <select id="shift" required>
+                        <option value="">Select Shift</option>
+                        <option value="Morning">Morning</option>
+                        <option value="Evening">Evening</option>
+                        <option value="Night">Night</option>
                     </select>
-                </div>
-                <div class="form-group">
-                    <label style="color: #2980b9;">2. Select Machine (Name & Operation)</label>
-                    <select id="machineSelect" onchange="checkExistingData()">
-                        <option value="">-- Select Line First --</option>
-                    </select>
-                </div>
-                <div class="form-group"><label>Barcode # (Asset Number)</label><input type="text" id="barcode" placeholder="Auto-filled" readonly></div>
-            </div>
-
-            <div class="form-group"><label>Operator Name</label><input type="text" id="operatorName" required></div>
-            <div class="form-group">
-                <label>Shift</label>
-                <select id="shift" required onchange="checkExistingData()">
-                    <option value="">Select Shift</option>
-                    <option value="Morning">Morning</option>
-                    <option value="Evening">Evening</option>
-                    <option value="Night">Night</option>
-                </select>
-            </div>
-
-            <!-- ALL 3 SECTIONS ON ONE PAGE -->
-
-            <!-- STEP 1: MAINTENANCE -->
-            <div id="maintenanceSection" class="section-box">
-                <div class="section-title">Step 1: Maintenance</div>
-                <span id="maintStatus" class="status-badge">Pending</span>
-                <p style="font-size:12px; color:#7f8c8d; margin-top:10px;">Enter 0 if machine ran fine without breakdown.</p>
-                
-                <div class="form-group"><label>Planned Time (Mins)</label><input type="number" id="maintPlannedTime" value="480" readonly></div>
-                <div class="form-group"><label>Total Downtime (Mins)</label><input type="number" id="downtime" placeholder="Enter Downtime" oninput="updateInterlocks()"></div>
-                <div class="form-group"><label style="color:#2980b9;">Run Time (Mins)</label><input type="number" id="maintRunTime" value="480" readonly></div>
-                
-                <div class="form-group">
-                    <label>Maintenance Reason</label>
-                    <select id="maintReasonSelect" onchange="handleOther('maintReason')">
-                        <option value="No Issue">No Issue</option>
-                        <option value="Other">Other (Type manually)</option>
-                    </select>
-                    <input type="text" id="maintReasonOther" class="hidden" placeholder="Type specific reason here..." style="margin-top:8px;">
-                </div>
-
-                <div class="form-group"><label>Technician Name</label><input type="text" id="techName" placeholder="Leave blank if no issue"></div>
-            </div>
-
-            <!-- STEP 2: PRODUCTION -->
-            <div id="productionSection" class="section-box">
-                <div class="section-title">Step 2: Production</div>
-                <span id="prodStatus" class="status-badge">Pending</span>
-                <p style="font-size:12px; color:#7f8c8d; margin-top:10px;">Will unlock after Maintenance is filled.</p>
-
-                <div class="form-group"><label id="lblShiftTime">Available Time (Mins)</label><input type="number" id="shiftTime" value="480" readonly></div>
-                <div class="form-group"><label>Ideal CT (Min/part)</label><input type="number" step="0.01" id="target" readonly></div>
-                <div class="form-group"><label>Standard Production (Shift Target)</label><input type="number" id="stdProd" readonly></div>
-                
-                <div class="form-group"><label style="color:#2980b9;">Total Count (Parts Produced)</label><input type="number" id="actual" placeholder="Enter parts produced today" disabled oninput="updateInterlocks()"></div>
-                
-                <div class="form-group hidden" id="lossReasonDiv">
-                    <label style="color:#e74c3c;">Performance Loss Reason (Why less?)</label>
-                    <select id="lossReasonSelect" onchange="handleOther('lossReason')" disabled>
-                        <option value="">-- Select Reason --</option>
-                        <option value="Other">Other (Type manually)</option>
-                    </select>
-                    <input type="text" id="lossReasonOther" class="hidden" placeholder="Type specific reason here..." style="margin-top:8px;">
                 </div>
             </div>
 
-            <!-- STEP 3: QUALITY -->
-            <div id="qualitySection" class="section-box">
-                <div class="section-title">Step 3: Quality</div>
-                <span id="qualStatus" class="status-badge">Pending</span>
-                <p style="font-size:12px; color:#7f8c8d; margin-top:10px;">Will unlock after Production is filled.</p>
-                <p id="qualProdTarget" style="font-size:12px; color:#16a085; font-weight:bold; margin-top:0;"></p>
-                
-                <div class="form-group"><label>Good Count</label><input type="number" id="goodParts" placeholder="Enter good parts" disabled oninput="calculateScrap()"></div>
-                <div class="form-group"><label>Scrap Count (Auto calculated)</label><input type="number" id="rejectParts" readonly placeholder="0"></div>
-                
-                <div class="form-group" id="rejectReasonDiv">
-                    <label>Reject Reason</label>
-                    <select id="rejectReasonSelect" onchange="handleOther('rejectReason')" disabled>
-                        <option value="">-- Select Reason --</option>
-                        <option value="Other">Other (Type manually)</option>
-                    </select>
-                    <input type="text" id="rejectReasonOther" class="hidden" placeholder="Type specific reason here..." style="margin-top:8px;">
+            <!-- ================= STEP 2: MAINTENANCE ================= -->
+            <div class="step-content" id="step2">
+                <div class="info-box" id="boxStep2">
+                    <span id="maintStatus" class="status-badge">Pending</span>
+                    <h3 style="margin-top:0; color:#2c3e50;">Maintenance</h3>
+                    <p style="font-size:12px; color:#e74c3c; font-weight:bold;">* Enter 0 if machine ran fine.</p>
+                    
+                    <div class="form-group"><label>Planned Time (Mins)</label><input type="number" id="maintPlannedTime" value="480" readonly></div>
+                    <div class="form-group"><label>Total Downtime (Mins)</label><input type="number" id="downtime" placeholder="Enter Downtime (e.g., 0 or 15)"></div>
+                    <div class="form-group"><label style="color:#2980b9;">Run Time (Mins)</label><input type="number" id="maintRunTime" value="480" readonly></div>
+                    
+                    <hr style="border: 0; border-top: 1px solid #ccc; margin: 15px 0;">
+                    <div class="form-group">
+                        <label>Maintenance Reason</label>
+                        <select id="maintReasonSelect" onchange="handleOther('maintReason')">
+                            <option value="No Issue">No Issue</option>
+                            <option value="Other">Other (Type manually)</option>
+                        </select>
+                        <input type="text" id="maintReasonOther" class="hidden" placeholder="Type specific reason here..." style="margin-top:8px;">
+                    </div>
+                    <div class="form-group"><label>Technician Name</label><input type="text" id="techName" placeholder="Leave blank if no issue"></div>
                 </div>
             </div>
 
-            <button type="submit" id="submitBtn">Submit Data</button>
+            <!-- ================= STEP 3: PRODUCTION ================= -->
+            <div class="step-content" id="step3">
+                <div class="info-box" id="boxStep3">
+                    <span id="prodStatus" class="status-badge">Pending</span>
+                    <h3 style="margin-top:0; color:#2c3e50;">Production</h3>
+                    
+                    <div class="form-group"><label id="lblShiftTime">Available Time (Mins)</label><input type="number" id="shiftTime" value="480" readonly></div>
+                    <div class="form-group"><label>Ideal CT (Min/part)</label><input type="number" step="0.01" id="target" readonly></div>
+                    <div class="form-group"><label>Standard Production (Shift Target)</label><input type="number" id="stdProd" readonly></div>
+                    
+                    <hr style="border: 0; border-top: 1px solid #ccc; margin: 15px 0;">
+                    <div class="form-group"><label style="color:#2980b9;">Total Count (Parts Produced)</label><input type="number" id="actual" placeholder="Enter total parts today"></div>
+                    
+                    <div class="form-group hidden" id="lossReasonDiv">
+                        <label style="color:#e74c3c;">Performance Loss Reason (Target Missed)</label>
+                        <select id="lossReasonSelect" onchange="handleOther('lossReason')">
+                            <option value="">-- Select Reason --</option>
+                            <option value="Other">Other (Type manually)</option>
+                        </select>
+                        <input type="text" id="lossReasonOther" class="hidden" placeholder="Type specific reason here..." style="margin-top:8px;">
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= STEP 4: QUALITY ================= -->
+            <div class="step-content" id="step4">
+                <div class="info-box" id="boxStep4">
+                    <span id="qualStatus" class="status-badge">Pending</span>
+                    <h3 style="margin-top:0; color:#2c3e50;">Quality</h3>
+                    <p id="qualProdTarget" style="font-size:12px; color:#16a085; font-weight:bold; margin-top:0;"></p>
+                    
+                    <div class="form-group"><label>Good Count</label><input type="number" id="goodParts" placeholder="Enter good parts"></div>
+                    <div class="form-group"><label>Scrap Count (Auto calculated)</label><input type="number" id="rejectParts" readonly placeholder="0"></div>
+                    
+                    <div class="form-group" id="rejectReasonDiv">
+                        <label>Reject Reason</label>
+                        <select id="rejectReasonSelect" onchange="handleOther('rejectReason')">
+                            <option value="">-- Select Reason --</option>
+                            <option value="Other">Other (Type manually)</option>
+                        </select>
+                        <input type="text" id="rejectReasonOther" class="hidden" placeholder="Type specific reason here..." style="margin-top:8px;">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Buttons -->
+            <div class="nav-buttons">
+                <button type="button" id="btnPrev" class="btn-prev hidden" onclick="goPrev()">Back</button>
+                <button type="button" id="btnNext" class="btn-next" onclick="goNext()">Next</button>
+                <button type="button" id="btnSubmit" class="btn-submit hidden" onclick="submitData()">Submit Data</button>
+            </div>
         </form>
     </div>
 
@@ -140,15 +175,13 @@
         const API_URL = "https://script.google.com/macros/s/AKfycbyRkmh4_ofJjAftObCfnX9gmhqCa4xcsvSp143BXCUdQujfy4gaFkBMlEhsVrwa61HugQ/exec";
         let allRegisteredMachines = [];
         let allLogs = [];
-        
-        // Track saved states
         let state = { maintSaved: false, prodSaved: false, qualSaved: false };
+        let currentStep = 1;
+        let currentTotalProduced = 0;
 
         function getSafeVal(obj, possibleKeys) {
             let lowerKeys = possibleKeys.map(k => k.toLowerCase().replace(/\s/g, ''));
-            for(let key in obj) {
-                if(lowerKeys.includes(key.toLowerCase().replace(/\s/g, ''))) return obj[key];
-            }
+            for(let key in obj) { if(lowerKeys.includes(key.toLowerCase().replace(/\s/g, ''))) return obj[key]; }
             return "";
         }
 
@@ -156,20 +189,18 @@
             let now = new Date();
             now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
             document.getElementById('entryDateTime').value = now.toISOString().slice(0,16);
-            fetchData(false);
+            fetchData();
         };
 
-        function fetchData(isSilent) {
-            if (!isSilent) {
-                let cachedM = localStorage.getItem("mes_machines");
-                let cachedL = localStorage.getItem("mes_logs");
-                if (cachedM && cachedL) {
-                    allRegisteredMachines = JSON.parse(cachedM);
-                    allLogs = JSON.parse(cachedL);
-                    document.getElementById('loadingStatus').style.display = 'none';
-                    populateLineDropdown();
-                    processQRScan();
-                }
+        function fetchData() {
+            let cachedM = localStorage.getItem("mes_machines");
+            let cachedL = localStorage.getItem("mes_logs");
+            if (cachedM && cachedL) {
+                allRegisteredMachines = JSON.parse(cachedM);
+                allLogs = JSON.parse(cachedL);
+                document.getElementById('loadingStatus').style.display = 'none';
+                populateLineDropdown();
+                processQRScan();
             }
 
             fetch(API_URL)
@@ -179,18 +210,12 @@
                     allLogs = data.logs || [];
                     localStorage.setItem("mes_machines", JSON.stringify(allRegisteredMachines)); 
                     localStorage.setItem("mes_logs", JSON.stringify(allLogs)); 
-                    
-                    if (!isSilent && !localStorage.getItem("mes_machines")) {
+                    if (!cachedM) {
                         document.getElementById('loadingStatus').style.display = 'none';
                         populateLineDropdown();
                         processQRScan();
                     }
-                    if(isSilent) checkExistingData(); // Re-check after silent update
-                }).catch(err => {
-                    if(!isSilent && !localStorage.getItem("mes_machines")) {
-                        document.getElementById('loadingStatus').innerText = "⚠️ Error loading data.";
-                    }
-                });
+                }).catch(e => { if(!cachedM) document.getElementById('loadingStatus').innerText = "⚠️ Error loading data."; });
         }
 
         function processQRScan() {
@@ -202,345 +227,328 @@
                     document.getElementById("lineSelect").value = getSafeVal(m, ["LineName", "Line", "Department"]);
                     onLineChange();
                     document.getElementById("machineSelect").value = assetFromQR;
-                    checkExistingData();
+                    onMachineSelect();
                 }
             }
         }
 
         function populateLineDropdown() {
-            const lineSelect = document.getElementById("lineSelect");
-            lineSelect.innerHTML = '<option value="">-- Choose Production Line --</option>';
-            let uniqueLines = [...new Set(allRegisteredMachines.map(m => getSafeVal(m, ["LineName", "Line", "Department"])))].filter(Boolean);
-            uniqueLines.forEach(line => {
-                let opt = document.createElement("option");
-                opt.value = line; opt.innerText = line;
-                lineSelect.appendChild(opt);
-            });
+            const select = document.getElementById("lineSelect");
+            select.innerHTML = '<option value="">-- Choose Production Line --</option>';
+            let lines = [...new Set(allRegisteredMachines.map(m => getSafeVal(m, ["LineName", "Line"])))].filter(Boolean);
+            lines.forEach(l => select.innerHTML += `<option value="${l}">${l}</option>`);
         }
 
         function onLineChange() {
             const selectedLine = document.getElementById("lineSelect").value;
             const machSelect = document.getElementById("machineSelect");
             machSelect.innerHTML = '<option value="">-- Select Machine --</option>';
-            
-            resetFormFields();
-
+            document.getElementById("barcode").value = ""; 
             if (!selectedLine) return;
 
-            let lineData = allRegisteredMachines.filter(m => getSafeVal(m, ["LineName", "Line", "Department"]) === selectedLine);
+            let lineMachines = allRegisteredMachines.filter(m => getSafeVal(m, ["LineName", "Line"]) === selectedLine);
             
-            let allMaint = [], allProd = [], allQual = [];
-            lineData.forEach(m => {
-                let mR = getSafeVal(m, ["MaintReasons", "MaintenanceReasons", "MaintReason"]);
-                if(mR) allMaint.push(...mR.split(',').map(s=>s.trim()));
-                let pR = getSafeVal(m, ["ProdReasons", "ProductionReasons"]);
-                if(pR) allProd.push(...pR.split(',').map(s=>s.trim()));
-                let qR = getSafeVal(m, ["QualReasons", "QualityReasons", "RejectReasons"]);
-                if(qR) allQual.push(...qR.split(',').map(s=>s.trim()));
+            // Gather reasons for dropdowns
+            let am=[], ap=[], aq=[];
+            lineMachines.forEach(m => {
+                let mr=getSafeVal(m, ["MaintReasons", "MaintReason"]); if(mr) am.push(...mr.split(',').map(s=>s.trim()));
+                let pr=getSafeVal(m, ["ProdReasons"]); if(pr) ap.push(...pr.split(',').map(s=>s.trim()));
+                let qr=getSafeVal(m, ["QualReasons"]); if(qr) aq.push(...qr.split(',').map(s=>s.trim()));
             });
 
-            let uniqueMaint = [...new Set(allMaint)].filter(Boolean).join(',');
-            let uniqueProd = [...new Set(allProd)].filter(Boolean).join(',');
-            let uniqueQual = [...new Set(allQual)].filter(Boolean).join(',');
+            let uMaint = [...new Set(am)].filter(Boolean).join(',');
+            let uProd = [...new Set(ap)].filter(Boolean).join(',');
+            let uQual = [...new Set(aq)].filter(Boolean).join(',');
 
-            let validMachines = lineData.filter(m => getSafeVal(m, ["AssetNumber", "Asset#", "Barcode"]) !== "");
-
-            validMachines.forEach((m) => {
+            lineMachines.filter(m => getSafeVal(m, ["AssetNumber"]) !== "").forEach((m) => {
                 let name = getSafeVal(m, ["MachineName", "Machine"]);
-                let op = getSafeVal(m, ["Operation", "Op", "OperationName"]);
-                let asset = getSafeVal(m, ["AssetNumber", "Asset#", "Barcode"]);
+                let op = getSafeVal(m, ["Operation", "Op"]);
+                let asset = getSafeVal(m, ["AssetNumber", "Barcode"]);
                 let opt = document.createElement("option");
-                opt.value = asset; 
-                opt.innerText = `${name} | Op: ${op} (${asset})`;
-                
-                opt.dataset.ct = getSafeVal(m, ["IdealCT", "IdealCT(Min)", "Target"]);
-                opt.dataset.std = getSafeVal(m, ["StdProduction", "StandardProduction", "TargetQty"]);
-                opt.dataset.maintReasons = uniqueMaint;
-                opt.dataset.prodReasons = uniqueProd;
-                opt.dataset.qualReasons = uniqueQual;
-                
+                opt.value = asset; opt.innerText = `${name} | Op: ${op} (${asset})`;
+                opt.dataset.ct = getSafeVal(m, ["IdealCT", "Target"]);
+                opt.dataset.std = getSafeVal(m, ["StdProduction", "TargetQty"]);
+                opt.dataset.maintReasons = uMaint;
+                opt.dataset.prodReasons = uProd;
+                opt.dataset.qualReasons = uQual;
                 machSelect.appendChild(opt);
             });
         }
 
-        function populateDropdownList(selectId, commaSeparatedString, defaultText) {
-            const selectElem = document.getElementById(selectId);
-            selectElem.innerHTML = `<option value="">-- ${defaultText} --</option>`;
-            
-            if (selectId === 'maintReasonSelect') {
-                selectElem.innerHTML = `<option value="No Issue">No Issue</option>`; 
+        function onMachineSelect() {
+            const machSelect = document.getElementById("machineSelect");
+            const opt = machSelect.options[machSelect.selectedIndex];
+            if (opt && opt.value) {
+                document.getElementById("barcode").value = opt.value; 
+                document.getElementById("target").value = opt.dataset.ct || 0; 
+                document.getElementById("stdProd").value = opt.dataset.std || 0; 
+                
+                populateDropdownList('maintReasonSelect', opt.dataset.maintReasons, "Select Reason");
+                populateDropdownList('lossReasonSelect', opt.dataset.prodReasons, "Select Reason");
+                populateDropdownList('rejectReasonSelect', opt.dataset.qualReasons, "Select Reason");
             }
+        }
 
-            if (commaSeparatedString && commaSeparatedString.trim() !== "") {
-                let reasons = commaSeparatedString.split(',');
-                reasons.forEach(r => {
-                    if (r.trim()) {
-                        let opt = document.createElement("option");
-                        opt.value = r.trim(); opt.innerText = r.trim();
-                        selectElem.appendChild(opt);
-                    }
+        function populateDropdownList(id, commaStr, defaultText) {
+            const sel = document.getElementById(id);
+            sel.innerHTML = `<option value="">-- ${defaultText} --</option>`;
+            if (id === 'maintReasonSelect') sel.innerHTML = `<option value="No Issue">No Issue</option>`; 
+            if (commaStr) {
+                commaStr.split(',').forEach(r => {
+                    if (r.trim()) sel.innerHTML += `<option value="${r.trim()}">${r.trim()}</option>`;
                 });
             }
-            let otherOpt = document.createElement("option");
-            otherOpt.value = "Other"; otherOpt.innerText = "Other (Type manually)";
-            selectElem.appendChild(otherOpt);
+            sel.innerHTML += `<option value="Other">Other (Type manually)</option>`;
         }
 
-        function handleOther(reasonType) {
-            let selectVal = document.getElementById(reasonType + "Select").value;
-            let otherInput = document.getElementById(reasonType + "Other");
-            if (selectVal === "Other") {
-                otherInput.classList.remove("hidden");
+        function handleOther(type) {
+            let val = document.getElementById(type + "Select").value;
+            let oth = document.getElementById(type + "Other");
+            if (val === "Other") oth.classList.remove("hidden");
+            else { oth.classList.add("hidden"); oth.value = ""; }
+        }
+
+        // ================= WIZARD NAVIGATION LOGIC =================
+        function updateUI() {
+            for(let i=1; i<=4; i++) {
+                document.getElementById('step'+i).classList.remove('active');
+                if(i <= currentStep) document.getElementById('dot'+i).classList.add('active');
+                else document.getElementById('dot'+i).classList.remove('active');
+                if(i < currentStep) document.getElementById('line'+i).classList.add('completed');
+                else if(document.getElementById('line'+i)) document.getElementById('line'+i).classList.remove('completed');
+            }
+            document.getElementById('step'+currentStep).classList.add('active');
+
+            const btnPrev = document.getElementById('btnPrev');
+            const btnNext = document.getElementById('btnNext');
+            const btnSubmit = document.getElementById('btnSubmit');
+
+            btnPrev.classList.toggle('hidden', currentStep === 1);
+            
+            if(currentStep === 4) {
+                btnNext.classList.add('hidden');
+                btnSubmit.classList.remove('hidden');
             } else {
-                otherInput.classList.add("hidden");
-                otherInput.value = "";
+                btnNext.classList.remove('hidden');
+                btnSubmit.classList.toggle('hidden', currentStep === 1); // Allow submit from Step 2
             }
         }
 
-        // --- CORE LOGIC: CHECK EXISTING DATA & AUTO-FILL ---
-        function checkExistingData() {
-            const machSelect = document.getElementById("machineSelect");
+        function goNext() {
+            if(currentStep === 1) {
+                if(!document.getElementById('lineSelect').value || !document.getElementById('barcode').value || 
+                   !document.getElementById('operatorName').value || !document.getElementById('shift').value) {
+                    alert("⚠️ Please fill all fields in Setup to continue."); return;
+                }
+                checkBackendDataForToday(); // Fetch history before moving to Maint
+            }
+            else if(currentStep === 2) {
+                let dt = document.getElementById('downtime').value;
+                if(!state.maintSaved && dt === "") {
+                    alert("⚠️ Please enter Total Downtime (Enter 0 if machine ran fine)."); return;
+                }
+                calculateAvailableTimeForProduction();
+            }
+            else if(currentStep === 3) {
+                let actual = document.getElementById('actual').value;
+                let std = parseFloat(document.getElementById('stdProd').value) || 0;
+                let reason = getFinalReason('lossReason');
+                if(!state.prodSaved) {
+                    if(actual === "") { alert("⚠️ Please enter Total Count."); return; }
+                    if(parseFloat(actual) < std && reason.trim() === "") { alert("⚠️ Target missed! Please enter Performance Loss Reason."); return; }
+                }
+                calculateTargetsForQuality();
+            }
+
+            if(currentStep < 4) { currentStep++; updateUI(); }
+        }
+
+        function goPrev() {
+            if(currentStep > 1) { currentStep--; updateUI(); }
+        }
+
+        // ================= INTERLOCKS & AUTO-FILL =================
+        function checkBackendDataForToday() {
             const shift = document.getElementById("shift").value;
+            const barcode = document.getElementById("barcode").value;
             const dateInput = document.getElementById("entryDateTime").value;
-
-            resetFormFields();
-
-            if (!machSelect.value) return;
-
-            const selectedOpt = machSelect.options[machSelect.selectedIndex];
-            document.getElementById("barcode").value = selectedOpt.value; 
-            document.getElementById("target").value = selectedOpt.dataset.ct || 0; 
-            document.getElementById("stdProd").value = selectedOpt.dataset.std || 0; 
-            
-            populateDropdownList('maintReasonSelect', selectedOpt.dataset.maintReasons, "Select Reason");
-            populateDropdownList('lossReasonSelect', selectedOpt.dataset.prodReasons, "Select Reason");
-            populateDropdownList('rejectReasonSelect', selectedOpt.dataset.qualReasons, "Select Reason");
-
-            if (!shift || !dateInput) return; // Wait until shift and date are filled
-
             let selectedDateStr = new Date(dateInput).toDateString();
             
-            // Filter logs for this specific Machine, Shift and Date
             let dayLogs = allLogs.filter(log => {
                 let logDate = new Date(getSafeVal(log, ["Timestamp", "Date"])).toDateString();
                 return logDate === selectedDateStr &&
-                       String(getSafeVal(log, ["Barcode#", "Barcode", "AssetNumber"])) === selectedOpt.value &&
+                       String(getSafeVal(log, ["Barcode#", "Barcode", "AssetNumber"])) === barcode &&
                        String(getSafeVal(log, ["Shift"])) === shift;
             });
 
-            // 1. Check Maintenance
-            let maintLog = dayLogs.find(l => String(getSafeVal(l, ["EntryType", "Type"])) === "Maintenance");
-            if (maintLog) {
+            // Reset States
+            state = { maintSaved: false, prodSaved: false, qualSaved: false };
+            let idsToReset = ["downtime", "maintReasonOther", "techName", "actual", "lossReasonOther", "goodParts", "rejectParts", "rejectReasonOther"];
+            idsToReset.forEach(id => { document.getElementById(id).value = ""; document.getElementById(id).disabled = false; });
+            document.getElementById("maintReasonSelect").disabled = false; document.getElementById("lossReasonSelect").disabled = false; document.getElementById("rejectReasonSelect").disabled = false;
+            
+            // Check Maint
+            let mLog = dayLogs.find(l => String(getSafeVal(l, ["EntryType", "Type"])) === "Maintenance");
+            if(mLog) {
                 state.maintSaved = true;
-                let dt = getSafeVal(maintLog, ["Downtime(Min)", "Downtime"]) || 0;
-                document.getElementById("downtime").value = dt;
-                document.getElementById("maintReasonSelect").value = getSafeVal(maintLog, ["MaintReason", "Maint.Reason"]);
-                document.getElementById("techName").value = getSafeVal(maintLog, ["TechName"]);
-                
-                // Styling
-                document.getElementById("maintenanceSection").classList.add("completed-box");
+                document.getElementById('downtime').value = getSafeVal(mLog, ["Downtime(Min)", "Downtime"]) || 0;
+                document.getElementById('maintReasonSelect').value = getSafeVal(mLog, ["MaintReason", "Maint.Reason"]);
+                document.getElementById('techName').value = getSafeVal(mLog, ["TechName"]);
+                document.getElementById("boxStep2").classList.add("completed-box");
                 document.getElementById("maintStatus").innerText = "Completed";
-                document.getElementById("downtime").disabled = true;
-                document.getElementById("maintReasonSelect").disabled = true;
-                document.getElementById("techName").disabled = true;
+                ["downtime", "maintReasonSelect", "techName"].forEach(id => document.getElementById(id).disabled = true);
+            } else {
+                document.getElementById("boxStep2").classList.remove("completed-box");
+                document.getElementById("maintStatus").innerText = "Pending";
             }
 
-            // 2. Check Production
-            let prodLog = dayLogs.find(l => String(getSafeVal(l, ["EntryType", "Type"])) === "Production");
-            if (prodLog) {
+            // Check Prod
+            let pLog = dayLogs.find(l => String(getSafeVal(l, ["EntryType", "Type"])) === "Production");
+            if(pLog) {
                 state.prodSaved = true;
-                document.getElementById("actual").value = getSafeVal(prodLog, ["TotalCount", "Actual", "TotalProduced"]);
-                document.getElementById("lossReasonSelect").value = getSafeVal(prodLog, ["LossReason"]);
-                
-                // Styling
-                document.getElementById("productionSection").classList.add("completed-box");
+                document.getElementById('actual').value = getSafeVal(pLog, ["TotalCount", "Actual", "TotalProduced"]);
+                document.getElementById('lossReasonSelect').value = getSafeVal(pLog, ["LossReason"]);
+                document.getElementById("boxStep3").classList.add("completed-box");
                 document.getElementById("prodStatus").innerText = "Completed";
-                document.getElementById("actual").disabled = true;
-                document.getElementById("lossReasonSelect").disabled = true;
+                ["actual", "lossReasonSelect"].forEach(id => document.getElementById(id).disabled = true);
+            } else {
+                document.getElementById("boxStep3").classList.remove("completed-box");
+                document.getElementById("prodStatus").innerText = "Pending";
             }
 
-            // 3. Check Quality
-            let qualLog = dayLogs.find(l => String(getSafeVal(l, ["EntryType", "Type"])) === "Quality");
-            if (qualLog) {
+            // Check Qual
+            let qLog = dayLogs.find(l => String(getSafeVal(l, ["EntryType", "Type"])) === "Quality");
+            if(qLog) {
                 state.qualSaved = true;
-                document.getElementById("goodParts").value = getSafeVal(qualLog, ["GoodCount", "GoodParts"]);
-                document.getElementById("rejectParts").value = getSafeVal(qualLog, ["ScrapCount", "RejectParts"]);
-                document.getElementById("rejectReasonSelect").value = getSafeVal(qualLog, ["RejectReason"]);
-                
-                // Styling
-                document.getElementById("qualitySection").classList.add("completed-box");
+                document.getElementById('goodParts').value = getSafeVal(qLog, ["GoodCount", "GoodParts"]);
+                document.getElementById('rejectParts').value = getSafeVal(qLog, ["ScrapCount", "RejectParts"]);
+                document.getElementById('rejectReasonSelect').value = getSafeVal(qLog, ["RejectReason"]);
+                document.getElementById("boxStep4").classList.add("completed-box");
                 document.getElementById("qualStatus").innerText = "Completed";
-                document.getElementById("goodParts").disabled = true;
-                document.getElementById("rejectReasonSelect").disabled = true;
+                ["goodParts", "rejectReasonSelect"].forEach(id => document.getElementById(id).disabled = true);
+            } else {
+                document.getElementById("boxStep4").classList.remove("completed-box");
+                document.getElementById("qualStatus").innerText = "Pending";
             }
-
-            updateInterlocks();
+            
+            // Auto Update local calcs
+            let downtimeVal = document.getElementById("downtime").value;
+            if(downtimeVal !== "") document.getElementById("maintRunTime").value = 480 - parseFloat(downtimeVal);
+            
+            let actVal = document.getElementById('actual').value;
+            let stdProd = parseFloat(document.getElementById("stdProd").value) || 0;
+            if(actVal > 0 && actVal < stdProd) document.getElementById("lossReasonDiv").classList.remove("hidden");
+            else document.getElementById("lossReasonDiv").classList.add("hidden");
         }
 
-        // --- UPDATE INTERLOCKS ON THE FLY ---
-        function updateInterlocks() {
-            // Maintenance logic
-            let downtimeVal = document.getElementById("downtime").value;
-            let downtime = downtimeVal === "" ? 0 : parseFloat(downtimeVal);
-            document.getElementById("maintRunTime").value = 480 - downtime;
+        // Live Calculations
+        document.getElementById("downtime").addEventListener("input", function() {
+            let down = parseFloat(this.value) || 0;
+            let run = 480 - down;
+            document.getElementById("maintRunTime").value = run < 0 ? 0 : run;
+        });
+
+        function calculateAvailableTimeForProduction() {
+            let downtime = parseFloat(document.getElementById('downtime').value) || 0;
+            let avail = 480 - downtime;
+            document.getElementById('shiftTime').value = avail;
             
-            // Production unlock condition: Downtime must be filled (even if 0) OR previously saved
-            if (downtimeVal !== "" || state.maintSaved) {
-                document.getElementById("shiftTime").value = 480 - downtime;
-                if(downtime > 0) document.getElementById("lblShiftTime").innerHTML = `Available Time (Mins) <span style="color:#e74c3c; font-size:12px;">(-${downtime}m Maint)</span>`;
-                else document.getElementById("lblShiftTime").innerHTML = `Available Time (Mins)`;
+            if(downtime > 0) document.getElementById("lblShiftTime").innerHTML = `Available Time (Mins) <span style="color:#e74c3c; font-size:12px;">(-${downtime}m Maint)</span>`;
+            else document.getElementById("lblShiftTime").innerHTML = `Available Time (Mins)`;
 
-                let idealCT = parseFloat(document.getElementById("target").value) || 0;
-                if (idealCT > 0) document.getElementById("stdProd").value = Math.floor((480 - downtime) / idealCT);
-                
-                if (!state.prodSaved) {
-                    document.getElementById("actual").disabled = false;
-                    document.getElementById("lossReasonSelect").disabled = false;
-                }
-            } else {
-                // Lock Production
-                document.getElementById("actual").disabled = true;
-                document.getElementById("lossReasonSelect").disabled = true;
-            }
+            let idealCT = parseFloat(document.getElementById("target").value) || 0;
+            if (idealCT > 0) document.getElementById("stdProd").value = Math.floor(avail / idealCT);
+        }
 
-            // Target check for Loss Reason
-            let actual = parseFloat(document.getElementById("actual").value) || 0;
+        document.getElementById("actual").addEventListener("input", function() {
+            let actual = parseFloat(this.value) || 0;
             let stdProd = parseFloat(document.getElementById("stdProd").value) || 0;
             if(actual > 0 && actual < stdProd) document.getElementById("lossReasonDiv").classList.remove("hidden");
             else document.getElementById("lossReasonDiv").classList.add("hidden");
+        });
 
-            // Quality unlock condition: Actual must be filled OR previously saved
-            if (document.getElementById("actual").value !== "" || state.prodSaved) {
-                document.getElementById("qualProdTarget").innerText = `Total Parts Produced: ${actual}`;
-                document.getElementById("goodParts").placeholder = `Max: ${actual}`;
-                
-                if (!state.qualSaved) {
-                    document.getElementById("goodParts").disabled = false;
-                    document.getElementById("rejectReasonSelect").disabled = false;
-                }
-            } else {
-                // Lock Quality
-                document.getElementById("goodParts").disabled = true;
-                document.getElementById("rejectReasonSelect").disabled = true;
-            }
+        function calculateTargetsForQuality() {
+            currentTotalProduced = parseInt(document.getElementById('actual').value) || 0;
+            document.getElementById("qualProdTarget").innerText = `Total Parts Produced: ${currentTotalProduced}`;
+            document.getElementById("goodParts").placeholder = `Max allowed: ${currentTotalProduced}`;
         }
 
-        function calculateScrap() {
-            let actual = parseInt(document.getElementById("actual").value) || 0;
-            let good = parseInt(document.getElementById("goodParts").value) || 0;
-            if (good > actual) {
-                alert(`⚠️ Good parts cannot be greater than Total Produced (${actual})!`);
-                document.getElementById("goodParts").value = actual;
-                good = actual;
+        document.getElementById("goodParts").addEventListener("input", function() {
+            let good = parseInt(this.value) || 0;
+            if (good > currentTotalProduced) {
+                alert(`⚠️ Good parts cannot be greater than Total Produced (${currentTotalProduced})!`);
+                this.value = currentTotalProduced; good = currentTotalProduced;
             }
-            document.getElementById("rejectParts").value = actual - good;
+            document.getElementById("rejectParts").value = currentTotalProduced - good;
+        });
+
+        function getFinalReason(id) {
+            let val = document.getElementById(id + "Select").value;
+            return val === "Other" ? document.getElementById(id + "Other").value : val;
         }
 
-        function resetFormFields() {
-            state = { maintSaved: false, prodSaved: false, qualSaved: false };
-            
-            let idsToReset = ["downtime", "maintReasonOther", "techName", "actual", "lossReasonOther", "goodParts", "rejectParts", "rejectReasonOther"];
-            idsToReset.forEach(id => { document.getElementById(id).value = ""; document.getElementById(id).disabled = false; });
-            
-            document.getElementById("maintenanceSection").classList.remove("completed-box");
-            document.getElementById("productionSection").classList.remove("completed-box");
-            document.getElementById("qualitySection").classList.remove("completed-box");
-            
-            document.getElementById("maintStatus").innerText = "Pending";
-            document.getElementById("prodStatus").innerText = "Pending";
-            document.getElementById("qualStatus").innerText = "Pending";
-
-            document.getElementById("downtime").disabled = false;
-            document.getElementById("maintReasonSelect").disabled = false;
-            document.getElementById("techName").disabled = false;
-            document.getElementById("actual").disabled = true;
-            document.getElementById("lossReasonSelect").disabled = true;
-            document.getElementById("goodParts").disabled = true;
-            document.getElementById("rejectReasonSelect").disabled = true;
-
-            document.getElementById('maintReasonOther').classList.add("hidden");
-            document.getElementById('lossReasonOther').classList.add("hidden");
-            document.getElementById('rejectReasonOther').classList.add("hidden");
-            document.getElementById("lossReasonDiv").classList.add("hidden");
-
-            document.getElementById("qualProdTarget").innerText = "";
-            document.getElementById("lblShiftTime").innerHTML = `Available Time (Mins)`;
-        }
-
-        function getFinalReason(reasonType) {
-            let selectVal = document.getElementById(reasonType + "Select").value;
-            return selectVal === "Other" ? document.getElementById(reasonType + "Other").value : selectVal;
-        }
-
-        // --- SUBMIT SEQUENTIALLY ---
-        document.getElementById("oeeForm").addEventListener("submit", async function(e) {
-            e.preventDefault(); 
-            
-            if (!document.getElementById("barcode").value) { alert("⚠️ Select Machine First!"); return; }
-
-            let downtimeVal = document.getElementById("downtime").value;
-            let actualVal = document.getElementById("actual").value;
-            let goodVal = document.getElementById("goodParts").value;
-
-            // Base Validation
-            if (!state.maintSaved && downtimeVal === "") { alert("⚠️ Please enter Total Downtime (0 if none)."); return; }
-            if (!state.prodSaved && actualVal !== "") {
-                let stdProd = parseFloat(document.getElementById("stdProd").value) || 0;
-                if (parseFloat(actualVal) < stdProd && getFinalReason("lossReason").trim() === "") {
-                    alert("⚠️ Target missed! Please enter a Performance Loss Reason."); return;
-                }
+        // ================= SUBMIT DATA =================
+        function submitData() {
+            // Validate Current Step before submitting early
+            if(currentStep === 2 && !state.maintSaved && document.getElementById('downtime').value === "") { alert("⚠️ Enter Downtime before saving."); return; }
+            if(currentStep === 3 && !state.prodSaved) {
+                let actual = document.getElementById('actual').value;
+                let std = parseFloat(document.getElementById('stdProd').value) || 0;
+                if(actual === "") { alert("⚠️ Enter Total Count before saving."); return; }
+                if(parseFloat(actual) < std && getFinalReason('lossReason').trim() === "") { alert("⚠️ Enter Loss Reason before saving."); return; }
             }
-            if (!state.qualSaved && goodVal !== "") {
-                let rejectParts = document.getElementById("rejectParts").value;
-                if (parseFloat(rejectParts) > 0 && getFinalReason("rejectReason").trim() === "") {
-                    alert("⚠️ Scrap parts detected! Please enter a Reject Reason."); return;
-                }
+            if(currentStep === 4 && !state.qualSaved) {
+                let good = document.getElementById('goodParts').value;
+                let rej = document.getElementById('rejectParts').value;
+                if(good === "") { alert("⚠️ Enter Good Count before saving."); return; }
+                if(parseFloat(rej) > 0 && getFinalReason('rejectReason').trim() === "") { alert("⚠️ Enter Reject Reason before saving."); return; }
             }
 
-            const btn = document.getElementById("submitBtn");
-            btn.innerText = "Saving Data..."; btn.disabled = true;
+            const btn = document.getElementById("btnSubmit");
+            btn.innerText = "Saving..."; btn.disabled = true;
 
-            // Generate Payloads for UN-SAVED sections that have data
             let payloads = [];
             let commonData = {
-                manualDateTime: document.getElementById("entryDateTime").value,
-                barcode: document.getElementById("barcode").value,
-                operatorName: document.getElementById("operatorName").value,
-                shift: document.getElementById("shift").value,
-                shiftTime: document.getElementById("shiftTime").value, 
-                target: document.getElementById("target").value,
-                lineName: document.getElementById("lineSelect").value
+                formType: "dataEntry", manualDateTime: document.getElementById("entryDateTime").value,
+                barcode: document.getElementById("barcode").value, operatorName: document.getElementById("operatorName").value,
+                shift: document.getElementById("shift").value, lineName: document.getElementById("lineSelect").value,
+                shiftTime: document.getElementById("shiftTime").value, target: document.getElementById("target").value
             };
 
-            if (!state.maintSaved && downtimeVal !== "") {
-                payloads.push({ formType: "dataEntry", entryType: "Maintenance", downtime: downtimeVal, maintReason: getFinalReason("maintReason"), techName: document.getElementById("techName").value, ...commonData });
+            // Only submit what's filled and NOT previously saved
+            if(!state.maintSaved && document.getElementById("downtime").value !== "") {
+                payloads.push({ entryType: "Maintenance", downtime: document.getElementById("downtime").value, maintReason: getFinalReason("maintReason"), techName: document.getElementById("techName").value, ...commonData });
             }
-            if (!state.prodSaved && actualVal !== "") {
-                payloads.push({ formType: "dataEntry", entryType: "Production", actual: actualVal, lossReason: getFinalReason("lossReason"), ...commonData });
+            if(!state.prodSaved && document.getElementById("actual").value !== "") {
+                payloads.push({ entryType: "Production", actual: document.getElementById("actual").value, lossReason: getFinalReason("lossReason"), ...commonData });
             }
-            if (!state.qualSaved && goodVal !== "") {
-                payloads.push({ formType: "dataEntry", entryType: "Quality", goodParts: goodVal, rejectParts: document.getElementById("rejectParts").value, rejectReason: getFinalReason("rejectReason"), ...commonData });
-            }
-
-            if (payloads.length === 0) {
-                alert("No new data to save.");
-                btn.innerText = "Submit Data"; btn.disabled = false;
-                return;
+            if(!state.qualSaved && document.getElementById("goodParts").value !== "") {
+                payloads.push({ entryType: "Quality", goodParts: document.getElementById("goodParts").value, rejectParts: document.getElementById("rejectParts").value, rejectReason: getFinalReason("rejectReason"), ...commonData });
             }
 
-            // Send sequentially to avoid backend conflicts
+            if(payloads.length === 0) {
+                alert("All selected steps are already saved. Nothing new to submit.");
+                btn.innerText = "Submit Data"; btn.disabled = false; return;
+            }
+
+            submitPayloads(payloads, btn);
+        }
+
+        async function submitPayloads(payloads, btn) {
             try {
-                for (let payload of payloads) {
-                    await fetch(API_URL, { method: "POST", body: JSON.stringify(payload) });
-                }
+                for (let p of payloads) { await fetch(API_URL, { method: "POST", body: JSON.stringify(p) }); }
                 alert("Data Saved Successfully!");
-                fetchData(true); // refresh logs silently
+                document.getElementById("oeeForm").reset();
+                let now = new Date(); now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+                document.getElementById('entryDateTime').value = now.toISOString().slice(0,16);
+                currentStep = 1; updateUI();
                 btn.innerText = "Submit Data"; btn.disabled = false;
-            } catch (err) {
-                alert("Error saving data. Please check internet.");
+                fetchData(true); // refresh logs
+            } catch(e) {
+                alert("Error saving data. Please check connection.");
                 btn.innerText = "Submit Data"; btn.disabled = false;
             }
-        });
+        }
     </script>
 </body>
 </html>
