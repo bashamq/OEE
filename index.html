@@ -6,25 +6,36 @@
     <title>OEE Data Entry</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #e9ecef; padding: 20px; margin: 0; }
-        .container { max-width: 450px; margin: 0 auto; background: #ffffff; padding: 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .container { max-width: 500px; margin: 0 auto; background: #ffffff; padding: 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         h2 { text-align: center; color: #2c3e50; margin-bottom: 20px; }
         .form-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 6px; font-weight: 600; color: #34495e; font-size: 14px; }
         input, select { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 6px; font-size: 15px; }
-        input[readonly] { background-color: #e8f8f5; border-color: #1abc9c; color: #16a085; font-weight: bold; cursor: not-allowed; }
+        input[readonly], select:disabled, input:disabled { background-color: #e8f8f5; border-color: #1abc9c; color: #16a085; font-weight: bold; cursor: not-allowed; }
+        
         .hidden { display: none; }
-        .section-box { background: #f8f9fa; padding: 15px; border-radius: 6px; border: 1px solid #dee2e6; margin-bottom: 15px; }
-        .selection-box { background-color: #f4f6f7; border: 1px solid #d5dbdb; padding: 12px; border-radius: 8px; margin-bottom: 15px; }
-        button { width: 100%; padding: 12px; background: #27ae60; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s;}
+        .section-box { background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #dee2e6; margin-bottom: 20px; position: relative;}
+        .section-title { position: absolute; top: -12px; left: 15px; background: #34495e; color: white; padding: 2px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+        
+        /* Completed Section Style */
+        .completed-box { background-color: #d5f5e3; border-color: #2ecc71; }
+        .completed-box .section-title { background: #27ae60; }
+        
+        .selection-box { background-color: #f4f6f7; border: 1px solid #d5dbdb; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        button { width: 100%; padding: 14px; background: #27ae60; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s;}
         button:hover { background: #219150; }
+        button:disabled { background: #95a5a6; cursor: not-allowed; }
         .loading-text { font-size: 13px; font-weight: bold; margin-bottom: 10px; text-align: center; color: #f39c12; }
+        .status-badge { float: right; font-size: 11px; background: #e74c3c; color: white; padding: 2px 6px; border-radius: 4px; }
+        .completed-box .status-badge { background: #27ae60; }
     </style>
 </head>
 <body>
     <div class="container">
         <h2>OEE Data Entry Form</h2>
         <form id="oeeForm">
-            <div class="form-group"><label>Date & Time</label><input type="datetime-local" id="entryDateTime" required></div>
+            
+            <div class="form-group"><label>Date & Time</label><input type="datetime-local" id="entryDateTime" required onchange="checkExistingData()"></div>
             
             <div id="loadingStatus" class="loading-text">Loading registered machines & logs...</div>
 
@@ -37,41 +48,35 @@
                 </div>
                 <div class="form-group">
                     <label style="color: #2980b9;">2. Select Machine (Name & Operation)</label>
-                    <select id="machineSelect" onchange="onMachineSelect()">
+                    <select id="machineSelect" onchange="checkExistingData()">
                         <option value="">-- Select Line First --</option>
                     </select>
                 </div>
+                <div class="form-group"><label>Barcode # (Asset Number)</label><input type="text" id="barcode" placeholder="Auto-filled" readonly></div>
             </div>
 
-            <div class="form-group"><label>Barcode # (Asset Number)</label><input type="text" id="barcode" required placeholder="Auto-filled or Scan QR" readonly></div>
             <div class="form-group"><label>Operator Name</label><input type="text" id="operatorName" required></div>
             <div class="form-group">
                 <label>Shift</label>
-                <select id="shift" required>
+                <select id="shift" required onchange="checkExistingData()">
                     <option value="">Select Shift</option>
                     <option value="Morning">Morning</option>
                     <option value="Evening">Evening</option>
                     <option value="Night">Night</option>
                 </select>
             </div>
-            
-            <div class="form-group">
-                <label>Entry Type (Follow Sequence)</label>
-                <select id="entryType" required onchange="toggleSections()">
-                    <option value="">Select Type...</option>
-                    <option value="Maintenance">1. Maintenance</option>
-                    <option value="Production">2. Production</option>
-                    <option value="Quality">3. Quality</option>
-                </select>
-            </div>
 
-            <!-- Maintenance Section -->
-            <div id="maintenanceSection" class="section-box hidden">
-                <p style="font-size:12px; color:#e74c3c; font-weight:bold; margin-top:0;">* Required first. Enter 0 if no downtime.</p>
+            <!-- ALL 3 SECTIONS ON ONE PAGE -->
+
+            <!-- STEP 1: MAINTENANCE -->
+            <div id="maintenanceSection" class="section-box">
+                <div class="section-title">Step 1: Maintenance</div>
+                <span id="maintStatus" class="status-badge">Pending</span>
+                <p style="font-size:12px; color:#7f8c8d; margin-top:10px;">Enter 0 if machine ran fine without breakdown.</p>
+                
                 <div class="form-group"><label>Planned Time (Mins)</label><input type="number" id="maintPlannedTime" value="480" readonly></div>
-                <div class="form-group"><label>Total Downtime (Mins)</label><input type="number" id="downtime" placeholder="Enter 0 if machine ran fine"></div>
+                <div class="form-group"><label>Total Downtime (Mins)</label><input type="number" id="downtime" placeholder="Enter Downtime" oninput="updateInterlocks()"></div>
                 <div class="form-group"><label style="color:#2980b9;">Run Time (Mins)</label><input type="number" id="maintRunTime" value="480" readonly></div>
-                <hr style="border: 0; border-top: 1px solid #ccc; margin: 20px 0;">
                 
                 <div class="form-group">
                     <label>Maintenance Reason</label>
@@ -85,20 +90,21 @@
                 <div class="form-group"><label>Technician Name</label><input type="text" id="techName" placeholder="Leave blank if no issue"></div>
             </div>
 
-            <!-- Production Section -->
-            <div id="productionSection" class="section-box hidden">
-                <div class="form-group">
-                    <label id="lblShiftTime">Available Time (Mins)</label>
-                    <input type="number" id="shiftTime" value="480" readonly>
-                </div>
+            <!-- STEP 2: PRODUCTION -->
+            <div id="productionSection" class="section-box">
+                <div class="section-title">Step 2: Production</div>
+                <span id="prodStatus" class="status-badge">Pending</span>
+                <p style="font-size:12px; color:#7f8c8d; margin-top:10px;">Will unlock after Maintenance is filled.</p>
+
+                <div class="form-group"><label id="lblShiftTime">Available Time (Mins)</label><input type="number" id="shiftTime" value="480" readonly></div>
                 <div class="form-group"><label>Ideal CT (Min/part)</label><input type="number" step="0.01" id="target" readonly></div>
                 <div class="form-group"><label>Standard Production (Shift Target)</label><input type="number" id="stdProd" readonly></div>
-                <hr style="border: 0; border-top: 1px solid #ccc; margin: 20px 0;">
-                <div class="form-group"><label style="color:#2980b9;">Total Count (Parts Produced)</label><input type="number" id="actual" placeholder="Enter parts produced today"></div>
+                
+                <div class="form-group"><label style="color:#2980b9;">Total Count (Parts Produced)</label><input type="number" id="actual" placeholder="Enter parts produced today" disabled oninput="updateInterlocks()"></div>
                 
                 <div class="form-group hidden" id="lossReasonDiv">
                     <label style="color:#e74c3c;">Performance Loss Reason (Why less?)</label>
-                    <select id="lossReasonSelect" onchange="handleOther('lossReason')">
+                    <select id="lossReasonSelect" onchange="handleOther('lossReason')" disabled>
                         <option value="">-- Select Reason --</option>
                         <option value="Other">Other (Type manually)</option>
                     </select>
@@ -106,15 +112,19 @@
                 </div>
             </div>
 
-            <!-- Quality Section -->
-            <div id="qualitySection" class="section-box hidden">
+            <!-- STEP 3: QUALITY -->
+            <div id="qualitySection" class="section-box">
+                <div class="section-title">Step 3: Quality</div>
+                <span id="qualStatus" class="status-badge">Pending</span>
+                <p style="font-size:12px; color:#7f8c8d; margin-top:10px;">Will unlock after Production is filled.</p>
                 <p id="qualProdTarget" style="font-size:12px; color:#16a085; font-weight:bold; margin-top:0;"></p>
-                <div class="form-group"><label>Good Count</label><input type="number" id="goodParts" placeholder="Enter good parts"></div>
+                
+                <div class="form-group"><label>Good Count</label><input type="number" id="goodParts" placeholder="Enter good parts" disabled oninput="calculateScrap()"></div>
                 <div class="form-group"><label>Scrap Count (Auto calculated)</label><input type="number" id="rejectParts" readonly placeholder="0"></div>
                 
                 <div class="form-group" id="rejectReasonDiv">
                     <label>Reject Reason</label>
-                    <select id="rejectReasonSelect" onchange="handleOther('rejectReason')">
+                    <select id="rejectReasonSelect" onchange="handleOther('rejectReason')" disabled>
                         <option value="">-- Select Reason --</option>
                         <option value="Other">Other (Type manually)</option>
                     </select>
@@ -130,7 +140,9 @@
         const API_URL = "https://script.google.com/macros/s/AKfycbyRkmh4_ofJjAftObCfnX9gmhqCa4xcsvSp143BXCUdQujfy4gaFkBMlEhsVrwa61HugQ/exec";
         let allRegisteredMachines = [];
         let allLogs = [];
-        let currentTotalProduced = 0; 
+        
+        // Track saved states
+        let state = { maintSaved: false, prodSaved: false, qualSaved: false };
 
         function getSafeVal(obj, possibleKeys) {
             let lowerKeys = possibleKeys.map(k => k.toLowerCase().replace(/\s/g, ''));
@@ -173,6 +185,7 @@
                         populateLineDropdown();
                         processQRScan();
                     }
+                    if(isSilent) checkExistingData(); // Re-check after silent update
                 }).catch(err => {
                     if(!isSilent && !localStorage.getItem("mes_machines")) {
                         document.getElementById('loadingStatus').innerText = "⚠️ Error loading data.";
@@ -183,7 +196,15 @@
         function processQRScan() {
             const urlParams = new URLSearchParams(window.location.search);
             const assetFromQR = urlParams.get('asset');
-            if(assetFromQR) autoSelectFromQR(assetFromQR);
+            if(assetFromQR) {
+                let m = allRegisteredMachines.find(x => String(getSafeVal(x, ["AssetNumber", "Asset#", "Barcode"])) === String(assetFromQR));
+                if (m) {
+                    document.getElementById("lineSelect").value = getSafeVal(m, ["LineName", "Line", "Department"]);
+                    onLineChange();
+                    document.getElementById("machineSelect").value = assetFromQR;
+                    checkExistingData();
+                }
+            }
         }
 
         function populateLineDropdown() {
@@ -201,16 +222,14 @@
             const selectedLine = document.getElementById("lineSelect").value;
             const machSelect = document.getElementById("machineSelect");
             machSelect.innerHTML = '<option value="">-- Select Machine --</option>';
-            document.getElementById("barcode").value = ""; 
-            document.getElementById("target").value = ""; 
-            document.getElementById("stdProd").value = "";
             
+            resetFormFields();
+
             if (!selectedLine) return;
 
             let lineData = allRegisteredMachines.filter(m => getSafeVal(m, ["LineName", "Line", "Department"]) === selectedLine);
             
-            // Collect all reasons registered for this entire line (both from machines and reason-only entries)
-            let allMaint = []; let allProd = []; let allQual = [];
+            let allMaint = [], allProd = [], allQual = [];
             lineData.forEach(m => {
                 let mR = getSafeVal(m, ["MaintReasons", "MaintenanceReasons", "MaintReason"]);
                 if(mR) allMaint.push(...mR.split(',').map(s=>s.trim()));
@@ -220,12 +239,10 @@
                 if(qR) allQual.push(...qR.split(',').map(s=>s.trim()));
             });
 
-            // Master List of unique reasons for this line
             let uniqueMaint = [...new Set(allMaint)].filter(Boolean).join(',');
             let uniqueProd = [...new Set(allProd)].filter(Boolean).join(',');
             let uniqueQual = [...new Set(allQual)].filter(Boolean).join(',');
 
-            // Show ONLY valid machines in dropdown (Ignore "Reason Only" rows that have no asset number)
             let validMachines = lineData.filter(m => getSafeVal(m, ["AssetNumber", "Asset#", "Barcode"]) !== "");
 
             validMachines.forEach((m) => {
@@ -238,8 +255,6 @@
                 
                 opt.dataset.ct = getSafeVal(m, ["IdealCT", "IdealCT(Min)", "Target"]);
                 opt.dataset.std = getSafeVal(m, ["StdProduction", "StandardProduction", "TargetQty"]);
-                
-                // Assign the combined Master List of reasons to every machine in this line
                 opt.dataset.maintReasons = uniqueMaint;
                 opt.dataset.prodReasons = uniqueProd;
                 opt.dataset.qualReasons = uniqueQual;
@@ -259,19 +274,15 @@
             if (commaSeparatedString && commaSeparatedString.trim() !== "") {
                 let reasons = commaSeparatedString.split(',');
                 reasons.forEach(r => {
-                    let cleanedReason = r.trim();
-                    if (cleanedReason) {
+                    if (r.trim()) {
                         let opt = document.createElement("option");
-                        opt.value = cleanedReason;
-                        opt.innerText = cleanedReason;
+                        opt.value = r.trim(); opt.innerText = r.trim();
                         selectElem.appendChild(opt);
                     }
                 });
             }
-            
             let otherOpt = document.createElement("option");
-            otherOpt.value = "Other";
-            otherOpt.innerText = "Other (Type manually)";
+            otherOpt.value = "Other"; otherOpt.innerText = "Other (Type manually)";
             selectElem.appendChild(otherOpt);
         }
 
@@ -280,258 +291,255 @@
             let otherInput = document.getElementById(reasonType + "Other");
             if (selectVal === "Other") {
                 otherInput.classList.remove("hidden");
-                otherInput.required = true;
             } else {
                 otherInput.classList.add("hidden");
-                otherInput.required = false;
                 otherInput.value = "";
             }
         }
 
-        function onMachineSelect() {
+        // --- CORE LOGIC: CHECK EXISTING DATA & AUTO-FILL ---
+        function checkExistingData() {
             const machSelect = document.getElementById("machineSelect");
-            const selectedOpt = machSelect.options[machSelect.selectedIndex];
-            if (selectedOpt && selectedOpt.value) {
-                document.getElementById("barcode").value = selectedOpt.value; 
-                document.getElementById("target").value = selectedOpt.dataset.ct || 0; 
-                document.getElementById("stdProd").value = selectedOpt.dataset.std || 0; 
-                
-                document.getElementById("shiftTime").value = 480;
-                document.getElementById("lblShiftTime").innerHTML = `Available Time (Mins)`;
-
-                populateDropdownList('maintReasonSelect', selectedOpt.dataset.maintReasons, "Select Reason");
-                populateDropdownList('lossReasonSelect', selectedOpt.dataset.prodReasons, "Select Reason");
-                populateDropdownList('rejectReasonSelect', selectedOpt.dataset.qualReasons, "Select Reason");
-                
-                document.getElementById('maintReasonOther').classList.add("hidden");
-                document.getElementById('lossReasonOther').classList.add("hidden");
-                document.getElementById('rejectReasonOther').classList.add("hidden");
-
-                let eType = document.getElementById("entryType").value;
-                if(eType === "Production") checkMaintenanceForProduction();
-                if(eType === "Quality") checkProductionForQuality();
-
-                checkTarget();
-            }
-        }
-
-        function autoSelectFromQR(asset) {
-            let m = allRegisteredMachines.find(x => String(getSafeVal(x, ["AssetNumber", "Asset#", "Barcode"])) === String(asset));
-            if (m) {
-                document.getElementById("lineSelect").value = getSafeVal(m, ["LineName", "Line", "Department"]);
-                onLineChange();
-                document.getElementById("machineSelect").value = asset;
-                onMachineSelect();
-            }
-        }
-
-        function toggleSections() {
-            const type = document.getElementById("entryType").value;
-            document.getElementById("productionSection").classList.add("hidden");
-            document.getElementById("maintenanceSection").classList.add("hidden");
-            document.getElementById("qualitySection").classList.add("hidden");
-            
-            if(type === "Maintenance") {
-                document.getElementById("maintenanceSection").classList.remove("hidden");
-            }
-            if(type === "Production") {
-                checkMaintenanceForProduction();
-            }
-            if(type === "Quality") {
-                checkProductionForQuality();
-            }
-        }
-
-        document.getElementById("downtime").addEventListener("input", function() {
-            let planned = parseFloat(document.getElementById("maintPlannedTime").value) || 480;
-            let down = parseFloat(this.value) || 0;
-            let run = planned - down;
-            if (run < 0) run = 0;
-            document.getElementById("maintRunTime").value = run;
-        });
-
-        function checkMaintenanceForProduction() {
-            const barcode = document.getElementById("barcode").value;
             const shift = document.getElementById("shift").value;
+            const dateInput = document.getElementById("entryDateTime").value;
 
-            if (!barcode || !shift) {
-                alert("⚠️ Please select Machine and Shift first before entering Production.");
-                document.getElementById("entryType").value = "";
-                return;
-            }
+            resetFormFields();
 
-            let todayStr = new Date().toDateString(); 
+            if (!machSelect.value) return;
+
+            const selectedOpt = machSelect.options[machSelect.selectedIndex];
+            document.getElementById("barcode").value = selectedOpt.value; 
+            document.getElementById("target").value = selectedOpt.dataset.ct || 0; 
+            document.getElementById("stdProd").value = selectedOpt.dataset.std || 0; 
             
-            let maintLog = allLogs.slice().reverse().find(log => {
+            populateDropdownList('maintReasonSelect', selectedOpt.dataset.maintReasons, "Select Reason");
+            populateDropdownList('lossReasonSelect', selectedOpt.dataset.prodReasons, "Select Reason");
+            populateDropdownList('rejectReasonSelect', selectedOpt.dataset.qualReasons, "Select Reason");
+
+            if (!shift || !dateInput) return; // Wait until shift and date are filled
+
+            let selectedDateStr = new Date(dateInput).toDateString();
+            
+            // Filter logs for this specific Machine, Shift and Date
+            let dayLogs = allLogs.filter(log => {
                 let logDate = new Date(getSafeVal(log, ["Timestamp", "Date"])).toDateString();
-                return (logDate === todayStr) && 
-                       (String(getSafeVal(log, ["Barcode#", "Barcode", "AssetNumber"])) === String(barcode)) && 
-                       (String(getSafeVal(log, ["Shift"])) === String(shift)) && 
-                       (String(getSafeVal(log, ["EntryType", "Type"])) === "Maintenance");
+                return logDate === selectedDateStr &&
+                       String(getSafeVal(log, ["Barcode#", "Barcode", "AssetNumber"])) === selectedOpt.value &&
+                       String(getSafeVal(log, ["Shift"])) === shift;
             });
 
-            if (!maintLog) {
-                alert("⚠️ Error: Maintenance entry NOT FOUND for this Machine and Shift today!\nPlease submit a Maintenance entry first (Enter 0 downtime if machine is okay).");
-                document.getElementById("entryType").value = "";
-            } else {
-                let downtime = Number(getSafeVal(maintLog, ["Downtime(Min)", "Downtime"])) || 0;
-                let availableTime = 480 - downtime;
+            // 1. Check Maintenance
+            let maintLog = dayLogs.find(l => String(getSafeVal(l, ["EntryType", "Type"])) === "Maintenance");
+            if (maintLog) {
+                state.maintSaved = true;
+                let dt = getSafeVal(maintLog, ["Downtime(Min)", "Downtime"]) || 0;
+                document.getElementById("downtime").value = dt;
+                document.getElementById("maintReasonSelect").value = getSafeVal(maintLog, ["MaintReason", "Maint.Reason"]);
+                document.getElementById("techName").value = getSafeVal(maintLog, ["TechName"]);
                 
-                document.getElementById("shiftTime").value = availableTime;
+                // Styling
+                document.getElementById("maintenanceSection").classList.add("completed-box");
+                document.getElementById("maintStatus").innerText = "Completed";
+                document.getElementById("downtime").disabled = true;
+                document.getElementById("maintReasonSelect").disabled = true;
+                document.getElementById("techName").disabled = true;
+            }
+
+            // 2. Check Production
+            let prodLog = dayLogs.find(l => String(getSafeVal(l, ["EntryType", "Type"])) === "Production");
+            if (prodLog) {
+                state.prodSaved = true;
+                document.getElementById("actual").value = getSafeVal(prodLog, ["TotalCount", "Actual", "TotalProduced"]);
+                document.getElementById("lossReasonSelect").value = getSafeVal(prodLog, ["LossReason"]);
                 
-                if(downtime > 0) {
-                    document.getElementById("lblShiftTime").innerHTML = `Available Time (Mins) <span style="color:#e74c3c; font-size:12px;">(-${downtime}m Maint)</span>`;
-                } else {
-                    document.getElementById("lblShiftTime").innerHTML = `Available Time (Mins)`;
-                }
+                // Styling
+                document.getElementById("productionSection").classList.add("completed-box");
+                document.getElementById("prodStatus").innerText = "Completed";
+                document.getElementById("actual").disabled = true;
+                document.getElementById("lossReasonSelect").disabled = true;
+            }
+
+            // 3. Check Quality
+            let qualLog = dayLogs.find(l => String(getSafeVal(l, ["EntryType", "Type"])) === "Quality");
+            if (qualLog) {
+                state.qualSaved = true;
+                document.getElementById("goodParts").value = getSafeVal(qualLog, ["GoodCount", "GoodParts"]);
+                document.getElementById("rejectParts").value = getSafeVal(qualLog, ["ScrapCount", "RejectParts"]);
+                document.getElementById("rejectReasonSelect").value = getSafeVal(qualLog, ["RejectReason"]);
+                
+                // Styling
+                document.getElementById("qualitySection").classList.add("completed-box");
+                document.getElementById("qualStatus").innerText = "Completed";
+                document.getElementById("goodParts").disabled = true;
+                document.getElementById("rejectReasonSelect").disabled = true;
+            }
+
+            updateInterlocks();
+        }
+
+        // --- UPDATE INTERLOCKS ON THE FLY ---
+        function updateInterlocks() {
+            // Maintenance logic
+            let downtimeVal = document.getElementById("downtime").value;
+            let downtime = downtimeVal === "" ? 0 : parseFloat(downtimeVal);
+            document.getElementById("maintRunTime").value = 480 - downtime;
+            
+            // Production unlock condition: Downtime must be filled (even if 0) OR previously saved
+            if (downtimeVal !== "" || state.maintSaved) {
+                document.getElementById("shiftTime").value = 480 - downtime;
+                if(downtime > 0) document.getElementById("lblShiftTime").innerHTML = `Available Time (Mins) <span style="color:#e74c3c; font-size:12px;">(-${downtime}m Maint)</span>`;
+                else document.getElementById("lblShiftTime").innerHTML = `Available Time (Mins)`;
 
                 let idealCT = parseFloat(document.getElementById("target").value) || 0;
-                if (idealCT > 0) {
-                    let newTarget = Math.floor(availableTime / idealCT);
-                    document.getElementById("stdProd").value = newTarget;
+                if (idealCT > 0) document.getElementById("stdProd").value = Math.floor((480 - downtime) / idealCT);
+                
+                if (!state.prodSaved) {
+                    document.getElementById("actual").disabled = false;
+                    document.getElementById("lossReasonSelect").disabled = false;
                 }
-
-                document.getElementById("productionSection").classList.remove("hidden");
-                checkTarget();
-            }
-        }
-
-        function checkProductionForQuality() {
-            const barcode = document.getElementById("barcode").value;
-            const shift = document.getElementById("shift").value;
-
-            if (!barcode || !shift) {
-                alert("⚠️ Please select Machine and Shift first before entering Quality.");
-                document.getElementById("entryType").value = "";
-                return;
-            }
-
-            let todayStr = new Date().toDateString(); 
-            
-            let prodLog = allLogs.slice().reverse().find(log => {
-                let logDate = new Date(getSafeVal(log, ["Timestamp", "Date"])).toDateString();
-                return (logDate === todayStr) && 
-                       (String(getSafeVal(log, ["Barcode#", "Barcode", "AssetNumber"])) === String(barcode)) && 
-                       (String(getSafeVal(log, ["Shift"])) === String(shift)) && 
-                       (String(getSafeVal(log, ["EntryType", "Type"])) === "Production");
-            });
-
-            if (!prodLog) {
-                alert("⚠️ Error: Production entry NOT FOUND for this Machine and Shift today!\nPlease submit Production data first.");
-                document.getElementById("entryType").value = "";
-                currentTotalProduced = 0;
             } else {
-                currentTotalProduced = Number(getSafeVal(prodLog, ["TotalCount", "Actual", "TotalProduced"])) || 0;
-                document.getElementById("qualProdTarget").innerText = `Total Parts Produced in Shift: ${currentTotalProduced}`;
-                document.getElementById("goodParts").placeholder = `Max allowed: ${currentTotalProduced}`;
-                document.getElementById("goodParts").value = "";
-                document.getElementById("rejectParts").value = "";
-                document.getElementById("qualitySection").classList.remove("hidden");
+                // Lock Production
+                document.getElementById("actual").disabled = true;
+                document.getElementById("lossReasonSelect").disabled = true;
             }
-        }
 
-        document.getElementById("goodParts").addEventListener("input", calculateScrap);
-        
-        function calculateScrap() {
-            if(document.getElementById("entryType").value !== "Quality") return;
-            
-            let good = parseInt(document.getElementById("goodParts").value) || 0;
-            if (good > currentTotalProduced) {
-                alert(`⚠️ Good parts cannot be greater than Total Produced (${currentTotalProduced})!`);
-                document.getElementById("goodParts").value = currentTotalProduced;
-                good = currentTotalProduced;
-            }
-            let scrap = currentTotalProduced - good;
-            document.getElementById("rejectParts").value = scrap;
-        }
-
-        document.getElementById("actual").addEventListener("input", checkTarget);
-        function checkTarget() {
+            // Target check for Loss Reason
             let actual = parseFloat(document.getElementById("actual").value) || 0;
             let stdProd = parseFloat(document.getElementById("stdProd").value) || 0;
             if(actual > 0 && actual < stdProd) document.getElementById("lossReasonDiv").classList.remove("hidden");
             else document.getElementById("lossReasonDiv").classList.add("hidden");
+
+            // Quality unlock condition: Actual must be filled OR previously saved
+            if (document.getElementById("actual").value !== "" || state.prodSaved) {
+                document.getElementById("qualProdTarget").innerText = `Total Parts Produced: ${actual}`;
+                document.getElementById("goodParts").placeholder = `Max: ${actual}`;
+                
+                if (!state.qualSaved) {
+                    document.getElementById("goodParts").disabled = false;
+                    document.getElementById("rejectReasonSelect").disabled = false;
+                }
+            } else {
+                // Lock Quality
+                document.getElementById("goodParts").disabled = true;
+                document.getElementById("rejectReasonSelect").disabled = true;
+            }
+        }
+
+        function calculateScrap() {
+            let actual = parseInt(document.getElementById("actual").value) || 0;
+            let good = parseInt(document.getElementById("goodParts").value) || 0;
+            if (good > actual) {
+                alert(`⚠️ Good parts cannot be greater than Total Produced (${actual})!`);
+                document.getElementById("goodParts").value = actual;
+                good = actual;
+            }
+            document.getElementById("rejectParts").value = actual - good;
+        }
+
+        function resetFormFields() {
+            state = { maintSaved: false, prodSaved: false, qualSaved: false };
+            
+            let idsToReset = ["downtime", "maintReasonOther", "techName", "actual", "lossReasonOther", "goodParts", "rejectParts", "rejectReasonOther"];
+            idsToReset.forEach(id => { document.getElementById(id).value = ""; document.getElementById(id).disabled = false; });
+            
+            document.getElementById("maintenanceSection").classList.remove("completed-box");
+            document.getElementById("productionSection").classList.remove("completed-box");
+            document.getElementById("qualitySection").classList.remove("completed-box");
+            
+            document.getElementById("maintStatus").innerText = "Pending";
+            document.getElementById("prodStatus").innerText = "Pending";
+            document.getElementById("qualStatus").innerText = "Pending";
+
+            document.getElementById("downtime").disabled = false;
+            document.getElementById("maintReasonSelect").disabled = false;
+            document.getElementById("techName").disabled = false;
+            document.getElementById("actual").disabled = true;
+            document.getElementById("lossReasonSelect").disabled = true;
+            document.getElementById("goodParts").disabled = true;
+            document.getElementById("rejectReasonSelect").disabled = true;
+
+            document.getElementById('maintReasonOther').classList.add("hidden");
+            document.getElementById('lossReasonOther').classList.add("hidden");
+            document.getElementById('rejectReasonOther').classList.add("hidden");
+            document.getElementById("lossReasonDiv").classList.add("hidden");
+
+            document.getElementById("qualProdTarget").innerText = "";
+            document.getElementById("lblShiftTime").innerHTML = `Available Time (Mins)`;
         }
 
         function getFinalReason(reasonType) {
             let selectVal = document.getElementById(reasonType + "Select").value;
-            if (selectVal === "Other") {
-                return document.getElementById(reasonType + "Other").value;
-            }
-            return selectVal;
+            return selectVal === "Other" ? document.getElementById(reasonType + "Other").value : selectVal;
         }
 
-        document.getElementById("oeeForm").addEventListener("submit", function(e) {
+        // --- SUBMIT SEQUENTIALLY ---
+        document.getElementById("oeeForm").addEventListener("submit", async function(e) {
             e.preventDefault(); 
             
-            const entryType = document.getElementById("entryType").value;
-            
-            if (!document.getElementById("barcode").value) {
-                alert("⚠️ Error: Please select a Line and Machine first!");
-                return;
-            }
+            if (!document.getElementById("barcode").value) { alert("⚠️ Select Machine First!"); return; }
 
-            if (entryType === "Production") {
-                const actual = document.getElementById("actual").value;
-                const stdProd = parseFloat(document.getElementById("stdProd").value) || 0;
-                const finalLossReason = getFinalReason("lossReason");
-                
-                if (actual === "") { alert("⚠️ Error: Please enter Total Count."); return; }
-                if (parseFloat(actual) < stdProd && finalLossReason.trim() === "") {
-                    alert("⚠️ Error: Target missed! Please select or type a Performance Loss Reason."); return;
+            let downtimeVal = document.getElementById("downtime").value;
+            let actualVal = document.getElementById("actual").value;
+            let goodVal = document.getElementById("goodParts").value;
+
+            // Base Validation
+            if (!state.maintSaved && downtimeVal === "") { alert("⚠️ Please enter Total Downtime (0 if none)."); return; }
+            if (!state.prodSaved && actualVal !== "") {
+                let stdProd = parseFloat(document.getElementById("stdProd").value) || 0;
+                if (parseFloat(actualVal) < stdProd && getFinalReason("lossReason").trim() === "") {
+                    alert("⚠️ Target missed! Please enter a Performance Loss Reason."); return;
                 }
-            } else if (entryType === "Maintenance") {
-                if (document.getElementById("downtime").value === "") { alert("⚠️ Error: Please enter Total Downtime (Enter 0 if none)."); return; }
-            } else if (entryType === "Quality") {
-                const goodParts = document.getElementById("goodParts").value;
-                const rejectParts = document.getElementById("rejectParts").value;
-                const finalRejectReason = getFinalReason("rejectReason");
-                
-                if (goodParts === "") { alert("⚠️ Error: Please enter Good Count."); return; }
-                if (parseFloat(rejectParts) > 0 && finalRejectReason.trim() === "") {
-                    alert("⚠️ Error: Scrap parts detected! Please select or type a Reject Reason."); return;
+            }
+            if (!state.qualSaved && goodVal !== "") {
+                let rejectParts = document.getElementById("rejectParts").value;
+                if (parseFloat(rejectParts) > 0 && getFinalReason("rejectReason").trim() === "") {
+                    alert("⚠️ Scrap parts detected! Please enter a Reject Reason."); return;
                 }
             }
 
             const btn = document.getElementById("submitBtn");
-            btn.innerText = "Submitting..."; btn.disabled = true;
-            
-            const data = {
-                formType: "dataEntry",
+            btn.innerText = "Saving Data..."; btn.disabled = true;
+
+            // Generate Payloads for UN-SAVED sections that have data
+            let payloads = [];
+            let commonData = {
                 manualDateTime: document.getElementById("entryDateTime").value,
                 barcode: document.getElementById("barcode").value,
                 operatorName: document.getElementById("operatorName").value,
                 shift: document.getElementById("shift").value,
-                entryType: document.getElementById("entryType").value,
                 shiftTime: document.getElementById("shiftTime").value, 
-                target: document.getElementById("target").value, 
-                actual: document.getElementById("actual").value,
-                lossReason: getFinalReason("lossReason"),       
-                maintReason: getFinalReason("maintReason"),     
-                downtime: document.getElementById("downtime").value,
-                techName: document.getElementById("techName").value,
-                goodParts: document.getElementById("goodParts").value,
-                rejectParts: document.getElementById("rejectParts").value,
-                rejectReason: getFinalReason("rejectReason"),   
+                target: document.getElementById("target").value,
                 lineName: document.getElementById("lineSelect").value
             };
 
-            fetch(API_URL, { method: "POST", body: JSON.stringify(data) })
-            .then(res => res.json()) 
-            .then(res => {
-                alert("Data Saved Successfully!");
-                document.getElementById("oeeForm").reset(); 
-                let now = new Date(); now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-                document.getElementById('entryDateTime').value = now.toISOString().slice(0,16);
-                
-                document.getElementById('maintReasonOther').classList.add("hidden");
-                document.getElementById('lossReasonOther').classList.add("hidden");
-                document.getElementById('rejectReasonOther').classList.add("hidden");
+            if (!state.maintSaved && downtimeVal !== "") {
+                payloads.push({ formType: "dataEntry", entryType: "Maintenance", downtime: downtimeVal, maintReason: getFinalReason("maintReason"), techName: document.getElementById("techName").value, ...commonData });
+            }
+            if (!state.prodSaved && actualVal !== "") {
+                payloads.push({ formType: "dataEntry", entryType: "Production", actual: actualVal, lossReason: getFinalReason("lossReason"), ...commonData });
+            }
+            if (!state.qualSaved && goodVal !== "") {
+                payloads.push({ formType: "dataEntry", entryType: "Quality", goodParts: goodVal, rejectParts: document.getElementById("rejectParts").value, rejectReason: getFinalReason("rejectReason"), ...commonData });
+            }
 
-                toggleSections();
+            if (payloads.length === 0) {
+                alert("No new data to save.");
                 btn.innerText = "Submit Data"; btn.disabled = false;
-                fetchData(true); 
-            }).catch(err => { alert("Error saving data"); btn.innerText = "Submit Data"; btn.disabled = false; });
+                return;
+            }
+
+            // Send sequentially to avoid backend conflicts
+            try {
+                for (let payload of payloads) {
+                    await fetch(API_URL, { method: "POST", body: JSON.stringify(payload) });
+                }
+                alert("Data Saved Successfully!");
+                fetchData(true); // refresh logs silently
+                btn.innerText = "Submit Data"; btn.disabled = false;
+            } catch (err) {
+                alert("Error saving data. Please check internet.");
+                btn.innerText = "Submit Data"; btn.disabled = false;
+            }
         });
     </script>
 </body>
