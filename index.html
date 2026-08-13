@@ -201,11 +201,34 @@
             const selectedLine = document.getElementById("lineSelect").value;
             const machSelect = document.getElementById("machineSelect");
             machSelect.innerHTML = '<option value="">-- Select Machine --</option>';
-            document.getElementById("barcode").value = ""; document.getElementById("target").value = ""; document.getElementById("stdProd").value = "";
+            document.getElementById("barcode").value = ""; 
+            document.getElementById("target").value = ""; 
+            document.getElementById("stdProd").value = "";
+            
             if (!selectedLine) return;
 
-            let lineMachines = allRegisteredMachines.filter(m => getSafeVal(m, ["LineName", "Line", "Department"]) === selectedLine);
-            lineMachines.forEach((m) => {
+            let lineData = allRegisteredMachines.filter(m => getSafeVal(m, ["LineName", "Line", "Department"]) === selectedLine);
+            
+            // Collect all reasons registered for this entire line (both from machines and reason-only entries)
+            let allMaint = []; let allProd = []; let allQual = [];
+            lineData.forEach(m => {
+                let mR = getSafeVal(m, ["MaintReasons", "MaintenanceReasons", "MaintReason"]);
+                if(mR) allMaint.push(...mR.split(',').map(s=>s.trim()));
+                let pR = getSafeVal(m, ["ProdReasons", "ProductionReasons"]);
+                if(pR) allProd.push(...pR.split(',').map(s=>s.trim()));
+                let qR = getSafeVal(m, ["QualReasons", "QualityReasons", "RejectReasons"]);
+                if(qR) allQual.push(...qR.split(',').map(s=>s.trim()));
+            });
+
+            // Master List of unique reasons for this line
+            let uniqueMaint = [...new Set(allMaint)].filter(Boolean).join(',');
+            let uniqueProd = [...new Set(allProd)].filter(Boolean).join(',');
+            let uniqueQual = [...new Set(allQual)].filter(Boolean).join(',');
+
+            // Show ONLY valid machines in dropdown (Ignore "Reason Only" rows that have no asset number)
+            let validMachines = lineData.filter(m => getSafeVal(m, ["AssetNumber", "Asset#", "Barcode"]) !== "");
+
+            validMachines.forEach((m) => {
                 let name = getSafeVal(m, ["MachineName", "Machine"]);
                 let op = getSafeVal(m, ["Operation", "Op", "OperationName"]);
                 let asset = getSafeVal(m, ["AssetNumber", "Asset#", "Barcode"]);
@@ -213,24 +236,24 @@
                 opt.value = asset; 
                 opt.innerText = `${name} | Op: ${op} (${asset})`;
                 
-                // Store machine variables for easy access
                 opt.dataset.ct = getSafeVal(m, ["IdealCT", "IdealCT(Min)", "Target"]);
                 opt.dataset.std = getSafeVal(m, ["StdProduction", "StandardProduction", "TargetQty"]);
-                opt.dataset.maintReasons = getSafeVal(m, ["MaintReasons", "MaintenanceReasons", "MaintReason"]);
-                opt.dataset.prodReasons = getSafeVal(m, ["ProdReasons", "ProductionReasons"]);
-                opt.dataset.qualReasons = getSafeVal(m, ["QualReasons", "QualityReasons", "RejectReasons"]);
+                
+                // Assign the combined Master List of reasons to every machine in this line
+                opt.dataset.maintReasons = uniqueMaint;
+                opt.dataset.prodReasons = uniqueProd;
+                opt.dataset.qualReasons = uniqueQual;
                 
                 machSelect.appendChild(opt);
             });
         }
 
-        // --- POPULATE DROPDOWNS DYNAMICALLY ---
         function populateDropdownList(selectId, commaSeparatedString, defaultText) {
             const selectElem = document.getElementById(selectId);
             selectElem.innerHTML = `<option value="">-- ${defaultText} --</option>`;
             
             if (selectId === 'maintReasonSelect') {
-                selectElem.innerHTML = `<option value="No Issue">No Issue</option>`; // default for maint
+                selectElem.innerHTML = `<option value="No Issue">No Issue</option>`; 
             }
 
             if (commaSeparatedString && commaSeparatedString.trim() !== "") {
@@ -245,7 +268,7 @@
                     }
                 });
             }
-            // Add 'Other' at the end
+            
             let otherOpt = document.createElement("option");
             otherOpt.value = "Other";
             otherOpt.innerText = "Other (Type manually)";
@@ -276,12 +299,10 @@
                 document.getElementById("shiftTime").value = 480;
                 document.getElementById("lblShiftTime").innerHTML = `Available Time (Mins)`;
 
-                // Fill dynamic dropdowns
                 populateDropdownList('maintReasonSelect', selectedOpt.dataset.maintReasons, "Select Reason");
                 populateDropdownList('lossReasonSelect', selectedOpt.dataset.prodReasons, "Select Reason");
                 populateDropdownList('rejectReasonSelect', selectedOpt.dataset.qualReasons, "Select Reason");
                 
-                // Hide other inputs by default
                 document.getElementById('maintReasonOther').classList.add("hidden");
                 document.getElementById('lossReasonOther').classList.add("hidden");
                 document.getElementById('rejectReasonOther').classList.add("hidden");
@@ -321,7 +342,6 @@
             }
         }
 
-        // --- MAINTENANCE RUN TIME AUTO-CALCULATION ---
         document.getElementById("downtime").addEventListener("input", function() {
             let planned = parseFloat(document.getElementById("maintPlannedTime").value) || 480;
             let down = parseFloat(this.value) || 0;
@@ -330,7 +350,6 @@
             document.getElementById("maintRunTime").value = run;
         });
 
-        // --- PRODUCTION INTERLOCK WITH DYNAMIC TARGET & DOWNTIME DEDUCTION ---
         function checkMaintenanceForProduction() {
             const barcode = document.getElementById("barcode").value;
             const shift = document.getElementById("shift").value;
@@ -377,7 +396,6 @@
             }
         }
 
-        // --- QUALITY INTERLOCK LOGIC (Check for Production First) ---
         function checkProductionForQuality() {
             const barcode = document.getElementById("barcode").value;
             const shift = document.getElementById("shift").value;
@@ -435,7 +453,6 @@
             else document.getElementById("lossReasonDiv").classList.add("hidden");
         }
 
-        // --- FINAL SUBMISSION LOGIC ---
         function getFinalReason(reasonType) {
             let selectVal = document.getElementById(reasonType + "Select").value;
             if (selectVal === "Other") {
@@ -489,13 +506,13 @@
                 shiftTime: document.getElementById("shiftTime").value, 
                 target: document.getElementById("target").value, 
                 actual: document.getElementById("actual").value,
-                lossReason: getFinalReason("lossReason"),       // Picked dynamically
-                maintReason: getFinalReason("maintReason"),     // Picked dynamically
+                lossReason: getFinalReason("lossReason"),       
+                maintReason: getFinalReason("maintReason"),     
                 downtime: document.getElementById("downtime").value,
                 techName: document.getElementById("techName").value,
                 goodParts: document.getElementById("goodParts").value,
                 rejectParts: document.getElementById("rejectParts").value,
-                rejectReason: getFinalReason("rejectReason"),   // Picked dynamically
+                rejectReason: getFinalReason("rejectReason"),   
                 lineName: document.getElementById("lineSelect").value
             };
 
@@ -507,7 +524,6 @@
                 let now = new Date(); now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
                 document.getElementById('entryDateTime').value = now.toISOString().slice(0,16);
                 
-                // Hide specific reason boxes on reset
                 document.getElementById('maintReasonOther').classList.add("hidden");
                 document.getElementById('lossReasonOther').classList.add("hidden");
                 document.getElementById('rejectReasonOther').classList.add("hidden");
