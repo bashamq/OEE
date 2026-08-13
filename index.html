@@ -28,13 +28,11 @@
         .step-content.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Badge and Info Box */
         .info-box { background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #dee2e6; margin-bottom: 15px; }
         .completed-box { background-color: #d5f5e3; border-color: #2ecc71; }
         .status-badge { float: right; font-size: 11px; background: #e74c3c; color: white; padding: 3px 8px; border-radius: 12px; }
         .completed-box .status-badge { background: #27ae60; }
 
-        /* Buttons Navigation */
         .nav-buttons { display: flex; justify-content: space-between; gap: 10px; margin-top: 25px; }
         button { flex: 1; padding: 14px; color: white; border: none; border-radius: 6px; font-size: 15px; font-weight: bold; cursor: pointer; transition: 0.3s; }
         .btn-prev { background: #95a5a6; } .btn-prev:hover { background: #7f8c8d; }
@@ -49,7 +47,6 @@
     <div class="container">
         <h2>OEE Data Entry</h2>
         
-        <!-- Progress Indicator -->
         <div class="step-indicator">
             <div class="step-dot active" id="dot1">1</div><div class="step-line" id="line1"></div>
             <div class="step-dot" id="dot2">2</div><div class="step-line" id="line2"></div>
@@ -84,7 +81,7 @@
                 <div class="form-group"><label>Operator Name</label><input type="text" id="operatorName" required></div>
                 <div class="form-group">
                     <label>Shift</label>
-                    <select id="shift" required>
+                    <select id="shift" required onchange="checkBackendDataForToday()">
                         <option value="">Select Shift</option>
                         <option value="Morning">Morning</option>
                         <option value="Evening">Evening</option>
@@ -101,7 +98,7 @@
                     <p style="font-size:12px; color:#e74c3c; font-weight:bold;">* Enter 0 if machine ran fine.</p>
                     
                     <div class="form-group"><label>Planned Time (Mins)</label><input type="number" id="maintPlannedTime" value="480" readonly></div>
-                    <div class="form-group"><label>Total Downtime (Mins)</label><input type="number" id="downtime" placeholder="Enter Downtime (e.g., 0 or 15)"></div>
+                    <div class="form-group"><label>Total Downtime (Mins)</label><input type="number" id="downtime" placeholder="Enter Downtime (e.g., 0 or 15)" oninput="updateInterlocks()"></div>
                     <div class="form-group"><label style="color:#2980b9;">Run Time (Mins)</label><input type="number" id="maintRunTime" value="480" readonly></div>
                     
                     <hr style="border: 0; border-top: 1px solid #ccc; margin: 15px 0;">
@@ -128,11 +125,11 @@
                     <div class="form-group"><label>Standard Production (Shift Target)</label><input type="number" id="stdProd" readonly></div>
                     
                     <hr style="border: 0; border-top: 1px solid #ccc; margin: 15px 0;">
-                    <div class="form-group"><label style="color:#2980b9;">Total Count (Parts Produced)</label><input type="number" id="actual" placeholder="Enter total parts today"></div>
+                    <div class="form-group"><label style="color:#2980b9;">Total Count (Parts Produced)</label><input type="number" id="actual" placeholder="Enter total parts today" disabled oninput="updateInterlocks()"></div>
                     
                     <div class="form-group hidden" id="lossReasonDiv">
                         <label style="color:#e74c3c;">Performance Loss Reason (Target Missed)</label>
-                        <select id="lossReasonSelect" onchange="handleOther('lossReason')">
+                        <select id="lossReasonSelect" onchange="handleOther('lossReason')" disabled>
                             <option value="">-- Select Reason --</option>
                             <option value="Other">Other (Type manually)</option>
                         </select>
@@ -148,12 +145,12 @@
                     <h3 style="margin-top:0; color:#2c3e50;">Quality</h3>
                     <p id="qualProdTarget" style="font-size:12px; color:#16a085; font-weight:bold; margin-top:0;"></p>
                     
-                    <div class="form-group"><label>Good Count</label><input type="number" id="goodParts" placeholder="Enter good parts"></div>
+                    <div class="form-group"><label>Good Count</label><input type="number" id="goodParts" placeholder="Enter good parts" disabled oninput="calculateScrap()"></div>
                     <div class="form-group"><label>Scrap Count (Auto calculated)</label><input type="number" id="rejectParts" readonly placeholder="0"></div>
                     
                     <div class="form-group" id="rejectReasonDiv">
                         <label>Reject Reason</label>
-                        <select id="rejectReasonSelect" onchange="handleOther('rejectReason')">
+                        <select id="rejectReasonSelect" onchange="handleOther('rejectReason')" disabled>
                             <option value="">-- Select Reason --</option>
                             <option value="Other">Other (Type manually)</option>
                         </select>
@@ -162,7 +159,6 @@
                 </div>
             </div>
 
-            <!-- Navigation Buttons -->
             <div class="nav-buttons">
                 <button type="button" id="btnPrev" class="btn-prev hidden" onclick="goPrev()">Back</button>
                 <button type="button" id="btnNext" class="btn-next" onclick="goNext()">Next</button>
@@ -246,9 +242,8 @@
             document.getElementById("barcode").value = ""; 
             if (!selectedLine) return;
 
-            let lineMachines = allRegisteredMachines.filter(m => getSafeVal(m, ["LineName", "Line"]) === selectedLine);
+            let lineMachines = allRegisteredMachines.filter(m => getSafeVal(m, ["LineName", "Line", "Department"]) === selectedLine);
             
-            // Gather reasons for dropdowns
             let am=[], ap=[], aq=[];
             lineMachines.forEach(m => {
                 let mr=getSafeVal(m, ["MaintReasons", "MaintReason"]); if(mr) am.push(...mr.split(',').map(s=>s.trim()));
@@ -286,6 +281,8 @@
                 populateDropdownList('maintReasonSelect', opt.dataset.maintReasons, "Select Reason");
                 populateDropdownList('lossReasonSelect', opt.dataset.prodReasons, "Select Reason");
                 populateDropdownList('rejectReasonSelect', opt.dataset.qualReasons, "Select Reason");
+                
+                checkBackendDataForToday(); // Fetch existing data if shift is also selected
             }
         }
 
@@ -308,7 +305,6 @@
             else { oth.classList.add("hidden"); oth.value = ""; }
         }
 
-        // ================= WIZARD NAVIGATION LOGIC =================
         function updateUI() {
             for(let i=1; i<=4; i++) {
                 document.getElementById('step'+i).classList.remove('active');
@@ -330,7 +326,7 @@
                 btnSubmit.classList.remove('hidden');
             } else {
                 btnNext.classList.remove('hidden');
-                btnSubmit.classList.toggle('hidden', currentStep === 1); // Allow submit from Step 2
+                btnSubmit.classList.toggle('hidden', currentStep === 1); 
             }
         }
 
@@ -340,14 +336,14 @@
                    !document.getElementById('operatorName').value || !document.getElementById('shift').value) {
                     alert("⚠️ Please fill all fields in Setup to continue."); return;
                 }
-                checkBackendDataForToday(); // Fetch history before moving to Maint
+                checkBackendDataForToday(); 
             }
             else if(currentStep === 2) {
                 let dt = document.getElementById('downtime').value;
                 if(!state.maintSaved && dt === "") {
                     alert("⚠️ Please enter Total Downtime (Enter 0 if machine ran fine)."); return;
                 }
-                calculateAvailableTimeForProduction();
+                updateInterlocks(); 
             }
             else if(currentStep === 3) {
                 let actual = document.getElementById('actual').value;
@@ -357,7 +353,7 @@
                     if(actual === "") { alert("⚠️ Please enter Total Count."); return; }
                     if(parseFloat(actual) < std && reason.trim() === "") { alert("⚠️ Target missed! Please enter Performance Loss Reason."); return; }
                 }
-                calculateTargetsForQuality();
+                updateInterlocks(); 
             }
 
             if(currentStep < 4) { currentStep++; updateUI(); }
@@ -367,11 +363,12 @@
             if(currentStep > 1) { currentStep--; updateUI(); }
         }
 
-        // ================= INTERLOCKS & AUTO-FILL =================
         function checkBackendDataForToday() {
             const shift = document.getElementById("shift").value;
             const barcode = document.getElementById("barcode").value;
             const dateInput = document.getElementById("entryDateTime").value;
+            if(!shift || !barcode || !dateInput) return;
+
             let selectedDateStr = new Date(dateInput).toDateString();
             
             let dayLogs = allLogs.filter(log => {
@@ -381,18 +378,16 @@
                        String(getSafeVal(log, ["Shift"])) === shift;
             });
 
-            // Reset States
             state = { maintSaved: false, prodSaved: false, qualSaved: false };
             let idsToReset = ["downtime", "maintReasonOther", "techName", "actual", "lossReasonOther", "goodParts", "rejectParts", "rejectReasonOther"];
             idsToReset.forEach(id => { document.getElementById(id).value = ""; document.getElementById(id).disabled = false; });
             document.getElementById("maintReasonSelect").disabled = false; document.getElementById("lossReasonSelect").disabled = false; document.getElementById("rejectReasonSelect").disabled = false;
             
-            // Check Maint
             let mLog = dayLogs.find(l => String(getSafeVal(l, ["EntryType", "Type"])) === "Maintenance");
             if(mLog) {
                 state.maintSaved = true;
                 document.getElementById('downtime').value = getSafeVal(mLog, ["Downtime(Min)", "Downtime"]) || 0;
-                document.getElementById('maintReasonSelect').value = getSafeVal(mLog, ["MaintReason", "Maint.Reason"]);
+                document.getElementById('maintReasonSelect').value = getSafeVal(mLog, ["MaintReason", "Maint.Reason"]) || "No Issue";
                 document.getElementById('techName').value = getSafeVal(mLog, ["TechName"]);
                 document.getElementById("boxStep2").classList.add("completed-box");
                 document.getElementById("maintStatus").innerText = "Completed";
@@ -402,7 +397,6 @@
                 document.getElementById("maintStatus").innerText = "Pending";
             }
 
-            // Check Prod
             let pLog = dayLogs.find(l => String(getSafeVal(l, ["EntryType", "Type"])) === "Production");
             if(pLog) {
                 state.prodSaved = true;
@@ -416,7 +410,6 @@
                 document.getElementById("prodStatus").innerText = "Pending";
             }
 
-            // Check Qual
             let qLog = dayLogs.find(l => String(getSafeVal(l, ["EntryType", "Type"])) === "Quality");
             if(qLog) {
                 state.qualSaved = true;
@@ -431,99 +424,105 @@
                 document.getElementById("qualStatus").innerText = "Pending";
             }
             
-            // Auto Update local calcs
+            updateInterlocks();
+        }
+
+        function updateInterlocks() {
+            // Maintenance Run Time
             let downtimeVal = document.getElementById("downtime").value;
-            if(downtimeVal !== "") document.getElementById("maintRunTime").value = 480 - parseFloat(downtimeVal);
+            let downtime = downtimeVal === "" ? 0 : parseFloat(downtimeVal);
+            document.getElementById("maintRunTime").value = 480 - downtime;
             
-            let actVal = document.getElementById('actual').value;
-            let stdProd = parseFloat(document.getElementById("stdProd").value) || 0;
-            if(actVal > 0 && actVal < stdProd) document.getElementById("lossReasonDiv").classList.remove("hidden");
-            else document.getElementById("lossReasonDiv").classList.add("hidden");
-        }
+            // Production Calculation (Based on Maint)
+            if (downtimeVal !== "" || state.maintSaved) {
+                document.getElementById("shiftTime").value = 480 - downtime;
+                if(downtime > 0) document.getElementById("lblShiftTime").innerHTML = `Available Time (Mins) <span style="color:#e74c3c; font-size:12px;">(-${downtime}m Maint)</span>`;
+                else document.getElementById("lblShiftTime").innerHTML = `Available Time (Mins)`;
 
-        // Live Calculations
-        document.getElementById("downtime").addEventListener("input", function() {
-            let down = parseFloat(this.value) || 0;
-            let run = 480 - down;
-            document.getElementById("maintRunTime").value = run < 0 ? 0 : run;
-        });
+                let idealCT = parseFloat(document.getElementById("target").value) || 0;
+                if (idealCT > 0) document.getElementById("stdProd").value = Math.floor((480 - downtime) / idealCT);
+                
+                if (!state.prodSaved) {
+                    document.getElementById("actual").disabled = false;
+                    document.getElementById("lossReasonSelect").disabled = false;
+                }
+            } else {
+                document.getElementById("actual").disabled = true;
+                document.getElementById("lossReasonSelect").disabled = true;
+            }
 
-        function calculateAvailableTimeForProduction() {
-            let downtime = parseFloat(document.getElementById('downtime').value) || 0;
-            let avail = 480 - downtime;
-            document.getElementById('shiftTime').value = avail;
-            
-            if(downtime > 0) document.getElementById("lblShiftTime").innerHTML = `Available Time (Mins) <span style="color:#e74c3c; font-size:12px;">(-${downtime}m Maint)</span>`;
-            else document.getElementById("lblShiftTime").innerHTML = `Available Time (Mins)`;
-
-            let idealCT = parseFloat(document.getElementById("target").value) || 0;
-            if (idealCT > 0) document.getElementById("stdProd").value = Math.floor(avail / idealCT);
-        }
-
-        document.getElementById("actual").addEventListener("input", function() {
-            let actual = parseFloat(this.value) || 0;
+            let actual = parseFloat(document.getElementById("actual").value) || 0;
             let stdProd = parseFloat(document.getElementById("stdProd").value) || 0;
             if(actual > 0 && actual < stdProd) document.getElementById("lossReasonDiv").classList.remove("hidden");
             else document.getElementById("lossReasonDiv").classList.add("hidden");
-        });
 
-        function calculateTargetsForQuality() {
-            currentTotalProduced = parseInt(document.getElementById('actual').value) || 0;
-            document.getElementById("qualProdTarget").innerText = `Total Parts Produced: ${currentTotalProduced}`;
-            document.getElementById("goodParts").placeholder = `Max allowed: ${currentTotalProduced}`;
+            // Quality Target (Based on Prod)
+            if (document.getElementById("actual").value !== "" || state.prodSaved) {
+                currentTotalProduced = actual;
+                document.getElementById("qualProdTarget").innerText = `Total Parts Produced: ${actual}`;
+                document.getElementById("goodParts").placeholder = `Max: ${actual}`;
+                
+                if (!state.qualSaved) {
+                    document.getElementById("goodParts").disabled = false;
+                    document.getElementById("rejectReasonSelect").disabled = false;
+                }
+            } else {
+                document.getElementById("goodParts").disabled = true;
+                document.getElementById("rejectReasonSelect").disabled = true;
+            }
         }
 
-        document.getElementById("goodParts").addEventListener("input", function() {
-            let good = parseInt(this.value) || 0;
-            if (good > currentTotalProduced) {
-                alert(`⚠️ Good parts cannot be greater than Total Produced (${currentTotalProduced})!`);
-                this.value = currentTotalProduced; good = currentTotalProduced;
+        function calculateScrap() {
+            let actual = parseInt(document.getElementById("actual").value) || 0;
+            let good = parseInt(document.getElementById("goodParts").value) || 0;
+            if (good > actual) {
+                alert(`⚠️ Good parts cannot be greater than Total Produced (${actual})!`);
+                document.getElementById("goodParts").value = actual;
+                good = actual;
             }
-            document.getElementById("rejectParts").value = currentTotalProduced - good;
-        });
+            document.getElementById("rejectParts").value = actual - good;
+        }
 
         function getFinalReason(id) {
             let val = document.getElementById(id + "Select").value;
             return val === "Other" ? document.getElementById(id + "Other").value : val;
         }
 
-        // ================= SUBMIT DATA =================
         function submitData() {
-            // Validate Current Step before submitting early
             if(currentStep === 2 && !state.maintSaved && document.getElementById('downtime').value === "") { alert("⚠️ Enter Downtime before saving."); return; }
             if(currentStep === 3 && !state.prodSaved) {
                 let actual = document.getElementById('actual').value;
                 let std = parseFloat(document.getElementById('stdProd').value) || 0;
                 if(actual === "") { alert("⚠️ Enter Total Count before saving."); return; }
-                if(parseFloat(actual) < std && getFinalReason('lossReason').trim() === "") { alert("⚠️ Enter Loss Reason before saving."); return; }
+                if(parseFloat(actual) < std && getFinalReason('lossReason').trim() === "") { alert("⚠️ Target missed! Enter Performance Loss Reason."); return; }
             }
             if(currentStep === 4 && !state.qualSaved) {
                 let good = document.getElementById('goodParts').value;
                 let rej = document.getElementById('rejectParts').value;
                 if(good === "") { alert("⚠️ Enter Good Count before saving."); return; }
-                if(parseFloat(rej) > 0 && getFinalReason('rejectReason').trim() === "") { alert("⚠️ Enter Reject Reason before saving."); return; }
+                if(parseFloat(rej) > 0 && getFinalReason('rejectReason').trim() === "") { alert("⚠️ Scrap detected! Enter Reject Reason."); return; }
             }
 
             const btn = document.getElementById("btnSubmit");
             btn.innerText = "Saving..."; btn.disabled = true;
 
             let payloads = [];
+            // FIX APPLIED HERE: shiftTime always sends 480 (maintPlannedTime) to backend so dashboard double deduction issue is resolved
             let commonData = {
-                formType: "dataEntry", manualDateTime: document.getElementById("entryDateTime").value,
+                manualDateTime: document.getElementById("entryDateTime").value,
                 barcode: document.getElementById("barcode").value, operatorName: document.getElementById("operatorName").value,
                 shift: document.getElementById("shift").value, lineName: document.getElementById("lineSelect").value,
-                shiftTime: document.getElementById("shiftTime").value, target: document.getElementById("target").value
+                shiftTime: document.getElementById("maintPlannedTime").value, target: document.getElementById("target").value
             };
 
-            // Only submit what's filled and NOT previously saved
             if(!state.maintSaved && document.getElementById("downtime").value !== "") {
-                payloads.push({ entryType: "Maintenance", downtime: document.getElementById("downtime").value, maintReason: getFinalReason("maintReason"), techName: document.getElementById("techName").value, ...commonData });
+                payloads.push({ formType: "dataEntry", entryType: "Maintenance", downtime: document.getElementById("downtime").value, maintReason: getFinalReason("maintReason"), techName: document.getElementById("techName").value, ...commonData });
             }
             if(!state.prodSaved && document.getElementById("actual").value !== "") {
-                payloads.push({ entryType: "Production", actual: document.getElementById("actual").value, lossReason: getFinalReason("lossReason"), ...commonData });
+                payloads.push({ formType: "dataEntry", entryType: "Production", actual: document.getElementById("actual").value, lossReason: getFinalReason("lossReason"), ...commonData });
             }
             if(!state.qualSaved && document.getElementById("goodParts").value !== "") {
-                payloads.push({ entryType: "Quality", goodParts: document.getElementById("goodParts").value, rejectParts: document.getElementById("rejectParts").value, rejectReason: getFinalReason("rejectReason"), ...commonData });
+                payloads.push({ formType: "dataEntry", entryType: "Quality", goodParts: document.getElementById("goodParts").value, rejectParts: document.getElementById("rejectParts").value, rejectReason: getFinalReason("rejectReason"), ...commonData });
             }
 
             if(payloads.length === 0) {
@@ -543,7 +542,7 @@
                 document.getElementById('entryDateTime').value = now.toISOString().slice(0,16);
                 currentStep = 1; updateUI();
                 btn.innerText = "Submit Data"; btn.disabled = false;
-                fetchData(true); // refresh logs
+                fetchData(true); 
             } catch(e) {
                 alert("Error saving data. Please check connection.");
                 btn.innerText = "Submit Data"; btn.disabled = false;
