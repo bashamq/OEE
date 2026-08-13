@@ -153,12 +153,39 @@
         }
 
         function fetchAllData(isSilent = false) {
+            // Memory Cache Logic added here for INSTANT Loading!
+            if (!isSilent) {
+                let cachedData = localStorage.getItem("mes_dashboard_data");
+                if (cachedData) {
+                    let parsedData = JSON.parse(cachedData);
+                    allLogs = parsedData.logs || [];
+                    allTargets = parsedData.targets || [];
+                    allMachines = parsedData.machines || [];
+
+                    document.getElementById('loadingMsg').style.display = 'none';
+                    document.getElementById('dashboardCards').style.display = 'flex';
+                    document.getElementById('chartDiv').style.display = 'flex';
+
+                    if(document.getElementById("lineSelect").options.length === 1) {
+                        populateLineDropdown();
+                    }
+                    calculateDashboard();
+
+                    isSilent = true; // Switch to silent mode so the background fetch doesn't interrupt the UI
+                }
+            }
+
             if(isSilent) document.getElementById('syncIndicator').style.display = 'flex';
             
             fetch(API_URL)
                 .then(res => res.json())
                 .then(data => {
-                    allLogs = data.logs || []; allTargets = data.targets || []; allMachines = data.machines || [];
+                    allLogs = data.logs || []; 
+                    allTargets = data.targets || []; 
+                    allMachines = data.machines || [];
+
+                    // Save new data to cache memory
+                    localStorage.setItem("mes_dashboard_data", JSON.stringify(data));
                     
                     if(!isSilent) {
                         document.getElementById('loadingMsg').style.display = 'none';
@@ -174,13 +201,15 @@
                     
                     if(isSilent) setTimeout(() => { document.getElementById('syncIndicator').style.display = 'none'; }, 2000);
                 }).catch(e => { 
-                    if(!isSilent) document.getElementById('loadingMsg').innerText = "Error loading data."; 
+                    if(!isSilent && !localStorage.getItem("mes_dashboard_data")) {
+                        document.getElementById('loadingMsg').innerText = "Error loading data."; 
+                    }
                     if(isSilent) document.getElementById('syncIndicator').style.display = 'none';
                 });
         }
         
         fetchAllData();
-        setInterval(() => { fetchAllData(true); }, 30000);
+        setInterval(() => { fetchAllData(true); }, 30000); // 30 second auto-refresh
 
         function toggleAdmin() {
             const sidebar = document.getElementById('adminSidebar');
@@ -327,7 +356,6 @@
             updateCharts(a*100, p*100, q*100, oee*100, sDt.map(i=>i.r), sDt.map(i=>i.t));
         }
 
-        // UPDATED: Chart order changed to OEE, A, P, Q
         function updateCharts(a, p, q, o, l, d) {
             if (oeeChartInstance) oeeChartInstance.destroy();
             oeeChartInstance = new Chart(document.getElementById('oeeChart'), { 
