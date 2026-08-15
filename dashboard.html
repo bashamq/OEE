@@ -153,7 +153,6 @@
         }
 
         function fetchAllData(isSilent = false) {
-            // Memory Cache Logic added here for INSTANT Loading!
             if (!isSilent) {
                 let cachedData = localStorage.getItem("mes_dashboard_data");
                 if (cachedData) {
@@ -171,7 +170,7 @@
                     }
                     calculateDashboard();
 
-                    isSilent = true; // Switch to silent mode so the background fetch doesn't interrupt the UI
+                    isSilent = true; 
                 }
             }
 
@@ -184,7 +183,6 @@
                     allTargets = data.targets || []; 
                     allMachines = data.machines || [];
 
-                    // Save new data to cache memory
                     localStorage.setItem("mes_dashboard_data", JSON.stringify(data));
                     
                     if(!isSilent) {
@@ -209,7 +207,7 @@
         }
         
         fetchAllData();
-        setInterval(() => { fetchAllData(true); }, 30000); // 30 second auto-refresh
+        setInterval(() => { fetchAllData(true); }, 30000);
 
         function toggleAdmin() {
             const sidebar = document.getElementById('adminSidebar');
@@ -304,22 +302,30 @@
                 banner.style.display = "none";
             }
 
+            let lineFinalAssets = [];
+            
             if (lineVal === "All") {
                 fLogs = allLogs;
                 let uLines = [...new Set(allMachines.map(m => getSafeVal(m, ["LineName", "Line"])))].filter(Boolean);
                 uLines.forEach(l => trg += getLatestTarget(l));
+                lineFinalAssets = allMachines.filter(m => getSafeVal(m, ["IsFinalMachine", "FinalMachine"]) === "Yes").map(m => String(getSafeVal(m, ["AssetNumber", "Asset#", "Barcode"])));
             } else if (lineVal !== "All" && machVal === "All") {
                 trg = getLatestTarget(lineVal);
                 let lineAssets = allMachines.filter(m => getSafeVal(m, ["LineName", "Line"]) === lineVal).map(m => String(getSafeVal(m, ["AssetNumber", "Asset#", "Barcode"])));
                 fLogs = allLogs.filter(log => lineAssets.includes(String(getSafeVal(log, ["Barcode#", "Barcode", "AssetNumber"]))));
+                lineFinalAssets = allMachines.filter(m => getSafeVal(m, ["LineName", "Line"]) === lineVal && getSafeVal(m, ["IsFinalMachine", "FinalMachine"]) === "Yes").map(m => String(getSafeVal(m, ["AssetNumber", "Asset#", "Barcode"])));
             } else if (machVal !== "All") {
                 trg = 0; 
                 fLogs = allLogs.filter(log => String(getSafeVal(log, ["Barcode#", "Barcode"])) === machVal);
             }
 
             let pt = 0, dt = 0, it = 0, g = 0, r = 0, dtC = 0, dtR = {};
+            let finalGood = 0; 
+            
             fLogs.forEach(row => {
                 let entryType = getSafeVal(row, ["EntryType"]);
+                let assetId = String(getSafeVal(row, ["Barcode#", "Barcode", "AssetNumber"]));
+                
                 if (entryType === "Production") { 
                     pt += Number(getSafeVal(row, ["PlannedTime(Min)", "ShiftTime"])) || 0; 
                     it += (Number(getSafeVal(row, ["IdealCT(Min)", "IdealCT", "Target"])) || 0) * (Number(getSafeVal(row, ["TotalCount", "Actual"])) || 0); 
@@ -329,13 +335,21 @@
                     if(d > 0) { dt += d; dtC++; let rn = getSafeVal(row, ["Maint.Reason", "MaintReason"]) || "N/A"; dtR[rn] = (dtR[rn] || 0) + d; } 
                 }
                 else if (entryType === "Quality") { 
-                    g += Number(getSafeVal(row, ["GoodCount", "GoodParts"])) || 0; r += Number(getSafeVal(row, ["ScrapCount", "RejectParts"])) || 0; 
+                    let gc = Number(getSafeVal(row, ["GoodCount", "GoodParts"])) || 0;
+                    let rc = Number(getSafeVal(row, ["ScrapCount", "RejectParts"])) || 0;
+                    g += gc; 
+                    r += rc; 
+                    if (lineFinalAssets.includes(assetId)) {
+                        finalGood += gc;
+                    }
                 }
             });
 
             if (progressDiv.style.display === "block") {
-                let pct = trg > 0 ? (g/trg)*100 : 0; if(pct>100) pct=100;
-                document.getElementById("targetText").innerText = `${g} / ${trg} (${pct.toFixed(1)}%)`;
+                let targetActualValue = lineFinalAssets.length > 0 ? finalGood : g; // Fallback if no final machine is registered
+                let pct = trg > 0 ? (targetActualValue/trg)*100 : 0; 
+                if(pct>100) pct=100;
+                document.getElementById("targetText").innerText = `${targetActualValue} / ${trg} (${pct.toFixed(1)}%)`;
                 document.getElementById("targetFill").style.width = `${pct}%`;
                 document.getElementById("targetFill").innerText = `${pct.toFixed(1)}%`;
                 document.getElementById("targetFill").style.backgroundColor = pct<50?"#e74c3c":pct<85?"#f1c40f":"#27ae60";
