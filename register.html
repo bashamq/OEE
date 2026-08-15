@@ -11,7 +11,6 @@
         .container { max-width: 500px; margin: 0 auto; background: #fff; padding: 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         h2 { text-align: center; color: #2c3e50; margin-bottom: 20px; }
         
-        /* Toggle Buttons Style */
         .toggle-container { display: flex; gap: 10px; margin-bottom: 25px; background: #ecf0f1; padding: 5px; border-radius: 8px; }
         .toggle-btn { flex: 1; padding: 12px; font-size: 15px; font-weight: bold; border: none; border-radius: 5px; cursor: pointer; transition: 0.3s; }
         .toggle-btn.active { background-color: #2980b9; color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
@@ -26,7 +25,6 @@
         button.submit-btn { width: 100%; padding: 12px; background: #27ae60; color: white; border: none; border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; transition: 0.3s;}
         button.submit-btn:hover { background: #219150; }
         
-        /* QR Section */
         #qrSection { text-align: center; display: none; margin-top: 20px; }
         .label-card { width: 320px; margin: 0 auto; padding: 25px 20px; background: #ffffff; border: 3px solid #2c3e50; border-radius: 12px; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
         .label-card h2 { margin: 0; font-size: 26px; color: #000; text-transform: uppercase; letter-spacing: 1px; }
@@ -53,14 +51,12 @@
     <div class="container" id="mainContainer">
         <h2>System Registration</h2>
         
-        <!-- Toggle Buttons -->
         <div class="toggle-container">
             <button type="button" id="btnModeMachine" class="toggle-btn active" onclick="setMode('machine')">⚙️ For Machine</button>
             <button type="button" id="btnModeReason" class="toggle-btn" onclick="setMode('reason')">📋 For Reasons</button>
         </div>
 
         <form id="registerForm">
-            <!-- Line Selection is required for both -->
             <div class="form-group">
                 <label>Select Production Line</label>
                 <select id="lineName" required>
@@ -88,7 +84,6 @@
                 </select>
             </div>
 
-            <!-- Machine Specific Fields -->
             <div id="machineSpecificFields">
                 <div class="form-group"><label>Machine Name</label><input type="text" id="machineName" required></div>
                 <div class="form-group"><label>Machine Brand / Make</label><input type="text" id="brand" required></div>
@@ -96,6 +91,16 @@
                 <div class="form-group"><label>Operation</label><input type="text" id="operation" placeholder="e.g. Turning, Milling" required></div>
                 <div class="form-group"><label>Ideal Cycle Time (Min)</label><input type="number" step="0.01" id="idealCT" required></div>
                 <div class="form-group"><label>Standard Production (Shift)</label><input type="number" id="stdProduction" required></div>
+                
+                <!-- NAYA FINAL MACHINE CHECKBOX -->
+                <div class="form-group" style="background: #e8f8f5; padding: 15px; border-radius: 8px; border: 1px solid #1abc9c; margin-top: 15px;">
+                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; color: #16a085; font-size: 15px;">
+                        <input type="checkbox" id="isFinalMachine" style="width: 20px; height: 20px;">
+                        Is this the Final/Last Machine of the Line?
+                    </label>
+                    <span class="hint" style="margin-left: 30px;">Check this box so the Dashboard counts its output as the Total Line Production.</span>
+                </div>
+                
                 <hr style="border: 0; border-top: 1px solid #ccc; margin: 20px 0;">
             </div>
             
@@ -141,7 +146,6 @@
         const ENTRY_FORM_URL = "https://bashamq.github.io/OEE/index.html"; 
         let currentMode = 'machine';
 
-        // Toggle Form Logic
         function setMode(mode) {
             currentMode = mode;
             const machineFields = document.getElementById('machineSpecificFields');
@@ -188,7 +192,8 @@
                 stdProduction: document.getElementById("stdProduction").value || "",
                 maintReasons: document.getElementById("maintReasons").value, 
                 prodReasons: document.getElementById("prodReasons").value,   
-                qualReasons: document.getElementById("qualReasons").value    
+                qualReasons: document.getElementById("qualReasons").value,
+                isFinalMachine: document.getElementById("isFinalMachine").checked // NAYA LOGIC
             };
 
             fetch("https://script.google.com/macros/s/AKfycbyRkmh4_ofJjAftObCfnX9gmhqCa4xcsvSp143BXCUdQujfy4gaFkBMlEhsVrwa61HugQ/exec", {
