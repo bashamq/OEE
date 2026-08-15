@@ -7,7 +7,6 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; overflow-x: hidden; }
-        
         .header { position: relative; text-align: center; background: #2c3e50; color: #f1c40f; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-bottom: 5px solid #e74c3c; }
         .header h1 { margin: 0; font-size: 28px; color: white;}
         .admin-btn { position: absolute; top: 25px; left: 20px; background: #8e44ad; color: white; border: none; padding: 10px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 14px; }
@@ -67,23 +66,6 @@
                     <option value="Axle 385">1. Axle 385</option>
                     <option value="Sump 385">2. Sump 385</option>
                     <option value="Hyd. Lift Cover">3. Hyd. Lift Cover</option>
-                    <option value="Cylinder 240/385">4. Cylinder 240/385</option>
-                    <option value="FAS 350">5. FAS 350</option>
-                    <option value="Spacer Block/Adaptor Plate/PTO">6. Spacer Block/Adaptor Plate/PTO</option>
-                    <option value="Rear Wheel 1st and 2nd">7. Rear Wheel 1st and 2nd</option>
-                    <option value="Diff Case 385 (set)">8. Diff Case 385 (set)</option>
-                    <option value="Piston 240/385">9. Piston 240/385</option>
-                    <option value="Front Support 350/385">10. Front Support 350/385</option>
-                    <option value="Front Support 850/85-56">11. Front Support 850/85-56</option>
-                    <option value="Diff Plate">12. Diff Plate</option>
-                    <option value="FAS 480">13. FAS 480</option>
-                    <option value="Diff Case 480">14. Diff Case 480</option>
-                    <option value="Tube Final Drive 480/640/850">15. Tube Final Drive 480/640/850</option>
-                    <option value="Hub 240/385/480">16. Hub 240/385/480</option>
-                    <option value="Support Splitter">17. Support Splitter</option>
-                    <option value="Small Parts">18. Small Parts</option>
-                    <option value="Axle Casing 480/850/85-56">19. Axle Casing 480/850/85-56</option>
-                    <option value="Casing Gear Box 480/850">20. Casing Gear Box 480/850</option>
                 </select>
             </div>
             <div class="form-group"><label>Target Quantity</label><input type="number" id="targetQty" required></div>
@@ -110,14 +92,14 @@
     <div id="loadingMsg" class="loading">Fetching Data... Please wait.</div>
 
     <div id="machineInfoBanner" class="info-banner" style="display: none;">
-        <div class="info-item"><span>Machine Name</span><strong id="lblMachName">-</strong></div>
-        <div class="info-item"><span>Asset (Barcode) #</span><strong id="lblMachAsset">-</strong></div>
-        <div class="info-item"><span>Operation</span><strong id="lblMachOp">-</strong></div>
+        <div class="info-item"><span>Station Name</span><strong id="lblMachName">-</strong></div>
+        <div class="info-item"><span>Asset / Station #</span><strong id="lblMachAsset">-</strong></div>
+        <div class="info-item"><span>Operation / Seq</span><strong id="lblMachOp">-</strong></div>
     </div>
 
     <div class="progress-wrapper" id="progressDiv">
         <div class="progress-header">
-            <h3>Monthly Target Progress</h3>
+            <h3>Monthly Target Progress <span id="lblTargetSource" style="font-size:12px; color:#7f8c8d; margin-left:10px;"></span></h3>
             <div class="progress-text" id="targetText">0 / 0 (0%)</div>
         </div>
         <div class="progress-bar-bg">
@@ -160,96 +142,45 @@
                     allLogs = parsedData.logs || [];
                     allTargets = parsedData.targets || [];
                     allMachines = parsedData.machines || [];
-
                     document.getElementById('loadingMsg').style.display = 'none';
                     document.getElementById('dashboardCards').style.display = 'flex';
                     document.getElementById('chartDiv').style.display = 'flex';
-
-                    if(document.getElementById("lineSelect").options.length === 1) {
-                        populateLineDropdown();
-                    }
+                    if(document.getElementById("lineSelect").options.length === 1) populateLineDropdown();
                     calculateDashboard();
-
                     isSilent = true; 
                 }
             }
 
             if(isSilent) document.getElementById('syncIndicator').style.display = 'flex';
             
-            fetch(API_URL)
-                .then(res => res.json())
-                .then(data => {
-                    allLogs = data.logs || []; 
-                    allTargets = data.targets || []; 
-                    allMachines = data.machines || [];
-
-                    localStorage.setItem("mes_dashboard_data", JSON.stringify(data));
-                    
-                    if(!isSilent) {
-                        document.getElementById('loadingMsg').style.display = 'none';
-                        document.getElementById('dashboardCards').style.display = 'flex';
-                        document.getElementById('chartDiv').style.display = 'flex';
-                    }
-                    
-                    if(document.getElementById("lineSelect").options.length === 1) {
-                        populateLineDropdown();
-                    }
-                    
-                    calculateDashboard();
-                    
-                    if(isSilent) setTimeout(() => { document.getElementById('syncIndicator').style.display = 'none'; }, 2000);
-                }).catch(e => { 
-                    if(!isSilent && !localStorage.getItem("mes_dashboard_data")) {
-                        document.getElementById('loadingMsg').innerText = "Error loading data."; 
-                    }
-                    if(isSilent) document.getElementById('syncIndicator').style.display = 'none';
-                });
+            fetch(API_URL).then(res => res.json()).then(data => {
+                allLogs = data.logs || []; allTargets = data.targets || []; allMachines = data.machines || [];
+                localStorage.setItem("mes_dashboard_data", JSON.stringify(data));
+                
+                if(!isSilent) {
+                    document.getElementById('loadingMsg').style.display = 'none';
+                    document.getElementById('dashboardCards').style.display = 'flex';
+                    document.getElementById('chartDiv').style.display = 'flex';
+                }
+                if(document.getElementById("lineSelect").options.length === 1) populateLineDropdown();
+                calculateDashboard();
+                if(isSilent) setTimeout(() => { document.getElementById('syncIndicator').style.display = 'none'; }, 2000);
+            }).catch(e => { if(isSilent) document.getElementById('syncIndicator').style.display = 'none'; });
         }
         
         fetchAllData();
         setInterval(() => { fetchAllData(true); }, 30000);
 
         function toggleAdmin() {
-            const sidebar = document.getElementById('adminSidebar');
-            const overlay = document.getElementById('sidebarOverlay');
-            if(sidebar.classList.contains('open')) {
-                sidebar.classList.remove('open');
-                overlay.style.display = 'none';
-            } else {
-                sidebar.classList.add('open');
-                overlay.style.display = 'block';
-            }
+            const sb = document.getElementById('adminSidebar');
+            const ov = document.getElementById('sidebarOverlay');
+            sb.classList.toggle('open'); ov.style.display = sb.classList.contains('open') ? 'block' : 'none';
         }
-
-        document.getElementById("adminForm").addEventListener("submit", function(e) {
-            e.preventDefault();
-            const btn = document.getElementById("submitTargetBtn");
-            btn.innerText = "Saving..."; btn.disabled = true;
-
-            const data = {
-                formType: "adminTarget", 
-                month: document.getElementById("targetMonth").value,
-                lineName: document.getElementById("targetLineName").value,
-                targetQty: document.getElementById("targetQty").value
-            };
-
-            fetch(API_URL, { method: "POST", body: JSON.stringify(data) })
-            .then(res => res.json())
-            .then(result => {
-                alert("Target Saved Successfully!");
-                document.getElementById("adminForm").reset();
-                btn.innerText = "Save Target"; btn.disabled = false;
-                toggleAdmin(); 
-                fetchAllData(true); 
-            });
-        });
 
         function populateLineDropdown() {
             const select = document.getElementById("lineSelect");
             let uniqueLines = [...new Set(allMachines.map(m => getSafeVal(m, ["LineName", "Line", "Department"])))].filter(Boolean);
-            uniqueLines.forEach(l => { 
-                let o = document.createElement("option"); o.value = l; o.innerText = "🛠️ Line: " + l; select.appendChild(o); 
-            });
+            uniqueLines.forEach(l => { select.innerHTML += `<option value="${l}">🛠️ Line: ${l}</option>`; });
         }
 
         function onLineChange() {
@@ -261,15 +192,28 @@
                 machSel.value = "All";
             } else {
                 machSel.style.display = "inline-block";
-                machSel.innerHTML = '<option value="All">⚙️ All Machines in this Line</option>';
-                let lineMachines = allMachines.filter(m => getSafeVal(m, ["LineName", "Line", "Department"]) === lineSel);
+                machSel.innerHTML = '<option value="All">⚙️ All Stations in this Line</option>';
+                let lineMachines = allMachines.filter(m => getSafeVal(m, ["LineName", "Line"]) === lineSel);
+                
+                // Sort machines by Sequence Number before adding to dropdown
+                lineMachines.sort((a, b) => {
+                    let seqA = parseInt(getSafeVal(a, ["OpSequence", "Seq"])) || 999;
+                    let seqB = parseInt(getSafeVal(b, ["OpSequence", "Seq"])) || 999;
+                    return seqA - seqB;
+                });
+
                 let uniqueAssets = new Set();
                 lineMachines.forEach(m => {
                     let asset = getSafeVal(m, ["AssetNumber", "Asset#", "Barcode"]);
                     let name = getSafeVal(m, ["MachineName", "Machine"]);
-                    if(!uniqueAssets.has(asset)) {
+                    let seq = getSafeVal(m, ["OpSequence"]);
+                    let isFinal = String(getSafeVal(m, ["IsFinalOp", "FinalOp"])).toUpperCase() === "TRUE" ? " (FINAL)" : "";
+                    
+                    if(!uniqueAssets.has(asset) && asset) {
                         uniqueAssets.add(asset);
-                        let o = document.createElement("option"); o.value = asset; o.innerText = `⚙️ ${name} (${asset})`; machSel.appendChild(o);
+                        let opt = document.createElement("option"); opt.value = asset; 
+                        opt.innerText = `[Op ${seq}] ${name} ${isFinal}`; 
+                        machSel.appendChild(opt);
                     }
                 });
             }
@@ -284,17 +228,18 @@
         function calculateDashboard() {
             let lineVal = document.getElementById("lineSelect").value;
             let machVal = document.getElementById("machineSelect").value;
-            let fLogs = [], trg = 0;
-            let banner = document.getElementById("machineInfoBanner");
             let progressDiv = document.getElementById("progressDiv");
+            let banner = document.getElementById("machineInfoBanner");
             
+            // Toggle Banners
             if (machVal !== "All" && lineVal !== "All") {
                 progressDiv.style.display = "none";
-                let m = allMachines.find(x => String(getSafeVal(x, ["AssetNumber", "Asset#", "Barcode"])) === machVal && getSafeVal(x, ["LineName", "Line", "Department"]) === lineVal);
+                let m = allMachines.find(x => String(getSafeVal(x, ["AssetNumber", "Asset#", "Barcode"])) === machVal);
                 if(m) {
                     document.getElementById("lblMachName").innerText = getSafeVal(m, ["MachineName", "Machine"]) || "N/A";
                     document.getElementById("lblMachAsset").innerText = machVal;
-                    document.getElementById("lblMachOp").innerText = getSafeVal(m, ["Operation", "Op", "OperationName"]) || "N/A";
+                    let seq = getSafeVal(m, ["OpSequence"]) || "-";
+                    document.getElementById("lblMachOp").innerText = `Seq: ${seq} | ${getSafeVal(m, ["Operation", "Op"]) || "N/A"}`;
                     banner.style.display = "flex";
                 }
             } else {
@@ -302,61 +247,97 @@
                 banner.style.display = "none";
             }
 
-            let lineFinalAssets = [];
-            
+            // Calculation Logic
+            let pt = 0, dt = 0, it = 0, dtC = 0, dtR = {};
+            let totalLineGood = 0; // Final Machine Good Parts
+            let totalLineScrap = 0; // All Machines Scrap
+            let trg = 0;
+
             if (lineVal === "All") {
-                fLogs = allLogs;
+                // Not supported yet for nested lines. Keeping simple average.
                 let uLines = [...new Set(allMachines.map(m => getSafeVal(m, ["LineName", "Line"])))].filter(Boolean);
                 uLines.forEach(l => trg += getLatestTarget(l));
-                lineFinalAssets = allMachines.filter(m => getSafeVal(m, ["IsFinalMachine", "FinalMachine"]) === "Yes").map(m => String(getSafeVal(m, ["AssetNumber", "Asset#", "Barcode"])));
+                
+                allLogs.forEach(row => { processLogRow(row); });
+                totalLineGood = allLogs.filter(l => String(getSafeVal(l, ["EntryType"]))==="Quality").reduce((s, r) => s + (Number(getSafeVal(r, ["GoodCount"]))||0), 0);
+                document.getElementById("lblTargetSource").innerText = "(Sum of all entries)";
+                
             } else if (lineVal !== "All" && machVal === "All") {
+                // SPECIFIC LINE SELECTED
                 trg = getLatestTarget(lineVal);
-                let lineAssets = allMachines.filter(m => getSafeVal(m, ["LineName", "Line"]) === lineVal).map(m => String(getSafeVal(m, ["AssetNumber", "Asset#", "Barcode"])));
-                fLogs = allLogs.filter(log => lineAssets.includes(String(getSafeVal(log, ["Barcode#", "Barcode", "AssetNumber"]))));
-                lineFinalAssets = allMachines.filter(m => getSafeVal(m, ["LineName", "Line"]) === lineVal && getSafeVal(m, ["IsFinalMachine", "FinalMachine"]) === "Yes").map(m => String(getSafeVal(m, ["AssetNumber", "Asset#", "Barcode"])));
+                let lineMachines = allMachines.filter(m => getSafeVal(m, ["LineName", "Line"]) === lineVal);
+                let lineAssets = lineMachines.map(m => String(getSafeVal(m, ["AssetNumber", "Barcode"])));
+                
+                // Find which assets belong to "Final Operations"
+                let finalAssets = lineMachines.filter(m => String(getSafeVal(m, ["IsFinalOp"])).toUpperCase() === "TRUE").map(m => String(getSafeVal(m, ["AssetNumber", "Barcode"])));
+
+                if(finalAssets.length > 0) {
+                    document.getElementById("lblTargetSource").innerText = "(Measured from Final Operations only)";
+                } else {
+                    document.getElementById("lblTargetSource").innerText = "(No Final Operation marked, measuring all)";
+                    finalAssets = lineAssets; // Fallback
+                }
+
+                let lineLogs = allLogs.filter(log => lineAssets.includes(String(getSafeVal(log, ["Barcode#", "Barcode"]))));
+                
+                lineLogs.forEach(row => { 
+                    processLogRow(row); // Calculates average OEE for the line
+                    
+                    let eType = String(getSafeVal(row, ["EntryType"]));
+                    let rowAsset = String(getSafeVal(row, ["Barcode#", "Barcode"]));
+                    
+                    if (eType === "Quality") {
+                        // Sum ALL scrap from entire line
+                        totalLineScrap += Number(getSafeVal(row, ["ScrapCount", "RejectParts"])) || 0;
+                        
+                        // Sum GOOD PARTS ONLY from the FINAL Machine
+                        if(finalAssets.includes(rowAsset)) {
+                            totalLineGood += Number(getSafeVal(row, ["GoodCount", "GoodParts"])) || 0;
+                        }
+                    }
+                });
             } else if (machVal !== "All") {
                 trg = 0; 
-                fLogs = allLogs.filter(log => String(getSafeVal(log, ["Barcode#", "Barcode"])) === machVal);
+                let machLogs = allLogs.filter(log => String(getSafeVal(log, ["Barcode#", "Barcode"])) === machVal);
+                machLogs.forEach(row => { 
+                    processLogRow(row); 
+                    let eType = String(getSafeVal(row, ["EntryType"]));
+                    if (eType === "Quality") {
+                        totalLineGood += Number(getSafeVal(row, ["GoodCount", "GoodParts"])) || 0;
+                        totalLineScrap += Number(getSafeVal(row, ["ScrapCount", "RejectParts"])) || 0;
+                    }
+                });
             }
 
-            let pt = 0, dt = 0, it = 0, g = 0, r = 0, dtC = 0, dtR = {};
-            let finalGood = 0; 
-            
-            fLogs.forEach(row => {
-                let entryType = getSafeVal(row, ["EntryType"]);
-                let assetId = String(getSafeVal(row, ["Barcode#", "Barcode", "AssetNumber"]));
-                
+            function processLogRow(row) {
+                let entryType = String(getSafeVal(row, ["EntryType", "Type"]));
                 if (entryType === "Production") { 
                     pt += Number(getSafeVal(row, ["PlannedTime(Min)", "ShiftTime"])) || 0; 
-                    it += (Number(getSafeVal(row, ["IdealCT(Min)", "IdealCT", "Target"])) || 0) * (Number(getSafeVal(row, ["TotalCount", "Actual"])) || 0); 
+                    it += (Number(getSafeVal(row, ["IdealCT(Min)", "Target"])) || 0) * (Number(getSafeVal(row, ["TotalCount", "Actual"])) || 0); 
                 }
                 else if (entryType === "Maintenance") { 
                     let d = Number(getSafeVal(row, ["Downtime(Min)", "Downtime"])) || 0; 
                     if(d > 0) { dt += d; dtC++; let rn = getSafeVal(row, ["Maint.Reason", "MaintReason"]) || "N/A"; dtR[rn] = (dtR[rn] || 0) + d; } 
                 }
-                else if (entryType === "Quality") { 
-                    let gc = Number(getSafeVal(row, ["GoodCount", "GoodParts"])) || 0;
-                    let rc = Number(getSafeVal(row, ["ScrapCount", "RejectParts"])) || 0;
-                    g += gc; 
-                    r += rc; 
-                    if (lineFinalAssets.includes(assetId)) {
-                        finalGood += gc;
-                    }
-                }
-            });
+            }
 
+            // Update Progress Bar using totalLineGood
             if (progressDiv.style.display === "block") {
-                let targetActualValue = lineFinalAssets.length > 0 ? finalGood : g; // Fallback if no final machine is registered
-                let pct = trg > 0 ? (targetActualValue/trg)*100 : 0; 
-                if(pct>100) pct=100;
-                document.getElementById("targetText").innerText = `${targetActualValue} / ${trg} (${pct.toFixed(1)}%)`;
+                let pct = trg > 0 ? (totalLineGood/trg)*100 : 0; if(pct>100) pct=100;
+                document.getElementById("targetText").innerText = `${totalLineGood} / ${trg} (${pct.toFixed(1)}%)`;
                 document.getElementById("targetFill").style.width = `${pct}%`;
                 document.getElementById("targetFill").innerText = `${pct.toFixed(1)}%`;
                 document.getElementById("targetFill").style.backgroundColor = pct<50?"#e74c3c":pct<85?"#f1c40f":"#27ae60";
             }
 
+            // OEE Formulas
             let rt = pt - dt; if(rt<0) rt=0;
-            let a = pt>0 ? rt/pt : 0, p = rt>0 ? it/rt : 0, q = (g+r)>0 ? g/(g+r) : 0;
+            let a = pt>0 ? rt/pt : 0, p = rt>0 ? it/rt : 0;
+            
+            // Nayi Quality Calculation (Final Good / (Final Good + ALL Scrap))
+            let totalProcessedForQuality = totalLineGood + totalLineScrap;
+            let q = totalProcessedForQuality > 0 ? totalLineGood / totalProcessedForQuality : 0;
+            
             if(p>1) p=1; let oee = a*p*q;
 
             document.getElementById("valOEE").innerText = (oee*100).toFixed(1)+"%";
@@ -374,23 +355,12 @@
             if (oeeChartInstance) oeeChartInstance.destroy();
             oeeChartInstance = new Chart(document.getElementById('oeeChart'), { 
                 type: 'bar', 
-                data: { 
-                    labels: ['OEE', 'A', 'P', 'Q'], 
-                    datasets: [{ 
-                        data: [o, a, p, q], 
-                        backgroundColor: ['#2c3e50', '#3498db', '#f1c40f', '#e74c3c'] 
-                    }] 
-                }, 
-                options: { 
-                    scales: { y: { max: 100 } }, 
-                    plugins: { legend: { display: false } } 
-                } 
+                data: { labels: ['OEE', 'A', 'P', 'Q'], datasets: [{ data: [o, a, p, q], backgroundColor: ['#2c3e50', '#3498db', '#f1c40f', '#e74c3c'] }] }, 
+                options: { scales: { y: { max: 100 } }, plugins: { legend: { display: false } } } 
             });
-            
             if (downtimeChartInstance) downtimeChartInstance.destroy();
             downtimeChartInstance = new Chart(document.getElementById('downtimeChart'), { 
-                type: 'bar', 
-                data: { labels: l, datasets: [{ data: d, backgroundColor: '#95a5a6' }] }, 
+                type: 'bar', data: { labels: l, datasets: [{ data: d, backgroundColor: '#95a5a6' }] }, 
                 options: { indexAxis: 'y', plugins: { legend: { display: false } } } 
             });
         }
