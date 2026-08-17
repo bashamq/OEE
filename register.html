@@ -10,6 +10,7 @@
         body { font-family: 'Segoe UI', sans-serif; background-color: #e9ecef; padding: 20px; }
         .container { max-width: 500px; margin: 0 auto; background: #fff; padding: 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         h2 { text-align: center; color: #2c3e50; margin-bottom: 20px; }
+        .loading-text { font-size: 13px; font-weight: bold; margin-bottom: 15px; text-align: center; color: #f39c12; }
         .toggle-container { display: flex; gap: 10px; margin-bottom: 25px; background: #ecf0f1; padding: 5px; border-radius: 8px; }
         .toggle-btn { flex: 1; padding: 12px; font-size: 15px; font-weight: bold; border: none; border-radius: 5px; cursor: pointer; transition: 0.3s; }
         .toggle-btn.active { background-color: #2980b9; color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
@@ -38,31 +39,36 @@
 <body>
     <div class="container" id="mainContainer">
         <h2>System Registration</h2>
+        <div id="loadingStatus" class="loading-text">Loading Master Data from Database...</div>
+        
         <div class="toggle-container">
             <button type="button" id="btnModeMachine" class="toggle-btn active" onclick="setMode('machine')">⚙️ For Machine/Product</button>
             <button type="button" id="btnModeReason" class="toggle-btn" onclick="setMode('reason')">📋 For Line Reasons</button>
         </div>
 
-        <form id="registerForm">
-            <!-- NEW: Department Selection -->
+        <form id="registerForm" style="display:none;">
+            <!-- DYNAMIC DROPDOWNS FROM MASTER DATA -->
             <div class="form-group">
                 <label>Select Department</label>
                 <select id="department" required>
                     <option value="">-- Select Department --</option>
-                    <option value="Machining">Machining</option>
-                    <option value="Assembly">Assembly</option>
-                    <option value="Packaging">Packaging</option>
                 </select>
             </div>
 
             <div class="form-group">
                 <label>Select Production Line</label>
-                <input type="text" id="lineName" placeholder="e.g. Axle 385" required>
+                <select id="lineName" required>
+                    <option value="">-- Select Line --</option>
+                </select>
             </div>
 
             <div id="machineSpecificFields">
-                <!-- NEW: Product Name -->
-                <div class="form-group"><label>Product / Part Name</label><input type="text" id="productName" placeholder="e.g. Shaft Assembly A" required></div>
+                <div class="form-group">
+                    <label>Product / Part Name</label>
+                    <select id="productName" required>
+                        <option value="">-- Select Product --</option>
+                    </select>
+                </div>
 
                 <div class="form-group" style="display: flex; gap: 10px;">
                     <div style="flex:1;"><label>Op Sequence #</label><input type="number" id="opSequence" placeholder="1, 2, 3..." required></div>
@@ -103,8 +109,47 @@
     </div>
 
     <script>
+        const API_URL = "https://script.google.com/macros/s/AKfycbyRkmh4_ofJjAftObCfnX9gmhqCa4xcsvSp143BXCUdQujfy4gaFkBMlEhsVrwa61HugQ/exec";
         const ENTRY_FORM_URL = "https://bashamq.github.io/OEE/index.html"; 
         let currentMode = 'machine';
+
+        function getSafeVal(obj, possibleKeys) {
+            let lowerKeys = possibleKeys.map(k => k.toLowerCase().replace(/\s/g, ''));
+            for(let key in obj) { if(lowerKeys.includes(key.toLowerCase().replace(/\s/g, ''))) return obj[key]; }
+            return "";
+        }
+
+        window.onload = function() {
+            fetch(API_URL)
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('loadingStatus').style.display = 'none';
+                document.getElementById('registerForm').style.display = 'block';
+                
+                let masterData = data.masterData || [];
+                
+                let depts = [...new Set(masterData.map(m => getSafeVal(m, ["Department"])))].filter(Boolean);
+                let lines = [...new Set(masterData.map(m => getSafeVal(m, ["Line"])))].filter(Boolean);
+                let prods = [...new Set(masterData.map(m => getSafeVal(m, ["Product"])))].filter(Boolean);
+
+                populateSelect('department', depts, '-- Select Department --');
+                populateSelect('lineName', lines, '-- Select Line --');
+                populateSelect('productName', prods, '-- Select Product --');
+            })
+            .catch(err => {
+                document.getElementById('loadingStatus').innerText = "⚠️ Error loading Master Data.";
+            });
+        };
+
+        function populateSelect(id, items, defaultText) {
+            let sel = document.getElementById(id);
+            sel.innerHTML = `<option value="">${defaultText}</option>`;
+            items.forEach(item => {
+                let opt = document.createElement("option");
+                opt.value = item; opt.innerText = item;
+                sel.appendChild(opt);
+            });
+        }
 
         function setMode(mode) {
             currentMode = mode;
@@ -152,7 +197,7 @@
                 isFinalOp: document.getElementById("isFinalOp").checked ? "TRUE" : "FALSE" 
             };
 
-            fetch("https://script.google.com/macros/s/AKfycbyRkmh4_ofJjAftObCfnX9gmhqCa4xcsvSp143BXCUdQujfy4gaFkBMlEhsVrwa61HugQ/exec", {
+            fetch(API_URL, {
                 method: "POST", body: JSON.stringify(data)
             }).then(res => res.json()).then(result => {
                 if(currentMode === 'machine') {
