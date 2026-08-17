@@ -45,7 +45,6 @@
             <div class="step-dot" id="dot3">3</div><div class="step-line" id="line3"></div>
             <div class="step-dot" id="dot4">4</div>
         </div>
-        <!-- NAMES UPDATED HERE -->
         <div class="step-labels"><span>Setup</span><span>Avail</span><span>Perf</span><span>Qual</span></div>
 
         <div id="loadingStatus" class="loading-text">Loading registered machines & logs...</div>
@@ -68,7 +67,7 @@
                 <div class="form-group"><label>Shift</label><select id="shift" required onchange="checkBackendDataForToday()"><option value="">Select Shift</option><option value="Morning">Morning</option><option value="Evening">Evening</option><option value="Night">Night</option></select></div>
             </div>
 
-            <!-- ================= STEP 2: AVAILABILITY (Was Maintenance) ================= -->
+            <!-- ================= STEP 2: AVAILABILITY ================= -->
             <div class="step-content" id="step2">
                 <div class="info-box" id="boxStep2">
                     <span id="availStatus" class="status-badge">Pending</span>
@@ -77,22 +76,14 @@
                     
                     <div class="form-group"><label>Planned Time (Mins)</label><input type="number" id="availPlannedTime" value="480" readonly></div>
                     
-                    <!-- TWO TYPES OF DOWNTIME -->
                     <div class="downtime-row">
-                        <div class="form-group">
-                            <label>Setup / Changeover</label>
-                            <input type="number" id="setupTime" placeholder="e.g. 15" oninput="calcAvail()">
-                        </div>
-                        <div class="form-group">
-                            <label>Maintenance Downtime</label>
-                            <input type="number" id="maintTime" placeholder="e.g. 20" oninput="calcAvail()">
-                        </div>
+                        <div class="form-group"><label>Setup / Changeover</label><input type="number" id="setupTime" placeholder="e.g. 15" oninput="calcAvail()"></div>
+                        <div class="form-group"><label>Maintenance Time</label><input type="number" id="maintTime" placeholder="e.g. 20" oninput="calcAvail()"></div>
                     </div>
 
                     <div class="form-group"><label>Total Downtime (Mins)</label><input type="number" id="downtime" placeholder="0" readonly></div>
                     <div class="form-group"><label style="color:#2980b9;">Run Time (Mins)</label><input type="number" id="availRunTime" value="480" readonly></div>
                     
-                    <!-- REASON ONLY SHOWS IF MAINTENANCE TIME > 0 -->
                     <div id="maintReasonDiv" class="hidden">
                         <hr style="border: 0; border-top: 1px solid #ccc; margin: 15px 0;">
                         <div class="form-group">
@@ -105,7 +96,7 @@
                 </div>
             </div>
 
-            <!-- ================= STEP 3: PERFORMANCE (Was Production) ================= -->
+            <!-- ================= STEP 3: PERFORMANCE ================= -->
             <div class="step-content" id="step3">
                 <div class="info-box" id="boxStep3">
                     <span id="perfStatus" class="status-badge">Pending</span>
@@ -116,7 +107,7 @@
                     <hr style="border: 0; border-top: 1px solid #ccc; margin: 15px 0;">
                     <div class="form-group"><label style="color:#2980b9;">Total Count (Parts Produced)</label><input type="number" id="actual" placeholder="Enter total parts today" disabled oninput="updateInterlocks()"></div>
                     <div class="form-group hidden" id="lossReasonDiv">
-                        <label style="color:#e74c3c;">Performance Loss Reason (Target Missed)</label>
+                        <label style="color:#e74c3c;">Performance Loss Reason</label>
                         <select id="lossReasonSelect" onchange="handleOther('lossReason')" disabled><option value="">-- Select Reason --</option><option value="Other">Other (Type manually)</option></select>
                         <input type="text" id="lossReasonOther" class="hidden" placeholder="Type specific reason here..." style="margin-top:8px;">
                     </div>
@@ -148,7 +139,9 @@
     </div>
 
     <script>
+        // 🔴 YAHAN APNA NAYA WEB APP URL LAAZMI DAALEIN! 🔴
         const API_URL = "https://script.google.com/macros/s/AKfycbyRkmh4_ofJjAftObCfnX9gmhqCa4xcsvSp143BXCUdQujfy4gaFkBMlEhsVrwa61HugQ/exec";
+        
         let allRegisteredMachines = []; let allLogs = [];
         let state = { availSaved: false, perfSaved: false, qualSaved: false };
         let currentStep = 1; let currentTotalProduced = 0;
@@ -182,6 +175,8 @@
                     populateDeptDropdown(); processQRScan();
                 }
                 if (isSilent) checkBackendDataForToday();
+            }).catch(e => {
+                if(!isSilent && !cachedM) document.getElementById('loadingStatus').innerText = "⚠️ Error loading data. Please check API URL."; 
             });
         }
 
@@ -282,6 +277,7 @@
         function populateDropdownList(id, commaStr, defaultText) {
             const sel = document.getElementById(id);
             sel.innerHTML = `<option value="">-- ${defaultText} --</option>`;
+            if (id === 'maintReasonSelect') sel.innerHTML = `<option value="No Issue">No Issue</option>`; 
             if (commaStr) commaStr.split(',').forEach(r => { if (r.trim()) sel.innerHTML += `<option value="${r.trim()}">${r.trim()}</option>`; });
             sel.innerHTML += `<option value="Other">Other (Type manually)</option>`;
         }
@@ -297,7 +293,8 @@
             let selectElem = document.getElementById(selectId);
             let otherInput = document.getElementById(otherInputId);
             if (!savedValue) {
-                selectElem.value = ""; otherInput.classList.add("hidden"); return;
+                if(selectId === 'maintReasonSelect') selectElem.value = "No Issue";
+                otherInput.classList.add("hidden"); return;
             }
             if (Array.from(selectElem.options).some(opt => opt.value === savedValue)) {
                 selectElem.value = savedValue; otherInput.classList.add("hidden");
@@ -365,7 +362,6 @@
             ["setupTime", "maintTime", "downtime", "maintReasonOther", "techName", "actual", "lossReasonOther", "goodParts", "rejectParts", "rejectReasonOther"].forEach(id => { document.getElementById(id).value = ""; document.getElementById(id).disabled = false; });
             ["maintReasonSelect", "lossReasonSelect", "rejectReasonSelect"].forEach(id => document.getElementById(id).disabled = false);
             
-            // Check Availability (Backward compatible with "Maintenance")
             let aLog = reversedLogs.find(l => {
                 let t = String(getSafeVal(l, ["EntryType", "Type"])).trim().toLowerCase();
                 return t === "availability" || t === "maintenance";
@@ -381,9 +377,7 @@
                 if((parseFloat(document.getElementById('maintTime').value) || 0) > 0 || mReason) {
                     document.getElementById("maintReasonDiv").classList.remove("hidden");
                     setReasonDropdown("maintReasonSelect", "maintReasonOther", mReason, true);
-                } else {
-                    document.getElementById("maintReasonDiv").classList.add("hidden");
-                }
+                } else { document.getElementById("maintReasonDiv").classList.add("hidden"); }
 
                 document.getElementById("boxStep2").classList.add("completed-box"); document.getElementById("availStatus").innerText = "Completed";
                 ["setupTime", "maintTime", "maintReasonSelect", "techName", "maintReasonOther"].forEach(id => document.getElementById(id).disabled = true);
@@ -392,7 +386,6 @@
                 document.getElementById("maintReasonDiv").classList.add("hidden");
             }
 
-            // Check Performance (Backward compatible with "Production")
             let pLog = reversedLogs.find(l => {
                 let t = String(getSafeVal(l, ["EntryType", "Type"])).trim().toLowerCase();
                 return t === "performance" || t === "production";
@@ -422,9 +415,8 @@
             document.getElementById("downtime").value = total;
             document.getElementById("availRunTime").value = Math.max(0, 480 - total);
             
-            if (maint > 0) {
-                document.getElementById("maintReasonDiv").classList.remove("hidden");
-            } else {
+            if (maint > 0) document.getElementById("maintReasonDiv").classList.remove("hidden");
+            else {
                 document.getElementById("maintReasonDiv").classList.add("hidden");
                 document.getElementById("maintReasonSelect").value = "";
                 document.getElementById("maintReasonOther").value = "";
@@ -495,13 +487,28 @@
 
             if(payloads.length === 0) { alert("All steps are saved."); btn.innerText = "Submit Data"; btn.disabled = false; return; }
 
+            // 🔴 ADVANCED ERROR HANDLING LOGIC ADDED HERE 🔴
             (async () => {
-                try { for (let p of payloads) await fetch(API_URL, { method: "POST", body: JSON.stringify(p) });
-                    alert("Data Saved Successfully!"); document.getElementById("oeeForm").reset();
+                try { 
+                    for (let p of payloads) {
+                        let response = await fetch(API_URL, { 
+                            method: "POST", 
+                            headers: { "Content-Type": "text/plain;charset=utf-8" },
+                            body: JSON.stringify(p) 
+                        });
+                        let result = await response.json();
+                        if (result.status === "error") throw new Error(result.message);
+                    }
+                    alert("Data Saved Successfully!"); 
+                    document.getElementById("oeeForm").reset();
                     let now = new Date(); now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
                     document.getElementById('entryDateTime').value = now.toISOString().slice(0,16);
                     currentStep = 1; updateUI(); btn.innerText = "Submit Data"; btn.disabled = false; fetchData(true);
-                } catch(e) { alert("Error saving data."); btn.innerText = "Submit Data"; btn.disabled = false; }
+                } catch(e) { 
+                    alert("⚠️ Error saving data!\nDetails: " + e.message + "\n\n(Kya aap ne Naya API_URL theek dala hai?)"); 
+                    btn.innerText = "Submit Data"; 
+                    btn.disabled = false; 
+                }
             })();
         }
     </script>
