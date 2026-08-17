@@ -2,48 +2,25 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Machine Registration</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background-color: #e9ecef; padding: 20px; }
-        .container { max-width: 500px; margin: 0 auto; background: #fff; padding: 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        h2 { text-align: center; color: #2c3e50; margin-bottom: 20px; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: #e9ecef; padding: 15px; margin:0; }
+        .container { max-width: 460px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #2c3e50; margin-bottom: 15px; font-size: 20px; }
         .loading-text { font-size: 13px; font-weight: bold; margin-bottom: 15px; text-align: center; color: #f39c12; }
-        .toggle-container { display: flex; gap: 10px; margin-bottom: 25px; background: #ecf0f1; padding: 5px; border-radius: 8px; }
-        .toggle-btn { flex: 1; padding: 12px; font-size: 15px; font-weight: bold; border: none; border-radius: 5px; cursor: pointer; transition: 0.3s; }
-        .toggle-btn.active { background-color: #2980b9; color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-        .toggle-btn:not(.active) { background-color: transparent; color: #7f8c8d; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; color: #34495e; }
-        input[type="text"], input[type="number"], select { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 5px; }
-        .final-op-box { background:#e8f8f5; padding:15px; border-radius:8px; border:2px solid #1abc9c; margin-bottom: 15px;}
-        .final-op-label { display:flex; align-items:center; gap:10px; margin:0; cursor:pointer; font-size:16px; color:#16a085; font-weight:bold;}
-        .final-op-label input { width:22px; height:22px; cursor:pointer; }
-        button.submit-btn { width: 100%; padding: 12px; background: #27ae60; color: white; border: none; border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px;}
-        #qrSection { text-align: center; display: none; margin-top: 20px; }
-        .label-card { width: 320px; margin: 0 auto; padding: 25px 20px; background: #ffffff; border: 3px solid #2c3e50; border-radius: 12px; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
-        .label-card h2 { margin: 0; font-size: 26px; color: #000; text-transform: uppercase; }
-        .asset-text { font-size: 18px; font-weight: bold; color: #333; margin: 5px 0 5px 0; }
-        .line-text { font-size: 16px; font-weight: 600; color: #16a085; margin: 0 0 15px 0; text-transform: uppercase; }
-        .qr-wrapper { display: flex; justify-content: center; margin: 10px 0; padding: 10px; background: #fff; }
-        .op-text { font-size: 16px; font-weight: bold; color: #2980b9; margin: 15px 0 0 0; border-top: 2px dashed #bdc3c7; padding-top: 15px; text-transform: uppercase; }
-        .action-buttons { display: flex; gap: 10px; margin-top: 25px; }
-        .btn-print { background: #27ae60; flex: 1; padding: 10px; border:none; border-radius:5px; color:white; cursor:pointer;}
-        .btn-save { background: #f39c12; flex: 1; padding: 10px; border:none; border-radius:5px; color:white; cursor:pointer;}
-        .btn-back { background: #7f8c8d; margin-top: 15px; width:100%; padding: 10px; border:none; border-radius:5px; color:white; cursor:pointer;}
+        .form-group { margin-bottom: 12px; }
+        label { display: block; margin-bottom: 4px; font-weight: bold; color: #34495e; font-size: 13px; }
+        input[type="text"], input[type="number"], select { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 5px; font-size: 14px; }
+        .final-op-box { background:#e8f8f5; padding:10px; border-radius:8px; border:2px solid #1abc9c; margin-bottom: 12px;}
+        .final-op-label { display:flex; align-items:center; gap:10px; margin:0; cursor:pointer; font-size:14px; color:#16a085; font-weight:bold;}
+        .final-op-label input { width:18px; height:18px; cursor:pointer; }
+        button.submit-btn { width: 100%; padding: 10px; background: #27ae60; color: white; border: none; border-radius: 5px; font-size: 15px; font-weight: bold; cursor: pointer; margin-top: 10px;}
     </style>
 </head>
 <body>
-    <div class="container" id="mainContainer">
+    <div class="container">
         <h2>System Registration</h2>
         <div id="loadingStatus" class="loading-text">Loading Master Data...</div>
-        
-        <div class="toggle-container">
-            <button type="button" id="btnModeMachine" class="toggle-btn active" onclick="setMode('machine')">⚙️ For Machine/Product</button>
-            <button type="button" id="btnModeReason" class="toggle-btn" onclick="setMode('reason')">📋 For Line Reasons</button>
-        </div>
 
         <form id="registerForm" style="display:none;">
             <div class="form-group">
@@ -54,55 +31,34 @@
                 <label>Select Production Line</label>
                 <select id="lineName" required><option value="">-- Select Line --</option></select>
             </div>
-
-            <div id="machineSpecificFields">
-                <div class="form-group">
-                    <label>Product / Part Name</label>
-                    <select id="productName" required><option value="">-- Select Product --</option></select>
-                </div>
-                <div class="form-group" style="display: flex; gap: 10px;">
-                    <div style="flex:1;"><label>Op Sequence #</label><input type="number" id="opSequence" placeholder="1, 2, 3..." required></div>
-                </div>
-                <div class="final-op-box">
-                    <label class="final-op-label"><input type="checkbox" id="isFinalOp">This is the FINAL Operation</label>
-                </div>
-                <div class="form-group"><label>Machine Name</label><input type="text" id="machineName" placeholder="e.g. Lathe 1" required></div>
-                <div class="form-group"><label>Brand / Make</label><input type="text" id="brand" placeholder="e.g. Fanuc" required></div>
-                <div class="form-group"><label>Asset Number (Barcode)</label><input type="text" id="assetNumber" placeholder="e.g. 14185" required></div>
-                <div class="form-group"><label>Operation</label><input type="text" id="operation" placeholder="e.g. Turning" required></div>
-                <div class="form-group"><label>Ideal Cycle Time (Min) for this Product</label><input type="number" step="0.01" id="idealCT" required></div>
-                <div class="form-group"><label>Standard Production (Shift Target)</label><input type="number" id="stdProduction" required></div>
-                <hr style="border: 0; border-top: 1px solid #ccc; margin: 20px 0;">
+            <div class="form-group">
+                <label>Product / Part Name</label>
+                <select id="productName" required><option value="">-- Select Product --</option></select>
             </div>
+            <div class="form-group">
+                <label>Op Sequence #</label>
+                <input type="number" id="opSequence" placeholder="1, 2, 3..." required>
+            </div>
+            <div class="final-op-box">
+                <label class="final-op-label"><input type="checkbox" id="isFinalOp">This is the FINAL Operation</label>
+            </div>
+            <div class="form-group"><label>Machine Name</label><input type="text" id="machineName" placeholder="e.g. Lathe 1" required></div>
+            <div class="form-group"><label>Brand / Make</label><input type="text" id="brand" placeholder="e.g. Fanuc" required></div>
+            <div class="form-group"><label>Asset Number (Barcode)</label><input type="text" id="assetNumber" placeholder="e.g. 14185" required></div>
+            <div class="form-group"><label>Operation</label><input type="text" id="operation" placeholder="e.g. Turning" required></div>
+            <div class="form-group"><label>Ideal Cycle Time (Min)</label><input type="number" step="0.01" id="idealCT" required></div>
+            <div class="form-group"><label>Standard Production Target</label><input type="number" id="stdProduction" required></div>
             
-            <h3 style="color:#2c3e50; font-size:16px;">Set Common Reasons (Optional)</h3>
+            <hr style="margin: 15px 0;">
             <div class="form-group"><label>Maintenance Reasons</label><input type="text" id="maintReasons" placeholder="e.g. Motor Heat, Oil Leak"></div>
             <div class="form-group"><label>Performance Loss Reasons</label><input type="text" id="prodReasons" placeholder="e.g. Tool Change, Setup"></div>
-            <div class="form-group"><label>Quality (Reject) Reasons</label><input type="text" id="qualReasons" placeholder="e.g. Porosity, Undersize"></div>
+            <div class="form-group"><label>Quality Reject Reasons</label><input type="text" id="qualReasons" placeholder="e.g. Porosity, Undersize"></div>
 
-            <button type="submit" id="submitBtn" class="submit-btn">Register & Generate QR</button>
+            <button type="submit" id="submitBtn" class="submit-btn">Register Machine</button>
         </form>
-
-        <div id="qrSection">
-            <div id="printLabel" class="label-card">
-                <h2 id="lblMachineName">Machine Name</h2>
-                <p id="lblAssetNum" class="asset-text">Asset #: 00000</p>
-                <p id="lblLineName" class="line-text">Line Name</p> 
-                <div id="qrcode" class="qr-wrapper"></div>
-                <p id="lblOperation" class="op-text">Operation Name</p>
-            </div>
-            <div class="action-buttons"><button class="btn-print" onclick="printQR()">🖨️ Print</button><button class="btn-save" onclick="saveQR()">💾 Save Image</button></div>
-            <button class="btn-back" onclick="location.reload()">⬅️ Register Another</button>
-        </div>
     </div>
 
     <script>
-        // 🔴 YAHAN APNA NAYA WEB APP URL LAAZMI DAALEIN! 🔴
-        const API_URL = "https://script.google.com/macros/s/AKfycbwwFITVl6QeuyJYVYjG0NmqYFkKorFeKiyQh4A6afqg7YM2j0DBxe1Be4nNshLp31N9Vw/exec";
-        const ENTRY_FORM_URL = "https://bashamq.github.io/OEE/index.html"; 
-        
-        let currentMode = 'machine';
-
         function getSafeVal(obj, possibleKeys) {
             let lowerKeys = possibleKeys.map(k => k.toLowerCase().replace(/\s/g, ''));
             for(let key in obj) { if(lowerKeys.includes(key.toLowerCase().replace(/\s/g, ''))) return obj[key]; }
@@ -110,7 +66,7 @@
         }
 
         window.onload = function() {
-            fetch(API_URL).then(res => res.json()).then(data => {
+            google.script.run.withSuccessHandler(function(data) {
                 document.getElementById('loadingStatus').style.display = 'none';
                 document.getElementById('registerForm').style.display = 'block';
                 
@@ -122,9 +78,7 @@
                 populateSelect('department', depts, '-- Select Department --');
                 populateSelect('lineName', lines, '-- Select Line --');
                 populateSelect('productName', prods, '-- Select Product --');
-            }).catch(err => {
-                document.getElementById('loadingStatus').innerText = "⚠️ Error loading Master Data. Check API URL.";
-            });
+            }).getAppData();
         };
 
         function populateSelect(id, items, defaultText) {
@@ -137,86 +91,35 @@
             });
         }
 
-        function setMode(mode) {
-            currentMode = mode;
-            const machineFields = document.getElementById('machineSpecificFields');
-            const reqFields = ['productName', 'opSequence', 'machineName', 'brand', 'assetNumber', 'operation', 'idealCT', 'stdProduction'];
-
-            if (mode === 'machine') {
-                machineFields.style.display = 'block';
-                document.getElementById('btnModeMachine').classList.add('active');
-                document.getElementById('btnModeReason').classList.remove('active');
-                document.getElementById('submitBtn').innerText = "Register & Generate QR";
-                document.getElementById('submitBtn').style.backgroundColor = "#27ae60";
-                reqFields.forEach(id => document.getElementById(id).required = true);
-            } else {
-                machineFields.style.display = 'none';
-                document.getElementById('btnModeReason').classList.add('active');
-                document.getElementById('btnModeMachine').classList.remove('active');
-                document.getElementById('submitBtn').innerText = "Save Reasons for Line";
-                document.getElementById('submitBtn').style.backgroundColor = "#8e44ad";
-                reqFields.forEach(id => document.getElementById(id).required = false);
-            }
-        }
-
         document.getElementById("registerForm").addEventListener("submit", function(e) {
             e.preventDefault();
             const btn = document.getElementById("submitBtn");
-            let originalText = btn.innerText;
-            btn.innerText = "Saving Data..."; btn.disabled = true;
+            btn.innerText = "Saving..."; btn.disabled = true;
 
-            const data = {
+            const payload = {
                 formType: "registerMachine", 
                 department: document.getElementById("department").value,
                 lineName: document.getElementById("lineName").value,
-                productName: document.getElementById("productName").value || "",
-                machineName: document.getElementById("machineName").value || "",
-                brand: document.getElementById("brand").value || "",
-                assetNumber: document.getElementById("assetNumber").value || "",
-                operation: document.getElementById("operation").value || "",
-                idealCT: document.getElementById("idealCT").value || "",
-                stdProduction: document.getElementById("stdProduction").value || "",
+                productName: document.getElementById("productName").value,
+                machineName: document.getElementById("machineName").value,
+                brand: document.getElementById("brand").value,
+                assetNumber: document.getElementById("assetNumber").value,
+                operation: document.getElementById("operation").value,
+                idealCT: document.getElementById("idealCT").value,
+                stdProduction: document.getElementById("stdProduction").value,
                 maintReasons: document.getElementById("maintReasons").value, 
                 prodReasons: document.getElementById("prodReasons").value,   
                 qualReasons: document.getElementById("qualReasons").value,
-                opSequence: document.getElementById("opSequence").value || "", 
+                opSequence: document.getElementById("opSequence").value, 
                 isFinalOp: document.getElementById("isFinalOp").checked ? "TRUE" : "FALSE" 
             };
 
-            fetch(API_URL, { method: "POST", body: JSON.stringify(data) })
-            .then(res => res.json()).then(result => {
-                if(currentMode === 'machine') {
-                    alert("Registered Successfully!");
-                    generateQR(data.assetNumber, data.machineName, data.operation, data.lineName);
-                } else {
-                    alert("Line Reasons Saved Successfully!");
-                    document.getElementById("registerForm").reset();
-                    btn.innerText = "Save Reasons for Line"; btn.disabled = false;
-                }
-            }).catch(e => { alert("Error saving data! Check API URL / CORS permission."); btn.innerText = originalText; btn.disabled = false; });
+            google.script.run.withSuccessHandler(function(res) {
+                alert("Registered Successfully!");
+                document.getElementById("registerForm").reset();
+                btn.innerText = "Register Machine"; btn.disabled = false;
+            }).processData(payload);
         });
-
-        function generateQR(asset, name, op, line) {
-            document.getElementById("registerForm").style.display = "none";
-            document.querySelector(".toggle-container").style.display = "none";
-            document.querySelector("h2").style.display = "none"; 
-            document.getElementById("qrSection").style.display = "block";
-            
-            document.getElementById("lblMachineName").innerText = name;
-            document.getElementById("lblAssetNum").innerText = "Asset #: " + asset;
-            document.getElementById("lblLineName").innerText = "Line: " + line;
-            document.getElementById("lblOperation").innerText = "Op: " + op;
-            
-            new QRCode(document.getElementById("qrcode"), { text: ENTRY_FORM_URL + "?asset=" + asset, width: 180, height: 180 });
-        }
-        function printQR() { window.print(); }
-        function saveQR() {
-            html2canvas(document.getElementById("printLabel")).then(canvas => {
-                const link = document.createElement('a');
-                link.download = `QR_${document.getElementById("lblAssetNum").innerText.split(": ")[1]}.png`;
-                link.href = canvas.toDataURL(); link.click();
-            });
-        }
     </script>
 </body>
 </html>
