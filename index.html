@@ -31,6 +31,8 @@
         .btn-prev { background: #95a5a6; } .btn-next { background: #3498db; } .btn-submit { background: #27ae60; }
         .hidden { display: none !important; }
         .loading-text { font-size: 13px; font-weight: bold; margin-bottom: 15px; text-align: center; color: #f39c12; }
+        .downtime-row { display: flex; gap: 10px; }
+        .downtime-row .form-group { flex: 1; }
     </style>
 </head>
 <body>
@@ -43,7 +45,8 @@
             <div class="step-dot" id="dot3">3</div><div class="step-line" id="line3"></div>
             <div class="step-dot" id="dot4">4</div>
         </div>
-        <div class="step-labels"><span>Setup</span><span>Maint</span><span>Prod</span><span>Qual</span></div>
+        <!-- NAMES UPDATED HERE -->
+        <div class="step-labels"><span>Setup</span><span>Avail</span><span>Perf</span><span>Qual</span></div>
 
         <div id="loadingStatus" class="loading-text">Loading registered machines & logs...</div>
 
@@ -59,44 +62,61 @@
                     
                     <div class="form-group"><label>Barcode # (Asset Number)</label><input type="text" id="barcode" placeholder="Auto-filled" readonly></div>
                     
-                    <!-- NEW: Product Selection -->
                     <div class="form-group"><label style="color: #8e44ad;">Select Product to Run</label><select id="productSelect" onchange="onProductSelect()" required><option value="">-- Select Product --</option></select></div>
                 </div>
                 <div class="form-group"><label>Operator Name</label><input type="text" id="operatorName" required></div>
                 <div class="form-group"><label>Shift</label><select id="shift" required onchange="checkBackendDataForToday()"><option value="">Select Shift</option><option value="Morning">Morning</option><option value="Evening">Evening</option><option value="Night">Night</option></select></div>
             </div>
 
-            <!-- ================= STEP 2: MAINTENANCE ================= -->
+            <!-- ================= STEP 2: AVAILABILITY (Was Maintenance) ================= -->
             <div class="step-content" id="step2">
                 <div class="info-box" id="boxStep2">
-                    <span id="maintStatus" class="status-badge">Pending</span>
-                    <h3 style="margin-top:0; color:#2c3e50;">Maintenance</h3>
-                    <p style="font-size:12px; color:#e74c3c; font-weight:bold;">* Required first. Enter 0 if machine ran fine.</p>
-                    <div class="form-group"><label>Planned Time (Mins)</label><input type="number" id="maintPlannedTime" value="480" readonly></div>
-                    <div class="form-group"><label>Total Downtime (Mins)</label><input type="number" id="downtime" placeholder="Enter Downtime" oninput="updateInterlocks()"></div>
-                    <div class="form-group"><label style="color:#2980b9;">Run Time (Mins)</label><input type="number" id="maintRunTime" value="480" readonly></div>
-                    <hr style="border: 0; border-top: 1px solid #ccc; margin: 15px 0;">
-                    <div class="form-group">
-                        <label>Maintenance Reason</label>
-                        <select id="maintReasonSelect" onchange="handleOther('maintReason')"><option value="No Issue">No Issue</option><option value="Other">Other (Type manually)</option></select>
-                        <input type="text" id="maintReasonOther" class="hidden" placeholder="Type specific reason here..." style="margin-top:8px;">
+                    <span id="availStatus" class="status-badge">Pending</span>
+                    <h3 style="margin-top:0; color:#2c3e50;">Availability</h3>
+                    <p style="font-size:12px; color:#e74c3c; font-weight:bold;">* Required first. Enter 0 if no time lost.</p>
+                    
+                    <div class="form-group"><label>Planned Time (Mins)</label><input type="number" id="availPlannedTime" value="480" readonly></div>
+                    
+                    <!-- TWO TYPES OF DOWNTIME -->
+                    <div class="downtime-row">
+                        <div class="form-group">
+                            <label>Setup / Changeover</label>
+                            <input type="number" id="setupTime" placeholder="e.g. 15" oninput="calcAvail()">
+                        </div>
+                        <div class="form-group">
+                            <label>Maintenance Downtime</label>
+                            <input type="number" id="maintTime" placeholder="e.g. 20" oninput="calcAvail()">
+                        </div>
                     </div>
-                    <div class="form-group"><label>Technician Name</label><input type="text" id="techName" placeholder="Leave blank if no issue"></div>
+
+                    <div class="form-group"><label>Total Downtime (Mins)</label><input type="number" id="downtime" placeholder="0" readonly></div>
+                    <div class="form-group"><label style="color:#2980b9;">Run Time (Mins)</label><input type="number" id="availRunTime" value="480" readonly></div>
+                    
+                    <!-- REASON ONLY SHOWS IF MAINTENANCE TIME > 0 -->
+                    <div id="maintReasonDiv" class="hidden">
+                        <hr style="border: 0; border-top: 1px solid #ccc; margin: 15px 0;">
+                        <div class="form-group">
+                            <label style="color:#e74c3c;">Maintenance Reason (Required)</label>
+                            <select id="maintReasonSelect" onchange="handleOther('maintReason')"><option value="">-- Select Reason --</option></select>
+                            <input type="text" id="maintReasonOther" class="hidden" placeholder="Type specific reason here..." style="margin-top:8px;">
+                        </div>
+                        <div class="form-group"><label>Technician Name</label><input type="text" id="techName" placeholder="Who repaired it?"></div>
+                    </div>
                 </div>
             </div>
 
-            <!-- ================= STEP 3: PRODUCTION ================= -->
+            <!-- ================= STEP 3: PERFORMANCE (Was Production) ================= -->
             <div class="step-content" id="step3">
                 <div class="info-box" id="boxStep3">
-                    <span id="prodStatus" class="status-badge">Pending</span>
-                    <h3 style="margin-top:0; color:#2c3e50;">Production</h3>
+                    <span id="perfStatus" class="status-badge">Pending</span>
+                    <h3 style="margin-top:0; color:#2c3e50;">Performance</h3>
                     <div class="form-group"><label id="lblShiftTime">Available Time (Mins)</label><input type="number" id="shiftTime" value="480" readonly></div>
                     <div class="form-group"><label>Ideal CT (Min/part)</label><input type="number" step="0.01" id="target" readonly></div>
                     <div class="form-group"><label>Standard Production (Shift Target)</label><input type="number" id="stdProd" readonly></div>
                     <hr style="border: 0; border-top: 1px solid #ccc; margin: 15px 0;">
                     <div class="form-group"><label style="color:#2980b9;">Total Count (Parts Produced)</label><input type="number" id="actual" placeholder="Enter total parts today" disabled oninput="updateInterlocks()"></div>
                     <div class="form-group hidden" id="lossReasonDiv">
-                        <label style="color:#e74c3c;">Performance Loss Reason</label>
+                        <label style="color:#e74c3c;">Performance Loss Reason (Target Missed)</label>
                         <select id="lossReasonSelect" onchange="handleOther('lossReason')" disabled><option value="">-- Select Reason --</option><option value="Other">Other (Type manually)</option></select>
                         <input type="text" id="lossReasonOther" class="hidden" placeholder="Type specific reason here..." style="margin-top:8px;">
                     </div>
@@ -130,7 +150,7 @@
     <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbyRkmh4_ofJjAftObCfnX9gmhqCa4xcsvSp143BXCUdQujfy4gaFkBMlEhsVrwa61HugQ/exec";
         let allRegisteredMachines = []; let allLogs = [];
-        let state = { maintSaved: false, prodSaved: false, qualSaved: false };
+        let state = { availSaved: false, perfSaved: false, qualSaved: false };
         let currentStep = 1; let currentTotalProduced = 0;
 
         function getSafeVal(obj, possibleKeys) {
@@ -224,9 +244,8 @@
             if (!asset) return;
 
             let machineData = allRegisteredMachines.filter(m => String(getSafeVal(m, ["AssetNumber", "Barcode"])) === asset);
-            
-            // Build Reason Lists based on Line
             let lineMachines = allRegisteredMachines.filter(m => getSafeVal(m, ["LineName", "Line"]) === document.getElementById("lineSelect").value);
+            
             let am=[], ap=[], aq=[];
             lineMachines.forEach(m => {
                 let mr=getSafeVal(m, ["MaintReasons"]); if(mr) am.push(...mr.split(',').map(s=>s.trim()));
@@ -237,7 +256,6 @@
             populateDropdownList('lossReasonSelect', [...new Set(ap)].filter(Boolean).join(','), "Select Reason");
             populateDropdownList('rejectReasonSelect', [...new Set(aq)].filter(Boolean).join(','), "Select Reason");
 
-            // Populate Products for this machine
             machineData.forEach(m => {
                 let pName = getSafeVal(m, ["ProductName", "Product"]);
                 if(pName) {
@@ -264,7 +282,6 @@
         function populateDropdownList(id, commaStr, defaultText) {
             const sel = document.getElementById(id);
             sel.innerHTML = `<option value="">-- ${defaultText} --</option>`;
-            if (id === 'maintReasonSelect') sel.innerHTML = `<option value="No Issue">No Issue</option>`; 
             if (commaStr) commaStr.split(',').forEach(r => { if (r.trim()) sel.innerHTML += `<option value="${r.trim()}">${r.trim()}</option>`; });
             sel.innerHTML += `<option value="Other">Other (Type manually)</option>`;
         }
@@ -280,8 +297,7 @@
             let selectElem = document.getElementById(selectId);
             let otherInput = document.getElementById(otherInputId);
             if (!savedValue) {
-                if(selectId === 'maintReasonSelect') selectElem.value = "No Issue";
-                otherInput.classList.add("hidden"); return;
+                selectElem.value = ""; otherInput.classList.add("hidden"); return;
             }
             if (Array.from(selectElem.options).some(opt => opt.value === savedValue)) {
                 selectElem.value = savedValue; otherInput.classList.add("hidden");
@@ -311,11 +327,16 @@
                 checkBackendDataForToday(); 
             }
             else if(currentStep === 2) {
-                if(!state.maintSaved && document.getElementById('downtime').value === "") { alert("⚠️ Enter Total Downtime (Enter 0 if ran fine)."); return; }
+                if(!state.availSaved) {
+                    let sVal = document.getElementById('setupTime').value;
+                    let mVal = document.getElementById('maintTime').value;
+                    if(sVal === "" && mVal === "") { alert("⚠️ Enter Setup or Maintenance Time (Enter 0 if ran fine)."); return; }
+                    if((parseFloat(mVal) || 0) > 0 && getFinalReason('maintReason') === "") { alert("⚠️ Please select a Maintenance Reason."); return; }
+                }
                 updateInterlocks(); 
             }
             else if(currentStep === 3) {
-                if(!state.prodSaved) {
+                if(!state.perfSaved) {
                     if(document.getElementById('actual').value === "") { alert("⚠️ Please enter Total Count."); return; }
                     if(parseFloat(document.getElementById('actual').value) < parseFloat(document.getElementById('stdProd').value) && getFinalReason('lossReason').trim() === "") { alert("⚠️ Target missed! Enter Performance Loss Reason."); return; }
                 }
@@ -340,25 +361,48 @@
                        String(getSafeVal(log, ["ProductName", "Product"])).trim() === product.trim();
             }).slice().reverse();
 
-            state = { maintSaved: false, prodSaved: false, qualSaved: false };
-            ["downtime", "maintReasonOther", "techName", "actual", "lossReasonOther", "goodParts", "rejectParts", "rejectReasonOther"].forEach(id => { document.getElementById(id).value = ""; document.getElementById(id).disabled = false; });
+            state = { availSaved: false, perfSaved: false, qualSaved: false };
+            ["setupTime", "maintTime", "downtime", "maintReasonOther", "techName", "actual", "lossReasonOther", "goodParts", "rejectParts", "rejectReasonOther"].forEach(id => { document.getElementById(id).value = ""; document.getElementById(id).disabled = false; });
             ["maintReasonSelect", "lossReasonSelect", "rejectReasonSelect"].forEach(id => document.getElementById(id).disabled = false);
             
-            let mLog = reversedLogs.find(l => String(getSafeVal(l, ["EntryType", "Type"])).trim().toLowerCase() === "maintenance");
-            if(mLog) {
-                state.maintSaved = true; document.getElementById('downtime').value = getSafeVal(mLog, ["Downtime(Min)", "Downtime"]) || 0;
-                document.getElementById('techName').value = getSafeVal(mLog, ["TechName"]); setReasonDropdown("maintReasonSelect", "maintReasonOther", getSafeVal(mLog, ["MaintReason", "Maint.Reason"]), true);
-                document.getElementById("boxStep2").classList.add("completed-box"); document.getElementById("maintStatus").innerText = "Completed";
-                ["downtime", "maintReasonSelect", "techName", "maintReasonOther"].forEach(id => document.getElementById(id).disabled = true);
-            } else { document.getElementById("boxStep2").classList.remove("completed-box"); document.getElementById("maintStatus").innerText = "Pending"; }
+            // Check Availability (Backward compatible with "Maintenance")
+            let aLog = reversedLogs.find(l => {
+                let t = String(getSafeVal(l, ["EntryType", "Type"])).trim().toLowerCase();
+                return t === "availability" || t === "maintenance";
+            });
+            if(aLog) {
+                state.availSaved = true; 
+                document.getElementById('setupTime').value = getSafeVal(aLog, ["SetupTime"]) || 0;
+                document.getElementById('maintTime').value = getSafeVal(aLog, ["MaintTime"]) || 0;
+                document.getElementById('downtime').value = getSafeVal(aLog, ["Downtime(Min)", "Downtime"]) || 0;
+                document.getElementById('techName').value = getSafeVal(aLog, ["TechName"]); 
+                
+                let mReason = getSafeVal(aLog, ["MaintReason", "Maint.Reason"]);
+                if((parseFloat(document.getElementById('maintTime').value) || 0) > 0 || mReason) {
+                    document.getElementById("maintReasonDiv").classList.remove("hidden");
+                    setReasonDropdown("maintReasonSelect", "maintReasonOther", mReason, true);
+                } else {
+                    document.getElementById("maintReasonDiv").classList.add("hidden");
+                }
 
-            let pLog = reversedLogs.find(l => String(getSafeVal(l, ["EntryType", "Type"])).trim().toLowerCase() === "production");
+                document.getElementById("boxStep2").classList.add("completed-box"); document.getElementById("availStatus").innerText = "Completed";
+                ["setupTime", "maintTime", "maintReasonSelect", "techName", "maintReasonOther"].forEach(id => document.getElementById(id).disabled = true);
+            } else { 
+                document.getElementById("boxStep2").classList.remove("completed-box"); document.getElementById("availStatus").innerText = "Pending"; 
+                document.getElementById("maintReasonDiv").classList.add("hidden");
+            }
+
+            // Check Performance (Backward compatible with "Production")
+            let pLog = reversedLogs.find(l => {
+                let t = String(getSafeVal(l, ["EntryType", "Type"])).trim().toLowerCase();
+                return t === "performance" || t === "production";
+            });
             if(pLog) {
-                state.prodSaved = true; document.getElementById('actual').value = getSafeVal(pLog, ["TotalCount", "Actual", "TotalProduced"]);
+                state.perfSaved = true; document.getElementById('actual').value = getSafeVal(pLog, ["TotalCount", "Actual", "TotalProduced"]);
                 setReasonDropdown("lossReasonSelect", "lossReasonOther", getSafeVal(pLog, ["LossReason"]), true);
-                document.getElementById("boxStep3").classList.add("completed-box"); document.getElementById("prodStatus").innerText = "Completed";
+                document.getElementById("boxStep3").classList.add("completed-box"); document.getElementById("perfStatus").innerText = "Completed";
                 ["actual", "lossReasonSelect", "lossReasonOther"].forEach(id => document.getElementById(id).disabled = true);
-            } else { document.getElementById("boxStep3").classList.remove("completed-box"); document.getElementById("prodStatus").innerText = "Pending"; }
+            } else { document.getElementById("boxStep3").classList.remove("completed-box"); document.getElementById("perfStatus").innerText = "Pending"; }
 
             let qLog = reversedLogs.find(l => String(getSafeVal(l, ["EntryType", "Type"])).trim().toLowerCase() === "quality");
             if(qLog) {
@@ -370,7 +414,24 @@
             updateInterlocks();
         }
 
-        document.getElementById("downtime").addEventListener("input", function() { document.getElementById("maintRunTime").value = Math.max(0, 480 - (parseFloat(this.value) || 0)); updateInterlocks(); });
+        function calcAvail() {
+            let setup = parseFloat(document.getElementById("setupTime").value) || 0;
+            let maint = parseFloat(document.getElementById("maintTime").value) || 0;
+            let total = setup + maint;
+            
+            document.getElementById("downtime").value = total;
+            document.getElementById("availRunTime").value = Math.max(0, 480 - total);
+            
+            if (maint > 0) {
+                document.getElementById("maintReasonDiv").classList.remove("hidden");
+            } else {
+                document.getElementById("maintReasonDiv").classList.add("hidden");
+                document.getElementById("maintReasonSelect").value = "";
+                document.getElementById("maintReasonOther").value = "";
+            }
+            updateInterlocks();
+        }
+
         document.getElementById("actual").addEventListener("input", updateInterlocks);
         document.getElementById("goodParts").addEventListener("input", function() {
             let good = parseInt(this.value) || 0;
@@ -379,19 +440,21 @@
         });
 
         function updateInterlocks() {
-            let downtime = document.getElementById("downtime").value === "" ? 0 : parseFloat(document.getElementById("downtime").value);
-            if (document.getElementById("downtime").value !== "" || state.maintSaved) {
+            let downtimeVal = document.getElementById("downtime").value;
+            let downtime = downtimeVal === "" ? 0 : parseFloat(downtimeVal);
+            
+            if (downtimeVal !== "" || state.availSaved || document.getElementById("setupTime").value !== "" || document.getElementById("maintTime").value !== "") {
                 let avail = 480 - downtime; document.getElementById("shiftTime").value = avail;
-                document.getElementById("lblShiftTime").innerHTML = downtime > 0 ? `Available Time (Mins) <span style="color:#e74c3c; font-size:12px;">(-${downtime}m Maint)</span>` : `Available Time (Mins)`;
+                document.getElementById("lblShiftTime").innerHTML = downtime > 0 ? `Available Time (Mins) <span style="color:#e74c3c; font-size:12px;">(-${downtime}m Downtime)</span>` : `Available Time (Mins)`;
                 let idealCT = parseFloat(document.getElementById("target").value) || 0;
                 if (idealCT > 0) document.getElementById("stdProd").value = Math.floor(avail / idealCT);
-                if (!state.prodSaved) { document.getElementById("actual").disabled = false; document.getElementById("lossReasonSelect").disabled = false; }
+                if (!state.perfSaved) { document.getElementById("actual").disabled = false; document.getElementById("lossReasonSelect").disabled = false; }
             } else { ["actual", "lossReasonSelect"].forEach(id => document.getElementById(id).disabled = true); }
 
             let actual = parseFloat(document.getElementById("actual").value) || 0;
             document.getElementById("lossReasonDiv").classList.toggle("hidden", !(actual > 0 && actual < (parseFloat(document.getElementById("stdProd").value) || 0)));
 
-            if (document.getElementById("actual").value !== "" || state.prodSaved) {
+            if (document.getElementById("actual").value !== "" || state.perfSaved) {
                 currentTotalProduced = actual; document.getElementById("qualProdTarget").innerText = `Total Parts Produced: ${actual}`; document.getElementById("goodParts").placeholder = `Max allowed: ${actual}`;
                 if (!state.qualSaved) { document.getElementById("goodParts").disabled = false; document.getElementById("rejectReasonSelect").disabled = false; }
             } else { ["goodParts", "rejectReasonSelect"].forEach(id => document.getElementById(id).disabled = true); }
@@ -400,8 +463,8 @@
         function getFinalReason(id) { let val = document.getElementById(id + "Select").value; return val === "Other" ? document.getElementById(id + "Other").value : val; }
 
         function submitData() {
-            if(currentStep === 2 && !state.maintSaved && document.getElementById('downtime').value === "") { alert("⚠️ Enter Downtime."); return; }
-            if(currentStep === 3 && !state.prodSaved && document.getElementById('actual').value === "") { alert("⚠️ Enter Total Count."); return; }
+            if(currentStep === 2 && !state.availSaved && document.getElementById('setupTime').value === "" && document.getElementById('maintTime').value === "") { alert("⚠️ Enter Setup or Maintenance Time."); return; }
+            if(currentStep === 3 && !state.perfSaved && document.getElementById('actual').value === "") { alert("⚠️ Enter Total Count."); return; }
             if(currentStep === 4 && !state.qualSaved && document.getElementById('goodParts').value === "") { alert("⚠️ Enter Good Count."); return; }
 
             const btn = document.getElementById("btnSubmit"); btn.innerText = "Saving..."; btn.disabled = true;
@@ -409,12 +472,26 @@
             let commonData = {
                 manualDateTime: document.getElementById("entryDateTime").value, department: document.getElementById("deptSelect").value, lineName: document.getElementById("lineSelect").value,
                 productName: document.getElementById("productSelect").value, barcode: document.getElementById("barcode").value, operatorName: document.getElementById("operatorName").value,
-                shift: document.getElementById("shift").value, shiftTime: document.getElementById("maintPlannedTime").value, target: document.getElementById("target").value
+                shift: document.getElementById("shift").value, shiftTime: document.getElementById("availPlannedTime").value, target: document.getElementById("target").value
             };
 
-            if(!state.maintSaved && document.getElementById("downtime").value !== "") payloads.push({ entryType: "Maintenance", downtime: document.getElementById("downtime").value, maintReason: getFinalReason("maintReason"), techName: document.getElementById("techName").value, ...commonData });
-            if(!state.prodSaved && document.getElementById("actual").value !== "") payloads.push({ entryType: "Production", actual: document.getElementById("actual").value, lossReason: getFinalReason("lossReason"), ...commonData });
-            if(!state.qualSaved && document.getElementById("goodParts").value !== "") payloads.push({ entryType: "Quality", goodParts: document.getElementById("goodParts").value, rejectParts: document.getElementById("rejectParts").value, rejectReason: getFinalReason("rejectReason"), ...commonData });
+            if(!state.availSaved && (document.getElementById("setupTime").value !== "" || document.getElementById("maintTime").value !== "")) {
+                payloads.push({ 
+                    entryType: "Availability", 
+                    setupTime: document.getElementById("setupTime").value,
+                    maintTime: document.getElementById("maintTime").value,
+                    downtime: document.getElementById("downtime").value, 
+                    maintReason: getFinalReason("maintReason"), 
+                    techName: document.getElementById("techName").value, 
+                    ...commonData 
+                });
+            }
+            if(!state.perfSaved && document.getElementById("actual").value !== "") {
+                payloads.push({ entryType: "Performance", actual: document.getElementById("actual").value, lossReason: getFinalReason("lossReason"), ...commonData });
+            }
+            if(!state.qualSaved && document.getElementById("goodParts").value !== "") {
+                payloads.push({ entryType: "Quality", goodParts: document.getElementById("goodParts").value, rejectParts: document.getElementById("rejectParts").value, rejectReason: getFinalReason("rejectReason"), ...commonData });
+            }
 
             if(payloads.length === 0) { alert("All steps are saved."); btn.innerText = "Submit Data"; btn.disabled = false; return; }
 
