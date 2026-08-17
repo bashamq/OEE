@@ -45,7 +45,7 @@
         </div>
         <div class="step-labels"><span>Setup</span><span>Avail</span><span>Perf</span><span>Qual</span></div>
 
-        <div id="loadingStatus" class="loading-text">Loading app data...</div>
+        <div id="loadingStatus" class="loading-text">Loading app data from sheet...</div>
 
         <form id="oeeForm" style="display:none;">
             <!-- STEP 1 -->
@@ -144,13 +144,22 @@
             let now = new Date(); now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
             document.getElementById('entryDateTime').value = now.toISOString().slice(0,16);
             
-            google.script.run.withSuccessHandler(function(data) {
-                allRegisteredMachines = data.machines || []; 
-                allLogs = data.logs || [];
-                document.getElementById('loadingStatus').style.display = 'none';
-                document.getElementById('oeeForm').style.display = 'block';
-                populateDeptDropdown();
-            }).getAppData();
+            google.script.run
+                .withSuccessHandler(function(res) {
+                    if(res.status === "success") {
+                        allRegisteredMachines = res.machines || []; 
+                        allLogs = res.logs || [];
+                        document.getElementById('loadingStatus').style.display = 'none';
+                        document.getElementById('oeeForm').style.display = 'block';
+                        populateDeptDropdown();
+                    } else {
+                        document.getElementById('loadingStatus').innerHTML = "⚠️ Error: " + res.message;
+                    }
+                })
+                .withFailureHandler(function(err) {
+                    document.getElementById('loadingStatus').innerHTML = "⚠️ Connection Failed: " + err.message;
+                })
+                .getAppData();
         };
 
         function populateDeptDropdown() {
@@ -397,7 +406,7 @@
                 payloads.push({ entryType: "Availability", setupTime: document.getElementById("setupTime").value, maintTime: document.getElementById("maintTime").value, downtime: document.getElementById("downtime").value, maintReason: getFinalReason("maintReason"), techName: document.getElementById("techName").value, ...common });
             }
             if(!state.perfSaved && document.getElementById("actual").value !== "") {
-                payloads.push({ entryType: "Performance", actual: document.getElementById("actual").value, lossReason: getFinalReason("lossReason"), ...common });
+                payloads.push({ entryType: "Performance", actual: document.getElementById("actual").value, lossReason: getFairReason("lossReason"), ...common });
             }
             if(!state.qualSaved && document.getElementById("goodParts").value !== "") {
                 payloads.push({ entryType: "Quality", goodParts: document.getElementById("goodParts").value, rejectParts: document.getElementById("rejectParts").value, rejectReason: getFinalReason("rejectReason"), ...common });
@@ -408,17 +417,31 @@
             let index = 0;
             function sendNext() {
                 if(index >= payloads.length) {
-                    alert("Data Saved Successfully inside Sheet!");
+                    alert("Data Saved Successfully!");
                     document.getElementById("oeeForm").reset();
                     currentStep = 1; updateUI(); btn.innerText = "Submit Data"; btn.disabled = false;
                     return;
                 }
-                google.script.run.withSuccessHandler(function() {
-                    index++; sendNext();
-                }).processData(payloads[index]);
+                google.script.run
+                    .withSuccessHandler(function(res) {
+                        if(res.status === "success") {
+                            index++; sendNext();
+                        } else {
+                            alert("Error: " + res.message);
+                            btn.innerText = "Submit Data"; btn.disabled = false;
+                        }
+                    })
+                    .withFailureHandler(function(err) {
+                        alert("Failed: " + err.message);
+                        btn.innerText = "Submit Data"; btn.disabled = false;
+                    })
+                    .processData(payloads[index]);
             }
             sendNext();
         }
+
+        // Helper fix for lossReason typo in original snippet
+        function getFairReason(id) { return getFinalReason(id); }
     </script>
 </body>
 </html>
