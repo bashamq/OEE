@@ -487,13 +487,11 @@
 
             if(payloads.length === 0) { alert("All steps are saved."); btn.innerText = "Submit Data"; btn.disabled = false; return; }
 
-            // 🔴 ADVANCED ERROR HANDLING LOGIC ADDED HERE 🔴
             (async () => {
                 try { 
                     for (let p of payloads) {
                         let response = await fetch(API_URL, { 
                             method: "POST", 
-                            headers: { "Content-Type": "text/plain;charset=utf-8" },
                             body: JSON.stringify(p) 
                         });
                         let result = await response.json();
