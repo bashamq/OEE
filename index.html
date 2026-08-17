@@ -2,32 +2,30 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OEE Data Entry Wizard</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #e9ecef; padding: 15px; margin: 0; }
         .container { max-width: 450px; margin: 0 auto; background: #ffffff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
-        h2 { text-align: center; color: #2c3e50; margin-bottom: 15px; font-size: 22px; }
+        h2 { text-align: center; color: #2c3e50; margin-bottom: 15px; font-size: 20px; }
         .step-indicator { display: flex; justify-content: space-between; margin-bottom: 20px; padding: 0 10px; }
-        .step-dot { width: 25px; height: 25px; border-radius: 50%; background-color: #bdc3c7; color: white; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; position: relative; z-index: 2; transition: 0.3s; }
-        .step-dot.active { background-color: #3498db; transform: scale(1.1); box-shadow: 0 0 8px rgba(52,152,219,0.5); }
+        .step-dot { width: 25px; height: 25px; border-radius: 50%; background-color: #bdc3c7; color: white; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; }
+        .step-dot.active { background-color: #3498db; }
         .step-dot.completed { background-color: #27ae60; }
-        .step-line { flex: 1; height: 3px; background-color: #bdc3c7; margin-top: 11px; z-index: 1; margin-left: -5px; margin-right: -5px; transition: 0.3s; }
+        .step-line { flex: 1; height: 3px; background-color: #bdc3c7; margin-top: 11px; margin-left: -5px; margin-right: -5px; }
         .step-line.completed { background-color: #27ae60; }
         .step-labels { display: flex; justify-content: space-between; font-size: 11px; color: #7f8c8d; font-weight: 600; margin-top: -15px; margin-bottom: 20px; padding: 0 5px; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 6px; font-weight: 600; color: #34495e; font-size: 14px; }
-        input, select { width: 100%; padding: 12px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 6px; font-size: 15px; transition: 0.3s; }
-        input[readonly], select:disabled, input:disabled { background-color: #e8f8f5; border-color: #1abc9c; color: #16a085; font-weight: bold; cursor: not-allowed; }
-        .step-content { display: none; animation: fadeIn 0.4s; }
+        .form-group { margin-bottom: 12px; }
+        label { display: block; margin-bottom: 5px; font-weight: 600; color: #34495e; font-size: 13px; }
+        input, select { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; }
+        input[readonly], select:disabled, input:disabled { background-color: #e8f8f5; border-color: #1abc9c; color: #16a085; font-weight: bold; }
+        .step-content { display: none; }
         .step-content.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .info-box { background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #dee2e6; margin-bottom: 15px; }
+        .info-box { background: #f8f9fa; padding: 12px; border-radius: 8px; border: 1px solid #dee2e6; margin-bottom: 12px; }
         .completed-box { background-color: #d5f5e3; border-color: #2ecc71; }
-        .status-badge { float: right; font-size: 11px; background: #e74c3c; color: white; padding: 3px 8px; border-radius: 12px; }
+        .status-badge { float: right; font-size: 11px; background: #e74c3c; color: white; padding: 2px 6px; border-radius: 10px; }
         .completed-box .status-badge { background: #27ae60; }
-        .nav-buttons { display: flex; justify-content: space-between; gap: 10px; margin-top: 25px; }
-        button { flex: 1; padding: 14px; color: white; border: none; border-radius: 6px; font-size: 15px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .nav-buttons { display: flex; justify-content: space-between; gap: 10px; margin-top: 20px; }
+        button { flex: 1; padding: 12px; color: white; border: none; border-radius: 6px; font-size: 14px; font-weight: bold; cursor: pointer; }
         .btn-prev { background: #95a5a6; } .btn-next { background: #3498db; } .btn-submit { background: #27ae60; }
         .hidden { display: none !important; }
         .loading-text { font-size: 13px; font-weight: bold; margin-bottom: 15px; text-align: center; color: #f39c12; }
@@ -47,82 +45,78 @@
         </div>
         <div class="step-labels"><span>Setup</span><span>Avail</span><span>Perf</span><span>Qual</span></div>
 
-        <div id="loadingStatus" class="loading-text">Loading registered machines & logs...</div>
+        <div id="loadingStatus" class="loading-text">Loading app data...</div>
 
-        <form id="oeeForm">
-            <!-- ================= STEP 1: SETUP ================= -->
+        <form id="oeeForm" style="display:none;">
+            <!-- STEP 1 -->
             <div class="step-content active" id="step1">
                 <div class="info-box">
                     <div class="form-group"><label>Date & Time</label><input type="datetime-local" id="entryDateTime" required onchange="checkBackendDataForToday()"></div>
-                    <div class="form-group"><label style="color: #2980b9;">Select Department</label><select id="deptSelect" onchange="onDeptChange()"><option value="">-- Choose Dept --</option></select></div>
-                    <div class="form-group"><label style="color: #2980b9;">Select Line</label><select id="lineSelect" onchange="onLineChange()"><option value="">-- Select Line --</option></select></div>
-                    <div class="form-group"><label style="color: #2980b9;">Select Asset (Machine)</label><select id="machineSelect" onchange="onMachineSelect()"><option value="">-- Select Machine --</option></select></div>
-                    <div class="form-group"><label>Barcode # (Asset Number)</label><input type="text" id="barcode" placeholder="Auto-filled" readonly></div>
-                    <div class="form-group"><label style="color: #8e44ad;">Select Product to Run</label><select id="productSelect" onchange="onProductSelect()" required><option value="">-- Select Product --</option></select></div>
+                    <div class="form-group"><label>Select Department</label><select id="deptSelect" onchange="onDeptChange()"><option value="">-- Choose Dept --</option></select></div>
+                    <div class="form-group"><label>Select Line</label><select id="lineSelect" onchange="onLineChange()"><option value="">-- Select Line --</option></select></div>
+                    <div class="form-group"><label>Select Asset (Machine)</label><select id="machineSelect" onchange="onMachineSelect()"><option value="">-- Select Machine --</option></select></div>
+                    <div class="form-group"><label>Barcode #</label><input type="text" id="barcode" placeholder="Auto-filled" readonly></div>
+                    <div class="form-group"><label>Select Product</label><select id="productSelect" onchange="onProductSelect()" required><option value="">-- Select Product --</option></select></div>
                 </div>
                 <div class="form-group"><label>Operator Name</label><input type="text" id="operatorName" required></div>
                 <div class="form-group"><label>Shift</label><select id="shift" required onchange="checkBackendDataForToday()"><option value="">Select Shift</option><option value="Morning">Morning</option><option value="Evening">Evening</option><option value="Night">Night</option></select></div>
             </div>
 
-            <!-- ================= STEP 2: AVAILABILITY ================= -->
+            <!-- STEP 2: AVAILABILITY -->
             <div class="step-content" id="step2">
                 <div class="info-box" id="boxStep2">
                     <span id="availStatus" class="status-badge">Pending</span>
-                    <h3 style="margin-top:0; color:#2c3e50;">Availability</h3>
-                    <p style="font-size:12px; color:#e74c3c; font-weight:bold;">* Required first. Enter 0 if no time lost.</p>
-                    
+                    <h3 style="margin-top:0; font-size:16px; color:#2c3e50;">Availability</h3>
                     <div class="form-group"><label>Planned Time (Mins)</label><input type="number" id="availPlannedTime" value="480" readonly></div>
-                    
                     <div class="downtime-row">
-                        <div class="form-group"><label>Setup / Changeover</label><input type="number" id="setupTime" placeholder="e.g. 15" oninput="calcAvail()"></div>
-                        <div class="form-group"><label>Maintenance Time</label><input type="number" id="maintTime" placeholder="e.g. 20" oninput="calcAvail()"></div>
+                        <div class="form-group"><label>Setup Time</label><input type="number" id="setupTime" placeholder="0" oninput="calcAvail()"></div>
+                        <div class="form-group"><label>Maintenance Time</label><input type="number" id="maintTime" placeholder="0" oninput="calcAvail()"></div>
                     </div>
-
-                    <div class="form-group"><label>Total Downtime (Mins)</label><input type="number" id="downtime" placeholder="0" readonly></div>
-                    <div class="form-group"><label style="color:#2980b9;">Run Time (Mins)</label><input type="number" id="availRunTime" value="480" readonly></div>
+                    <div class="form-group"><label>Total Downtime</label><input type="number" id="downtime" placeholder="0" readonly></div>
+                    <div class="form-group"><label>Run Time (Mins)</label><input type="number" id="availRunTime" value="480" readonly></div>
                     
                     <div id="maintReasonDiv" class="hidden">
-                        <hr style="border: 0; border-top: 1px solid #ccc; margin: 15px 0;">
+                        <hr style="margin: 10px 0;">
                         <div class="form-group">
-                            <label style="color:#e74c3c;">Maintenance Reason (Required)</label>
+                            <label style="color:#e74c3c;">Maintenance Reason</label>
                             <select id="maintReasonSelect" onchange="handleOther('maintReason')"><option value="">-- Select Reason --</option></select>
-                            <input type="text" id="maintReasonOther" class="hidden" placeholder="Type specific reason here..." style="margin-top:8px;">
+                            <input type="text" id="maintReasonOther" class="hidden" placeholder="Type reason..." style="margin-top:5px;">
                         </div>
-                        <div class="form-group"><label>Technician Name</label><input type="text" id="techName" placeholder="Who repaired it?"></div>
+                        <div class="form-group"><label>Technician Name</label><input type="text" id="techName" placeholder="Technician"></div>
                     </div>
                 </div>
             </div>
 
-            <!-- ================= STEP 3: PERFORMANCE ================= -->
+            <!-- STEP 3: PERFORMANCE -->
             <div class="step-content" id="step3">
                 <div class="info-box" id="boxStep3">
                     <span id="perfStatus" class="status-badge">Pending</span>
-                    <h3 style="margin-top:0; color:#2c3e50;">Performance</h3>
-                    <div class="form-group"><label id="lblShiftTime">Available Time (Mins)</label><input type="number" id="shiftTime" value="480" readonly></div>
-                    <div class="form-group"><label>Ideal CT (Min/part)</label><input type="number" step="0.01" id="target" readonly></div>
-                    <div class="form-group"><label>Standard Production (Shift Target)</label><input type="number" id="stdProd" readonly></div>
-                    <hr style="border: 0; border-top: 1px solid #ccc; margin: 15px 0;">
-                    <div class="form-group"><label style="color:#2980b9;">Total Count (Parts Produced)</label><input type="number" id="actual" placeholder="Enter total parts today" disabled oninput="updateInterlocks()"></div>
+                    <h3 style="margin-top:0; font-size:16px; color:#2c3e50;">Performance</h3>
+                    <div class="form-group"><label id="lblShiftTime">Available Time</label><input type="number" id="shiftTime" value="480" readonly></div>
+                    <div class="form-group"><label>Ideal CT</label><input type="number" step="0.01" id="target" readonly></div>
+                    <div class="form-group"><label>Standard Production Target</label><input type="number" id="stdProd" readonly></div>
+                    <hr style="margin: 10px 0;">
+                    <div class="form-group"><label>Total Count Produced</label><input type="number" id="actual" placeholder="Enter total parts" disabled oninput="updateInterlocks()"></div>
                     <div class="form-group hidden" id="lossReasonDiv">
                         <label style="color:#e74c3c;">Performance Loss Reason</label>
-                        <select id="lossReasonSelect" onchange="handleOther('lossReason')" disabled><option value="">-- Select Reason --</option><option value="Other">Other (Type manually)</option></select>
-                        <input type="text" id="lossReasonOther" class="hidden" placeholder="Type specific reason here..." style="margin-top:8px;">
+                        <select id="lossReasonSelect" onchange="handleOther('lossReason')" disabled><option value="">-- Select Reason --</option></select>
+                        <input type="text" id="lossReasonOther" class="hidden" placeholder="Type reason..." style="margin-top:5px;">
                     </div>
                 </div>
             </div>
 
-            <!-- ================= STEP 4: QUALITY ================= -->
+            <!-- STEP 4: QUALITY -->
             <div class="step-content" id="step4">
                 <div class="info-box" id="boxStep4">
                     <span id="qualStatus" class="status-badge">Pending</span>
-                    <h3 style="margin-top:0; color:#2c3e50;">Quality</h3>
-                    <p id="qualProdTarget" style="font-size:12px; color:#16a085; font-weight:bold; margin-top:0;"></p>
-                    <div class="form-group"><label>Good Count</label><input type="number" id="goodParts" placeholder="Enter good parts" disabled oninput="calculateScrap()"></div>
-                    <div class="form-group"><label>Scrap Count (Auto calculated)</label><input type="number" id="rejectParts" readonly placeholder="0"></div>
+                    <h3 style="margin-top:0; font-size:16px; color:#2c3e50;">Quality</h3>
+                    <p id="qualProdTarget" style="font-size:12px; color:#16a085; font-weight:bold; margin:0 0 10px 0;"></p>
+                    <div class="form-group"><label>Good Count</label><input type="number" id="goodParts" placeholder="Good parts" disabled oninput="calculateScrap()"></div>
+                    <div class="form-group"><label>Scrap Count</label><input type="number" id="rejectParts" readonly placeholder="0"></div>
                     <div class="form-group" id="rejectReasonDiv">
                         <label>Reject Reason</label>
-                        <select id="rejectReasonSelect" onchange="handleOther('rejectReason')" disabled><option value="">-- Select Reason --</option><option value="Other">Other (Type manually)</option></select>
-                        <input type="text" id="rejectReasonOther" class="hidden" placeholder="Type specific reason here..." style="margin-top:8px;">
+                        <select id="rejectReasonSelect" onchange="handleOther('rejectReason')" disabled><option value="">-- Select Reason --</option></select>
+                        <input type="text" id="rejectReasonOther" class="hidden" placeholder="Type reason..." style="margin-top:5px;">
                     </div>
                 </div>
             </div>
@@ -136,8 +130,6 @@
     </div>
 
     <script>
-        // 🔴 YAHAN APNA NAYA WEB APP URL LAAZMI DAALEIN (/exec WALA) 🔴
-        const API_URL = "https://script.google.com/macros/s/AKfycbwwFITVl6QeuyJYVYjG0NmqYFkKorFeKiyQh4A6afqg7YM2j0DBxe1Be4nNshLp31N9Vw/exec";
         let allRegisteredMachines = []; let allLogs = [];
         let state = { availSaved: false, perfSaved: false, qualSaved: false };
         let currentStep = 1; let currentTotalProduced = 0;
@@ -151,45 +143,15 @@
         window.onload = function() {
             let now = new Date(); now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
             document.getElementById('entryDateTime').value = now.toISOString().slice(0,16);
-            fetchData();
-        };
-
-        function fetchData(isSilent = false) {
-            let cachedM = localStorage.getItem("mes_machines"); let cachedL = localStorage.getItem("mes_logs");
-            if (!isSilent && cachedM && cachedL) {
-                allRegisteredMachines = JSON.parse(cachedM); allLogs = JSON.parse(cachedL);
+            
+            google.script.run.withSuccessHandler(function(data) {
+                allRegisteredMachines = data.machines || []; 
+                allLogs = data.logs || [];
                 document.getElementById('loadingStatus').style.display = 'none';
-                populateDeptDropdown(); processQRScan();
-            }
-
-            fetch(API_URL).then(res => res.json()).then(data => {
-                allRegisteredMachines = data.machines || []; allLogs = data.logs || [];
-                localStorage.setItem("mes_machines", JSON.stringify(allRegisteredMachines)); 
-                localStorage.setItem("mes_logs", JSON.stringify(allLogs)); 
-                if (!isSilent && !cachedM) {
-                    document.getElementById('loadingStatus').style.display = 'none';
-                    populateDeptDropdown(); processQRScan();
-                }
-                if (isSilent) checkBackendDataForToday();
-            }).catch(e => {
-                if(!isSilent && !cachedM) document.getElementById('loadingStatus').innerText = "⚠️ Error loading data. Please check API URL."; 
-            });
-        }
-
-        function processQRScan() {
-            const assetFromQR = new URLSearchParams(window.location.search).get('asset');
-            if(assetFromQR) {
-                let m = allRegisteredMachines.find(x => String(getSafeVal(x, ["AssetNumber", "Asset#", "Barcode"])).trim() === String(assetFromQR).trim());
-                if (m) {
-                    document.getElementById("deptSelect").value = getSafeVal(m, ["Department", "Dept"]);
-                    onDeptChange();
-                    document.getElementById("lineSelect").value = getSafeVal(m, ["LineName", "Line"]);
-                    onLineChange();
-                    document.getElementById("machineSelect").value = assetFromQR;
-                    onMachineSelect();
-                }
-            }
-        }
+                document.getElementById('oeeForm').style.display = 'block';
+                populateDeptDropdown();
+            }).getAppData();
+        };
 
         function populateDeptDropdown() {
             const select = document.getElementById("deptSelect");
@@ -315,7 +277,7 @@
         function goNext() {
             if(currentStep === 1) {
                 if(!document.getElementById('barcode').value || !document.getElementById('productSelect').value || !document.getElementById('shift').value) {
-                    alert("⚠️ Please fill all fields to continue."); return;
+                    alert("⚠️ Please fill all fields."); return;
                 }
                 checkBackendDataForToday(); 
             }
@@ -323,16 +285,12 @@
                 if(!state.availSaved) {
                     let sVal = document.getElementById('setupTime').value;
                     let mVal = document.getElementById('maintTime').value;
-                    if(sVal === "" && mVal === "") { alert("⚠️ Enter Setup or Maintenance Time (Enter 0 if ran fine)."); return; }
-                    if((parseFloat(mVal) || 0) > 0 && getFinalReason('maintReason') === "") { alert("⚠️ Please select a Maintenance Reason."); return; }
+                    if(sVal === "" && mVal === "") { alert("⚠️ Enter Setup or Maint Time."); return; }
                 }
                 updateInterlocks(); 
             }
             else if(currentStep === 3) {
-                if(!state.perfSaved) {
-                    if(document.getElementById('actual').value === "") { alert("⚠️ Please enter Total Count."); return; }
-                    if(parseFloat(document.getElementById('actual').value) < parseFloat(document.getElementById('stdProd').value) && getFinalReason('lossReason').trim() === "") { alert("⚠️ Target missed! Enter Performance Loss Reason."); return; }
-                }
+                if(!state.perfSaved && document.getElementById('actual').value === "") { alert("⚠️ Enter Total Count."); return; }
                 updateInterlocks(); 
             }
             if(currentStep < 4) { currentStep++; updateUI(); }
@@ -356,39 +314,23 @@
 
             state = { availSaved: false, perfSaved: false, qualSaved: false };
             ["setupTime", "maintTime", "downtime", "maintReasonOther", "techName", "actual", "lossReasonOther", "goodParts", "rejectParts", "rejectReasonOther"].forEach(id => { document.getElementById(id).value = ""; document.getElementById(id).disabled = false; });
-            ["maintReasonSelect", "lossReasonSelect", "rejectReasonSelect"].forEach(id => document.getElementById(id).disabled = false);
             
-            let aLog = reversedLogs.find(l => {
-                let t = String(getSafeVal(l, ["EntryType", "Type"])).trim().toLowerCase();
-                return t === "availability" || t === "maintenance";
-            });
+            let aLog = reversedLogs.find(l => String(getSafeVal(l, ["EntryType", "Type"])).trim().toLowerCase() === "availability");
             if(aLog) {
                 state.availSaved = true; 
                 document.getElementById('setupTime').value = getSafeVal(aLog, ["SetupTime"]) || 0;
                 document.getElementById('maintTime').value = getSafeVal(aLog, ["MaintTime"]) || 0;
-                document.getElementById('downtime').value = getSafeVal(aLog, ["Downtime(Min)", "Downtime"]) || 0;
+                document.getElementById('downtime').value = getSafeVal(aLog, ["Downtime"]) || 0;
                 document.getElementById('techName').value = getSafeVal(aLog, ["TechName"]); 
-                
-                let mReason = getSafeVal(aLog, ["MaintReason", "Maint.Reason"]);
-                if((parseFloat(document.getElementById('maintTime').value) || 0) > 0 || mReason) {
-                    document.getElementById("maintReasonDiv").classList.remove("hidden");
-                    setReasonDropdown("maintReasonSelect", "maintReasonOther", mReason, true);
-                } else { document.getElementById("maintReasonDiv").classList.add("hidden"); }
-
+                setReasonDropdown("maintReasonSelect", "maintReasonOther", getSafeVal(aLog, ["MaintReason"]), true);
                 document.getElementById("boxStep2").classList.add("completed-box"); document.getElementById("availStatus").innerText = "Completed";
                 ["setupTime", "maintTime", "maintReasonSelect", "techName", "maintReasonOther"].forEach(id => document.getElementById(id).disabled = true);
-            } else { 
-                document.getElementById("boxStep2").classList.remove("completed-box"); document.getElementById("availStatus").innerText = "Pending"; 
-                document.getElementById("maintReasonDiv").classList.add("hidden");
-            }
+            } else { document.getElementById("boxStep2").classList.remove("completed-box"); document.getElementById("availStatus").innerText = "Pending"; }
 
-            let pLog = reversedLogs.find(l => {
-                let t = String(getSafeVal(l, ["EntryType", "Type"])).trim().toLowerCase();
-                return t === "performance" || t === "production";
-            });
+            let pLog = reversedLogs.find(l => String(getSafeVal(l, ["EntryType", "Type"])).trim().toLowerCase() === "performance");
             if(pLog) {
-                state.perfSaved = true; document.getElementById('actual').value = getSafeVal(pLog, ["TotalCount", "Actual", "TotalProduced"]);
-                setReasonDropdown("lossReasonSelect", "lossReasonOther", getSafeVal(pLog, ["LossReason", "Low Production Reason"]), true);
+                state.perfSaved = true; document.getElementById('actual').value = getSafeVal(pLog, ["TotalCount", "Actual"]);
+                setReasonDropdown("lossReasonSelect", "lossReasonOther", getSafeVal(pLog, ["LossReason"]), true);
                 document.getElementById("boxStep3").classList.add("completed-box"); document.getElementById("perfStatus").innerText = "Completed";
                 ["actual", "lossReasonSelect", "lossReasonOther"].forEach(id => document.getElementById(id).disabled = true);
             } else { document.getElementById("boxStep3").classList.remove("completed-box"); document.getElementById("perfStatus").innerText = "Pending"; }
@@ -396,7 +338,8 @@
             let qLog = reversedLogs.find(l => String(getSafeVal(l, ["EntryType", "Type"])).trim().toLowerCase() === "quality");
             if(qLog) {
                 state.qualSaved = true; document.getElementById('goodParts').value = getSafeVal(qLog, ["GoodCount", "GoodParts"]);
-                document.getElementById('rejectParts').value = getSafeVal(qLog, ["ScrapCount", "RejectParts"]); setReasonDropdown("rejectReasonSelect", "rejectReasonOther", getSafeVal(qLog, ["RejectReason"]), true);
+                document.getElementById('rejectParts').value = getSafeVal(qLog, ["ScrapCount", "RejectParts"]); 
+                setReasonDropdown("rejectReasonSelect", "rejectReasonOther", getSafeVal(qLog, ["RejectReason"]), true);
                 document.getElementById("boxStep4").classList.add("completed-box"); document.getElementById("qualStatus").innerText = "Completed";
                 ["goodParts", "rejectReasonSelect", "rejectReasonOther"].forEach(id => document.getElementById(id).disabled = true);
             } else { document.getElementById("boxStep4").classList.remove("completed-box"); document.getElementById("qualStatus").innerText = "Pending"; }
@@ -407,105 +350,74 @@
             let setup = parseFloat(document.getElementById("setupTime").value) || 0;
             let maint = parseFloat(document.getElementById("maintTime").value) || 0;
             let total = setup + maint;
-            
             document.getElementById("downtime").value = total;
             document.getElementById("availRunTime").value = Math.max(0, 480 - total);
-            
             if (maint > 0) document.getElementById("maintReasonDiv").classList.remove("hidden");
-            else {
-                document.getElementById("maintReasonDiv").classList.add("hidden");
-                document.getElementById("maintReasonSelect").value = "";
-                document.getElementById("maintReasonOther").value = "";
-            }
+            else document.getElementById("maintReasonDiv").classList.add("hidden");
             updateInterlocks();
         }
 
-        document.getElementById("actual").addEventListener("input", updateInterlocks);
-        document.getElementById("goodParts").addEventListener("input", function() {
-            let good = parseInt(this.value) || 0;
-            if (good > currentTotalProduced) { alert(`⚠️ Max allowed: ${currentTotalProduced}`); this.value = currentTotalProduced; good = currentTotalProduced; }
+        function calculateScrap() {
+            let good = parseInt(document.getElementById("goodParts").value) || 0;
+            if (good > currentTotalProduced) { alert(`Max allowed: ${currentTotalProduced}`); this.value = currentTotalProduced; good = currentTotalProduced; }
             document.getElementById("rejectParts").value = currentTotalProduced - good;
-        });
+        }
 
         function updateInterlocks() {
-            let downtimeVal = document.getElementById("downtime").value;
-            let downtime = downtimeVal === "" ? 0 : parseFloat(downtimeVal);
+            let downtime = parseFloat(document.getElementById("downtime").value) || 0;
+            let avail = 480 - downtime; 
+            document.getElementById("shiftTime").value = avail;
+            let idealCT = parseFloat(document.getElementById("target").value) || 0;
+            if (idealCT > 0) document.getElementById("stdProd").value = Math.floor(avail / idealCT);
             
-            if (downtimeVal !== "" || state.availSaved || document.getElementById("setupTime").value !== "" || document.getElementById("maintTime").value !== "") {
-                let avail = 480 - downtime; document.getElementById("shiftTime").value = avail;
-                document.getElementById("lblShiftTime").innerHTML = downtime > 0 ? `Available Time (Mins) <span style="color:#e74c3c; font-size:12px;">(-${downtime}m Downtime)</span>` : `Available Time (Mins)`;
-                let idealCT = parseFloat(document.getElementById("target").value) || 0;
-                if (idealCT > 0) document.getElementById("stdProd").value = Math.floor(avail / idealCT);
-                if (!state.perfSaved) { document.getElementById("actual").disabled = false; document.getElementById("lossReasonSelect").disabled = false; }
-            } else { ["actual", "lossReasonSelect"].forEach(id => document.getElementById(id).disabled = true); }
-
+            if(!state.perfSaved) document.getElementById("actual").disabled = false;
             let actual = parseFloat(document.getElementById("actual").value) || 0;
             document.getElementById("lossReasonDiv").classList.toggle("hidden", !(actual > 0 && actual < (parseFloat(document.getElementById("stdProd").value) || 0)));
 
-            if (document.getElementById("actual").value !== "" || state.perfSaved) {
-                currentTotalProduced = actual; document.getElementById("qualProdTarget").innerText = `Total Parts Produced: ${actual}`; document.getElementById("goodParts").placeholder = `Max allowed: ${actual}`;
-                if (!state.qualSaved) { document.getElementById("goodParts").disabled = false; document.getElementById("rejectReasonSelect").disabled = false; }
-            } else { ["goodParts", "rejectReasonSelect"].forEach(id => document.getElementById(id).disabled = true); }
+            if (actual > 0 || state.perfSaved) {
+                currentTotalProduced = actual || parseFloat(document.getElementById("actual").value);
+                document.getElementById("qualProdTarget").innerText = `Total Parts: ${currentTotalProduced}`;
+                if(!state.qualSaved) document.getElementById("goodParts").disabled = false;
+            }
         }
 
         function getFinalReason(id) { let val = document.getElementById(id + "Select").value; return val === "Other" ? document.getElementById(id + "Other").value : val; }
 
         function submitData() {
-            if(currentStep === 2 && !state.availSaved && document.getElementById('setupTime').value === "" && document.getElementById('maintTime').value === "") { alert("⚠️ Enter Setup or Maintenance Time."); return; }
-            if(currentStep === 3 && !state.perfSaved && document.getElementById('actual').value === "") { alert("⚠️ Enter Total Count."); return; }
-            if(currentStep === 4 && !state.qualSaved && document.getElementById('goodParts').value === "") { alert("⚠️ Enter Good Count."); return; }
-
             const btn = document.getElementById("btnSubmit"); btn.innerText = "Saving..."; btn.disabled = true;
             let payloads = [];
-            let commonData = {
-                manualDateTime: document.getElementById("entryDateTime").value, department: document.getElementById("deptSelect").value, lineName: document.getElementById("lineSelect").value,
-                productName: document.getElementById("productSelect").value, barcode: document.getElementById("barcode").value, operatorName: document.getElementById("operatorName").value,
+            let common = {
+                manualDateTime: document.getElementById("entryDateTime").value, department: document.getElementById("deptSelect").value, 
+                lineName: document.getElementById("lineSelect").value, productName: document.getElementById("productSelect").value, 
+                barcode: document.getElementById("barcode").value, operatorName: document.getElementById("operatorName").value,
                 shift: document.getElementById("shift").value, shiftTime: document.getElementById("availPlannedTime").value, target: document.getElementById("target").value
             };
 
-            if(!state.availSaved && (document.getElementById("setupTime").value !== "" || document.getElementById("maintTime").value !== "")) {
-                payloads.push({ 
-                    entryType: "Availability", 
-                    setupTime: document.getElementById("setupTime").value,
-                    maintTime: document.getElementById("maintTime").value,
-                    downtime: document.getElementById("downtime").value, 
-                    maintReason: getFinalReason("maintReason"), 
-                    techName: document.getElementById("techName").value, 
-                    ...commonData 
-                });
+            if(!state.availSaved) {
+                payloads.push({ entryType: "Availability", setupTime: document.getElementById("setupTime").value, maintTime: document.getElementById("maintTime").value, downtime: document.getElementById("downtime").value, maintReason: getFinalReason("maintReason"), techName: document.getElementById("techName").value, ...common });
             }
             if(!state.perfSaved && document.getElementById("actual").value !== "") {
-                payloads.push({ entryType: "Performance", actual: document.getElementById("actual").value, lossReason: getFinalReason("lossReason"), ...commonData });
+                payloads.push({ entryType: "Performance", actual: document.getElementById("actual").value, lossReason: getFinalReason("lossReason"), ...common });
             }
             if(!state.qualSaved && document.getElementById("goodParts").value !== "") {
-                payloads.push({ entryType: "Quality", goodParts: document.getElementById("goodParts").value, rejectParts: document.getElementById("rejectParts").value, rejectReason: getFinalReason("rejectReason"), ...commonData });
+                payloads.push({ entryType: "Quality", goodParts: document.getElementById("goodParts").value, rejectParts: document.getElementById("rejectParts").value, rejectReason: getFinalReason("rejectReason"), ...common });
             }
 
-            if(payloads.length === 0) { alert("All steps are saved."); btn.innerText = "Submit Data"; btn.disabled = false; return; }
+            if(payloads.length === 0) { alert("Nothing to save."); btn.innerText = "Submit Data"; btn.disabled = false; return; }
 
-            (async () => {
-                try { 
-                    for (let p of payloads) {
-                        let response = await fetch(API_URL, { 
-                            method: "POST", 
-                            headers: { "Content-Type": "text/plain;charset=utf-8" },
-                            redirect: "follow",
-                            body: JSON.stringify(p) 
-                        });
-                        let result = await response.json();
-                        if (result.status === "error") throw new Error(result.message);
-                    }
-                    alert("Data Saved Successfully!"); 
+            let index = 0;
+            function sendNext() {
+                if(index >= payloads.length) {
+                    alert("Data Saved Successfully inside Sheet!");
                     document.getElementById("oeeForm").reset();
-                    let now = new Date(); now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-                    document.getElementById('entryDateTime').value = now.toISOString().slice(0,16);
-                    currentStep = 1; updateUI(); btn.innerText = "Submit Data"; btn.disabled = false; fetchData(true);
-                } catch(e) { 
-                    alert("⚠️ Error saving data!\nDetails: " + e.message + "\n\n(Ensure API_URL ends with /exec and Execute as is set to Me)"); 
-                    btn.innerText = "Submit Data"; 
-                    btn.disabled = false; 
+                    currentStep = 1; updateUI(); btn.innerText = "Submit Data"; btn.disabled = false;
+                    return;
                 }
-            })();
+                google.script.run.withSuccessHandler(function() {
+                    index++; sendNext();
+                }).processData(payloads[index]);
+            }
+            sendNext();
         }
     </script>
 </body>
