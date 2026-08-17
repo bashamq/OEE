@@ -3,38 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Machine & Reason Registration</title>
+    <title>Machine & Product Registration</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background-color: #e9ecef; padding: 20px; }
         .container { max-width: 500px; margin: 0 auto; background: #fff; padding: 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         h2 { text-align: center; color: #2c3e50; margin-bottom: 20px; }
-        
         .toggle-container { display: flex; gap: 10px; margin-bottom: 25px; background: #ecf0f1; padding: 5px; border-radius: 8px; }
         .toggle-btn { flex: 1; padding: 12px; font-size: 15px; font-weight: bold; border: none; border-radius: 5px; cursor: pointer; transition: 0.3s; }
         .toggle-btn.active { background-color: #2980b9; color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
         .toggle-btn:not(.active) { background-color: transparent; color: #7f8c8d; }
-        
         .form-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 5px; font-weight: bold; color: #34495e; }
         input[type="text"], input[type="number"], select { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 5px; }
         .hint { font-size: 12px; color: #7f8c8d; margin-top: 3px; display: block; }
-        
         .final-op-box { background:#e8f8f5; padding:15px; border-radius:8px; border:2px solid #1abc9c; margin-bottom: 15px;}
         .final-op-label { display:flex; align-items:center; gap:10px; margin:0; cursor:pointer; font-size:16px; color:#16a085; font-weight:bold;}
         .final-op-label input { width:22px; height:22px; cursor:pointer; }
-        
-        button.submit-btn { width: 100%; padding: 12px; background: #27ae60; color: white; border: none; border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; transition: 0.3s;}
-        
+        button.submit-btn { width: 100%; padding: 12px; background: #27ae60; color: white; border: none; border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px;}
         #qrSection { text-align: center; display: none; margin-top: 20px; }
         .label-card { width: 320px; margin: 0 auto; padding: 25px 20px; background: #ffffff; border: 3px solid #2c3e50; border-radius: 12px; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
-        .label-card h2 { margin: 0; font-size: 26px; color: #000; text-transform: uppercase; letter-spacing: 1px; }
+        .label-card h2 { margin: 0; font-size: 26px; color: #000; text-transform: uppercase; }
         .asset-text { font-size: 18px; font-weight: bold; color: #333; margin: 5px 0 5px 0; }
         .line-text { font-size: 16px; font-weight: 600; color: #16a085; margin: 0 0 15px 0; text-transform: uppercase; }
         .qr-wrapper { display: flex; justify-content: center; margin: 10px 0; padding: 10px; background: #fff; }
         .op-text { font-size: 16px; font-weight: bold; color: #2980b9; margin: 15px 0 0 0; border-top: 2px dashed #bdc3c7; padding-top: 15px; text-transform: uppercase; }
-        
         .action-buttons { display: flex; gap: 10px; margin-top: 25px; }
         .btn-print { background: #27ae60; flex: 1; padding: 10px; border:none; border-radius:5px; color:white; cursor:pointer;}
         .btn-save { background: #f39c12; flex: 1; padding: 10px; border:none; border-radius:5px; color:white; cursor:pointer;}
@@ -44,58 +38,55 @@
 <body>
     <div class="container" id="mainContainer">
         <h2>System Registration</h2>
-        
         <div class="toggle-container">
-            <button type="button" id="btnModeMachine" class="toggle-btn active" onclick="setMode('machine')">⚙️ For Machine/Station</button>
-            <button type="button" id="btnModeReason" class="toggle-btn" onclick="setMode('reason')">📋 For Reasons</button>
+            <button type="button" id="btnModeMachine" class="toggle-btn active" onclick="setMode('machine')">⚙️ For Machine/Product</button>
+            <button type="button" id="btnModeReason" class="toggle-btn" onclick="setMode('reason')">📋 For Line Reasons</button>
         </div>
 
         <form id="registerForm">
+            <!-- NEW: Department Selection -->
             <div class="form-group">
-                <label>Select Production Line</label>
-                <select id="lineName" required>
-                    <option value="">-- Select Line --</option>
-                    <option value="Axle 385">1. Axle 385</option>
-                    <option value="Sump 385">2. Sump 385</option>
-                    <option value="Hyd. Lift Cover">3. Hyd. Lift Cover</option>
-                    <option value="Cylinder 240/385">4. Cylinder 240/385</option>
-                    <option value="FAS 350">5. FAS 350</option>
+                <label>Select Department</label>
+                <select id="department" required>
+                    <option value="">-- Select Department --</option>
+                    <option value="Machining">Machining</option>
+                    <option value="Assembly">Assembly</option>
+                    <option value="Packaging">Packaging</option>
                 </select>
             </div>
 
+            <div class="form-group">
+                <label>Select Production Line</label>
+                <input type="text" id="lineName" placeholder="e.g. Axle 385" required>
+            </div>
+
             <div id="machineSpecificFields">
-                <!-- NAYA FEATURE: SEQUENCE & FINAL OP -->
+                <!-- NEW: Product Name -->
+                <div class="form-group"><label>Product / Part Name</label><input type="text" id="productName" placeholder="e.g. Shaft Assembly A" required></div>
+
                 <div class="form-group" style="display: flex; gap: 10px;">
-                    <div style="flex:1;">
-                        <label>Operation Sequence #</label>
-                        <input type="number" id="opSequence" placeholder="e.g. 1, 2, 3..." required>
-                    </div>
+                    <div style="flex:1;"><label>Op Sequence #</label><input type="number" id="opSequence" placeholder="1, 2, 3..." required></div>
                 </div>
                 
                 <div class="final-op-box">
-                    <label class="final-op-label">
-                        <input type="checkbox" id="isFinalOp">
-                        This is the FINAL Operation of the Line
-                    </label>
-                    <p class="hint" style="margin-left:32px;">Dashboard will calculate Line's Total Output based ONLY on this station.</p>
+                    <label class="final-op-label"><input type="checkbox" id="isFinalOp">This is the FINAL Operation</label>
                 </div>
 
-                <div class="form-group"><label>Machine Name (or Manual Station Name)</label><input type="text" id="machineName" placeholder="e.g. Lathe 1 OR Deburring Table" required></div>
-                <div class="form-group"><label>Brand / Make</label><input type="text" id="brand" placeholder="e.g. Fanuc OR Manual" required></div>
-                <div class="form-group"><label>Asset Number (Barcode)</label><input type="text" id="assetNumber" placeholder="e.g. 14185 OR MAN-01" required></div>
-                <div class="form-group"><label>Operation</label><input type="text" id="operation" placeholder="e.g. Turning, Deburring" required></div>
-                <div class="form-group"><label>Ideal Cycle Time (Min)</label><input type="number" step="0.01" id="idealCT" required></div>
-                <div class="form-group"><label>Standard Production (Shift)</label><input type="number" id="stdProduction" required></div>
+                <div class="form-group"><label>Machine Name</label><input type="text" id="machineName" placeholder="e.g. Lathe 1" required></div>
+                <div class="form-group"><label>Brand / Make</label><input type="text" id="brand" placeholder="e.g. Fanuc" required></div>
+                <div class="form-group"><label>Asset Number (Barcode)</label><input type="text" id="assetNumber" placeholder="e.g. 14185" required></div>
+                <div class="form-group"><label>Operation</label><input type="text" id="operation" placeholder="e.g. Turning" required></div>
+                <div class="form-group"><label>Ideal Cycle Time (Min) for this Product</label><input type="number" step="0.01" id="idealCT" required></div>
+                <div class="form-group"><label>Standard Production (Shift Target)</label><input type="number" id="stdProduction" required></div>
                 <hr style="border: 0; border-top: 1px solid #ccc; margin: 20px 0;">
             </div>
             
             <h3 style="color:#2c3e50; font-size:16px;" id="reasonHeading">Set Common Reasons (Optional)</h3>
-            
-            <div class="form-group"><label>Maintenance Reasons</label><input type="text" id="maintReasons" placeholder="e.g. Motor Heat, Oil Leak"><span class="hint">Use commas (,) to separate.</span></div>
-            <div class="form-group"><label>Performance Loss Reasons</label><input type="text" id="prodReasons" placeholder="e.g. Tool Change, Setup"><span class="hint">Use commas (,) to separate.</span></div>
-            <div class="form-group"><label>Quality (Reject) Reasons</label><input type="text" id="qualReasons" placeholder="e.g. Porosity, Undersize"><span class="hint">Use commas (,) to separate.</span></div>
+            <div class="form-group"><label>Maintenance Reasons</label><input type="text" id="maintReasons" placeholder="e.g. Motor Heat, Oil Leak"></div>
+            <div class="form-group"><label>Performance Loss Reasons</label><input type="text" id="prodReasons" placeholder="e.g. Tool Change, Setup"></div>
+            <div class="form-group"><label>Quality (Reject) Reasons</label><input type="text" id="qualReasons" placeholder="e.g. Porosity, Undersize"></div>
 
-            <button type="submit" id="submitBtn" class="submit-btn">Register Station & Generate QR</button>
+            <button type="submit" id="submitBtn" class="submit-btn">Register & Generate QR</button>
         </form>
 
         <div id="qrSection">
@@ -106,10 +97,7 @@
                 <div id="qrcode" class="qr-wrapper"></div>
                 <p id="lblOperation" class="op-text">Operation Name</p>
             </div>
-            <div class="action-buttons">
-                <button class="btn-print" onclick="printQR()">🖨️ Print</button>
-                <button class="btn-save" onclick="saveQR()">💾 Save Image</button>
-            </div>
+            <div class="action-buttons"><button class="btn-print" onclick="printQR()">🖨️ Print</button><button class="btn-save" onclick="saveQR()">💾 Save Image</button></div>
             <button class="btn-back" onclick="location.reload()">⬅️ Register Another</button>
         </div>
     </div>
@@ -121,13 +109,13 @@
         function setMode(mode) {
             currentMode = mode;
             const machineFields = document.getElementById('machineSpecificFields');
-            const reqFields = ['opSequence', 'machineName', 'brand', 'assetNumber', 'operation', 'idealCT', 'stdProduction'];
+            const reqFields = ['productName', 'opSequence', 'machineName', 'brand', 'assetNumber', 'operation', 'idealCT', 'stdProduction'];
 
             if (mode === 'machine') {
                 machineFields.style.display = 'block';
                 document.getElementById('btnModeMachine').classList.add('active');
                 document.getElementById('btnModeReason').classList.remove('active');
-                document.getElementById('submitBtn').innerText = "Register Station & Generate QR";
+                document.getElementById('submitBtn').innerText = "Register & Generate QR";
                 document.getElementById('submitBtn').style.backgroundColor = "#27ae60";
                 reqFields.forEach(id => document.getElementById(id).required = true);
             } else {
@@ -148,7 +136,9 @@
 
             const data = {
                 formType: "registerMachine", 
+                department: document.getElementById("department").value,
                 lineName: document.getElementById("lineName").value,
+                productName: document.getElementById("productName").value || "",
                 machineName: document.getElementById("machineName").value || "",
                 brand: document.getElementById("brand").value || "",
                 assetNumber: document.getElementById("assetNumber").value || "",
@@ -158,29 +148,25 @@
                 maintReasons: document.getElementById("maintReasons").value, 
                 prodReasons: document.getElementById("prodReasons").value,   
                 qualReasons: document.getElementById("qualReasons").value,
-                opSequence: document.getElementById("opSequence").value || "", // Naya field
-                isFinalOp: document.getElementById("isFinalOp").checked ? "TRUE" : "FALSE" // Naya field
+                opSequence: document.getElementById("opSequence").value || "", 
+                isFinalOp: document.getElementById("isFinalOp").checked ? "TRUE" : "FALSE" 
             };
 
             fetch("https://script.google.com/macros/s/AKfycbyRkmh4_ofJjAftObCfnX9gmhqCa4xcsvSp143BXCUdQujfy4gaFkBMlEhsVrwa61HugQ/exec", {
                 method: "POST", body: JSON.stringify(data)
-            })
-            .then(response => response.json())
-            .then(result => {
+            }).then(res => res.json()).then(result => {
                 if(currentMode === 'machine') {
-                    alert("Station Registered Successfully!");
+                    alert("Registered Successfully!");
                     generateQR(data.assetNumber, data.machineName, data.operation, data.lineName);
                 } else {
                     alert("Line Reasons Saved Successfully!");
                     document.getElementById("registerForm").reset();
-                    btn.innerText = "Save Reasons for Line"; 
-                    btn.disabled = false;
+                    btn.innerText = "Save Reasons for Line"; btn.disabled = false;
                 }
-            })
-            .catch(error => { alert("Error saving data!"); btn.innerText = originalText; btn.disabled = false; });
+            }).catch(e => { alert("Error saving data!"); btn.innerText = originalText; btn.disabled = false; });
         });
 
-        function generateQR(asset, name, operation, lineName) {
+        function generateQR(asset, name, op, line) {
             document.getElementById("registerForm").style.display = "none";
             document.querySelector(".toggle-container").style.display = "none";
             document.querySelector("h2").style.display = "none"; 
@@ -188,25 +174,17 @@
             
             document.getElementById("lblMachineName").innerText = name;
             document.getElementById("lblAssetNum").innerText = "Asset #: " + asset;
-            document.getElementById("lblLineName").innerText = "Line: " + lineName;
-            document.getElementById("lblOperation").innerText = "Op: " + operation;
+            document.getElementById("lblLineName").innerText = "Line: " + line;
+            document.getElementById("lblOperation").innerText = "Op: " + op;
             
-            const qrText = ENTRY_FORM_URL + "?asset=" + asset;
-            document.getElementById("qrcode").innerHTML = ""; 
-            new QRCode(document.getElementById("qrcode"), { 
-                text: qrText, width: 180, height: 180, colorDark : "#000000", colorLight : "#ffffff"
-            });
+            new QRCode(document.getElementById("qrcode"), { text: ENTRY_FORM_URL + "?asset=" + asset, width: 180, height: 180 });
         }
-
         function printQR() { window.print(); }
         function saveQR() {
-            const label = document.getElementById("printLabel");
-            const assetName = document.getElementById("lblAssetNum").innerText.split(": ")[1];
-            html2canvas(label).then(canvas => {
+            html2canvas(document.getElementById("printLabel")).then(canvas => {
                 const link = document.createElement('a');
-                link.download = `Station_${assetName}_QR.png`;
-                link.href = canvas.toDataURL("image/png");
-                link.click();
+                link.download = `QR_${document.getElementById("lblAssetNum").innerText.split(": ")[1]}.png`;
+                link.href = canvas.toDataURL(); link.click();
             });
         }
     </script>
