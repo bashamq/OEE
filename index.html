@@ -2,96 +2,123 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OEE Data Entry Wizard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>OEE Live Data Entry</title>
+    <!-- Google Fonts for Professional Look -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        /* LIVE BACKGROUND ANIMATION */
+        @keyframes panBackground {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
         body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            /* Natural Trees & Grass Background Theme */
-            background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.5)), url('https://images.unsplash.com/photo-1542273917363-3b1817f69a2d?auto=format&fit=crop&w=1920&q=80') no-repeat center center fixed;
-            background-size: cover;
-            padding: 15px; 
+            font-family: 'Poppins', sans-serif; 
             margin: 0; 
+            padding: 15px; 
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
+            /* High Quality Industrial Background */
+            background-image: url('https://images.unsplash.com/photo-1565514020179-026b92b84bb6?auto=format&fit=crop&w=1920&q=80');
+            background-size: cover;
+            background-position: center;
+            animation: panBackground 40s infinite alternate linear;
         }
+
+        /* GLASSMORPHISM CONTAINER */
         .container { 
             width: 100%;
             max-width: 480px; 
-            background: rgba(255, 255, 255, 0.95); 
-            backdrop-filter: blur(10px);
-            padding: 25px; 
+            background: rgba(255, 255, 255, 0.85); 
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            padding: 25px 20px; 
             border-radius: 16px; 
             box-shadow: 0 10px 30px rgba(0,0,0,0.3); 
+            border: 1px solid rgba(255, 255, 255, 0.5);
         }
-        h2 { text-align: center; color: #1e3d2f; margin-bottom: 20px; font-size: 24px; font-weight: 700; letter-spacing: 0.5px; }
-        .step-indicator { display: flex; justify-content: space-between; margin-bottom: 25px; padding: 0 10px; }
-        .step-dot { width: 30px; height: 30px; border-radius: 50%; background-color: #cbd5e1; color: white; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: bold; position: relative; z-index: 2; transition: 0.3s; }
-        .step-dot.active { background-color: #27ae60; transform: scale(1.15); box-shadow: 0 0 12px rgba(39,174,96,0.5); }
-        .step-dot.completed { background-color: #27ae60; }
-        .step-line { flex: 1; height: 4px; background-color: #cbd5e1; margin-top: 13px; z-index: 1; margin-left: -6px; margin-right: -6px; transition: 0.3s; }
-        .step-line.completed { background-color: #27ae60; }
-        .step-labels { display: flex; justify-content: space-between; font-size: 12px; color: #4b5563; font-weight: 700; margin-top: -18px; margin-bottom: 25px; padding: 0 5px; text-transform: uppercase; }
-        .form-group { margin-bottom: 16px; }
-        label { display: block; margin-bottom: 6px; font-weight: 600; color: #2d3748; font-size: 14px; }
+
+        h2 { text-align: center; color: #1a252f; margin-top: 0; margin-bottom: 20px; font-size: 24px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
         
-        /* Professional & Mobile-Friendly Dropdowns & Inputs */
+        /* STEP PROGRESS BAR */
+        .step-indicator { display: flex; justify-content: space-between; margin-bottom: 20px; padding: 0 10px; position: relative; }
+        .step-dot { width: 30px; height: 30px; border-radius: 50%; background-color: #e0e6ed; color: #7f8c8d; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: bold; position: relative; z-index: 2; transition: 0.4s ease; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .step-dot.active { background-color: #2980b9; color: white; transform: scale(1.15); box-shadow: 0 0 12px rgba(41,128,185,0.6); }
+        .step-dot.completed { background-color: #27ae60; color: white; }
+        .step-line { flex: 1; height: 4px; background-color: #e0e6ed; margin-top: 13px; z-index: 1; margin-left: -5px; margin-right: -5px; transition: 0.4s ease; }
+        .step-line.completed { background-color: #27ae60; }
+        .step-labels { display: flex; justify-content: space-between; font-size: 11px; color: #34495e; font-weight: 600; margin-top: -15px; margin-bottom: 20px; padding: 0 5px; text-transform: uppercase; }
+        
+        .form-group { margin-bottom: 16px; }
+        label { display: block; margin-bottom: 6px; font-weight: 600; color: #2c3e50; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        /* PROFESSIONAL MOBILE-FRIENDLY INPUTS & DROPDOWNS */
         input, select { 
             width: 100%; 
-            padding: 14px 12px; 
+            padding: 14px; 
             box-sizing: border-box; 
-            border: 2px solid #e2e8f0; 
+            border: 1px solid #cbd5e1; 
             border-radius: 10px; 
-            font-size: 16px; /* Prevents auto-zoom on mobile */
-            background-color: #f8fafc;
-            transition: all 0.3s ease;
-            appearance: none;
+            font-size: 16px; /* 16px prevents mobile auto-zoom */
+            font-family: 'Poppins', sans-serif;
+            background-color: rgba(255,255,255,0.9);
+            color: #1e293b;
+            transition: 0.3s;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
         }
+        input:focus, select:focus { outline: none; border-color: #3498db; box-shadow: 0 0 0 3px rgba(52,152,219,0.2); }
+        
+        /* CUSTOM ARROW FOR SELECT */
         select {
-            background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%231e3d2f%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2334495e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
             background-repeat: no-repeat;
-            background-position: right 14px center;
-            background-size: 12px auto;
-            padding-right: 35px;
+            background-position: right 12px center;
+            background-size: 18px;
+            padding-right: 40px;
         }
-        input:focus, select:focus {
-            border-color: #27ae60;
-            background-color: #fff;
-            outline: none;
-            box-shadow: 0 0 0 4px rgba(39, 174, 96, 0.15);
-        }
-        input[readonly], select:disabled, input:disabled { background-color: #edf2f7; border-color: #cbd5e1; color: #718096; font-weight: bold; cursor: not-allowed; }
+
+        input[readonly], select:disabled, input:disabled { background-color: #f1f5f9; border-color: #cbd5e1; color: #64748b; font-weight: 600; cursor: not-allowed; }
         
-        .step-content { display: none; animation: fadeIn 0.4s ease-in-out; }
+        /* SLIDE TOGGLE BUTTONS (SEGMENTED CONTROL) */
+        .segmented-control { display: flex; background: #e2e8f0; border-radius: 10px; overflow: hidden; padding: 4px; gap: 4px; }
+        .segmented-control input[type="radio"] { display: none; }
+        .segmented-control label { flex: 1; text-align: center; padding: 10px 5px; cursor: pointer; transition: 0.3s ease; font-size: 13px; font-weight: 600; color: #475569; border-radius: 8px; }
+        .segmented-control input[type="radio"]:checked + label { background: #3498db; color: white; box-shadow: 0 2px 8px rgba(52,152,219,0.4); transform: scale(1.02); }
+
+        .step-content { display: none; animation: slideUp 0.4s ease forwards; opacity: 0; transform: translateY(15px); }
         .step-content.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideUp { to { opacity: 1; transform: translateY(0); } }
         
-        .info-box { background: #f0fdf4; padding: 18px; border-radius: 12px; border: 1px solid #bbf7d0; margin-bottom: 15px; }
-        .completed-box { background-color: #e6fffa; border-color: #319795; }
-        .status-badge { float: right; font-size: 11px; font-weight: 700; background: #e53e3e; color: white; padding: 4px 10px; border-radius: 20px; text-transform: uppercase; }
-        .completed-box .status-badge { background: #319795; }
+        .info-box { background: rgba(255,255,255,0.6); padding: 18px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.8); margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
+        .completed-box { background-color: rgba(213, 245, 227, 0.7); border-color: #2ecc71; }
+        .status-badge { float: right; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; background: #e74c3c; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold; }
+        .completed-box .status-badge { background: #27ae60; }
         
         .nav-buttons { display: flex; justify-content: space-between; gap: 12px; margin-top: 25px; }
-        button.nav-btn { flex: 1; padding: 14px; color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
-        .btn-prev { background: #64748b; } .btn-prev:hover { background: #475569; }
-        .btn-next { background: #2563eb; } .btn-next:hover { background: #1d4ed8; }
-        .btn-submit { background: #16a34a; } .btn-submit:hover { background: #15803d; }
-        
+        button { flex: 1; padding: 15px; color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 700; text-transform: uppercase; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        button:active { transform: translateY(2px); box-shadow: none; }
+        .btn-prev { background: #7f8c8d; } 
+        .btn-prev:hover { background: #6c7a7d; }
+        .btn-next { background: #2980b9; } 
+        .btn-next:hover { background: #2471a3; }
+        .btn-submit { background: #27ae60; }
+        .btn-submit:hover { background: #219150; }
         .hidden { display: none !important; }
-        .loading-text { font-size: 14px; font-weight: bold; margin-bottom: 15px; text-align: center; color: #27ae60; }
+        .loading-text { font-size: 14px; font-weight: bold; margin-bottom: 15px; text-align: center; color: #d35400; background: rgba(255,255,255,0.8); padding: 10px; border-radius: 8px;}
+        
         .downtime-row { display: flex; gap: 12px; }
         .downtime-row .form-group { flex: 1; }
-        
-        .radio-group { display: flex; gap: 15px; margin-top: 6px; }
-        .radio-label { display: flex; align-items: center; gap: 6px; font-weight: 600; color: #2d3748; cursor: pointer; font-size: 14px; }
-        .radio-label input { width: 18px; height: 18px; accent-color: #27ae60; cursor: pointer; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2>OEE Data Entry</h2>
+        <h2>OEE Live Data</h2>
         
         <div class="step-indicator">
             <div class="step-dot active" id="dot1">1</div><div class="step-line" id="line1"></div>
@@ -101,23 +128,30 @@
         </div>
         <div class="step-labels"><span>Setup</span><span>Avail</span><span>Perf</span><span>Qual</span></div>
 
-        <div id="loadingStatus" class="loading-text">Loading registered machines & logs...</div>
+        <div id="loadingStatus" class="loading-text">🔄 Syncing with Master System...</div>
 
-        <form id="oeeForm" style="display:none;">
+        <form id="oeeForm">
             <!-- ================= STEP 1: SETUP ================= -->
             <div class="step-content active" id="step1">
                 <div class="info-box">
                     <div class="form-group"><label>Date & Time</label><input type="datetime-local" id="entryDateTime" required onchange="checkBackendDataForToday()"></div>
                     
-                    <div class="form-group"><label>Select Department</label><select id="deptSelect" onchange="onDeptChange()"><option value="">-- Choose Dept --</option></select></div>
-                    <div class="form-group"><label>Select Line</label><select id="lineSelect" onchange="onLineChange()"><option value="">-- Select Line --</option></select></div>
-                    <div class="form-group"><label>Select Asset (Machine)</label><select id="machineSelect" onchange="onMachineSelect()"><option value="">-- Select Machine --</option></select></div>
+                    <div class="form-group"><label style="color: #2980b9;">Department</label><select id="deptSelect" onchange="onDeptChange()"><option value="">-- Choose Dept --</option></select></div>
+                    <div class="form-group"><label style="color: #2980b9;">Production Line</label><select id="lineSelect" onchange="onLineChange()"><option value="">-- Select Line --</option></select></div>
                     
-                    <div class="form-group"><label>Barcode # (Asset Number)</label><input type="text" id="barcode" placeholder="Auto-filled" readonly></div>
+                    <div class="form-group">
+                        <label style="color: #2980b9;">Select Asset (Machine)</label>
+                        <select id="machineSelect" onchange="onMachineSelect()"><option value="">-- Select Machine --</option></select>
+                    </div>
                     
-                    <div class="form-group"><label>Select Product to Run</label><select id="productSelect" onchange="onProductSelect()" required><option value="">-- Select Product --</option></select></div>
+                    <div class="form-group"><label>Barcode #</label><input type="text" id="barcode" placeholder="Auto-filled" readonly></div>
+                    
+                    <div class="form-group">
+                        <label style="color: #8e44ad;">Product to Run</label>
+                        <select id="productSelect" onchange="onProductSelect()" required><option value="">-- Select Product --</option></select>
+                    </div>
                 </div>
-                <div class="form-group"><label>Operator Name</label><input type="text" id="operatorName" placeholder="Enter Operator Name" required></div>
+                <div class="form-group"><label>Operator Name</label><input type="text" id="operatorName" placeholder="Enter name" required></div>
                 <div class="form-group"><label>Shift</label><select id="shift" required onchange="checkBackendDataForToday()"><option value="">Select Shift</option><option value="Morning">Morning</option><option value="Evening">Evening</option><option value="Night">Night</option></select></div>
             </div>
 
@@ -125,37 +159,46 @@
             <div class="step-content" id="step2">
                 <div class="info-box" id="boxStep2">
                     <span id="availStatus" class="status-badge">Pending</span>
-                    <h3 style="margin-top:0; color:#1e3d2f; font-size:18px;">Availability</h3>
-                    <p style="font-size:12px; color:#e53e3e; font-weight:600;">* Enter 0 if no time lost.</p>
+                    <h3 style="margin-top:0; color:#2c3e50; font-weight:700;">Availability</h3>
+                    <p style="font-size:11px; color:#e74c3c; font-weight:600; margin-top:-5px;">* Enter 0 if no time lost.</p>
                     
                     <div class="form-group"><label>Planned Time (Mins)</label><input type="number" id="availPlannedTime" value="480" readonly></div>
                     
                     <div class="downtime-row">
-                        <div class="form-group"><label>Setup / Changeover</label><input type="number" id="setupTime" placeholder="e.g. 15" oninput="calcAvail()"></div>
-                        <div class="form-group"><label>Maintenance Time</label><input type="number" id="maintTime" placeholder="e.g. 20" oninput="calcAvail()"></div>
+                        <div class="form-group"><label>Setup Time</label><input type="number" id="setupTime" placeholder="e.g. 15" oninput="calcAvail()"></div>
+                        <div class="form-group"><label>Maint. Time</label><input type="number" id="maintTime" placeholder="e.g. 20" oninput="calcAvail()"></div>
                     </div>
 
-                    <div class="form-group"><label>Total Downtime (Mins)</label><input type="number" id="downtime" placeholder="0" readonly></div>
-                    <div class="form-group"><label>Run Time (Mins)</label><input type="number" id="availRunTime" value="480" readonly></div>
+                    <div class="form-group"><label>Total Downtime</label><input type="number" id="downtime" placeholder="0" readonly></div>
+                    <div class="form-group"><label style="color:#2980b9;">Run Time (Mins)</label><input type="number" id="availRunTime" value="480" readonly></div>
                     
                     <div id="maintReasonDiv" class="hidden">
-                        <hr style="border: 0; border-top: 1px solid #cbd5e1; margin: 15px 0;">
+                        <hr style="border: 0; border-top: 1px dashed #cbd5e1; margin: 20px 0;">
                         
-                        <!-- Maintenance Category: Mechanical or Electrical -->
+                        <!-- SLIDE BUTTONS FOR MAINTENANCE TYPE -->
                         <div class="form-group">
-                            <label style="color:#d97706;">Maintenance Type</label>
-                            <div class="radio-group">
-                                <label class="radio-label"><input type="radio" name="maintType" value="Mechanical" checked> Mechanical</label>
-                                <label class="radio-label"><input type="radio" name="maintType" value="Electrical"> Electrical</label>
+                            <label style="color:#e74c3c;">Fault Category</label>
+                            <div class="segmented-control">
+                                <input type="radio" id="faultMech" name="faultType" value="Mechanical" checked>
+                                <label for="faultMech">⚙️ Mech</label>
+                                
+                                <input type="radio" id="faultElec" name="faultType" value="Electrical">
+                                <label for="faultElec">⚡ Elec</label>
+                                
+                                <input type="radio" id="faultBoth" name="faultType" value="Both (M+E)">
+                                <label for="faultBoth">🛠️ Both</label>
+                                
+                                <input type="radio" id="faultOther" name="faultType" value="Other">
+                                <label for="faultOther">❓ Other</label>
                             </div>
                         </div>
 
                         <div class="form-group">
-                            <label style="color:#dc2626;">Maintenance Reason / Fault</label>
+                            <label style="color:#e74c3c;">Fault Details / Remarks</label>
                             <select id="maintReasonSelect" onchange="handleOther('maintReason')"><option value="">-- Select Reason --</option></select>
-                            <input type="text" id="maintReasonOther" class="hidden" placeholder="Type specific remarks/reason..." style="margin-top:8px;">
+                            <input type="text" id="maintReasonOther" class="hidden" placeholder="Type specific remarks..." style="margin-top:10px;">
                         </div>
-                        <div class="form-group"><label>Technician Name</label><input type="text" id="techName" placeholder="Who attended?"></div>
+                        <div class="form-group"><label>Technician Name</label><input type="text" id="techName" placeholder="Who repaired it?"></div>
                     </div>
                 </div>
             </div>
@@ -164,16 +207,21 @@
             <div class="step-content" id="step3">
                 <div class="info-box" id="boxStep3">
                     <span id="perfStatus" class="status-badge">Pending</span>
-                    <h3 style="margin-top:0; color:#1e3d2f; font-size:18px;">Performance</h3>
+                    <h3 style="margin-top:0; color:#2c3e50; font-weight:700;">Performance</h3>
                     <div class="form-group"><label id="lblShiftTime">Available Time (Mins)</label><input type="number" id="shiftTime" value="480" readonly></div>
-                    <div class="form-group"><label>Ideal CT (Min/part)</label><input type="number" step="0.01" id="target" readonly></div>
-                    <div class="form-group"><label>Standard Production (Shift Target)</label><input type="number" id="stdProd" readonly></div>
-                    <hr style="border: 0; border-top: 1px solid #cbd5e1; margin: 15px 0;">
-                    <div class="form-group"><label>Total Count (Parts Produced)</label><input type="number" id="actual" placeholder="Enter total parts today" disabled oninput="updateInterlocks()"></div>
+                    
+                    <div class="downtime-row">
+                        <div class="form-group"><label>Ideal CT</label><input type="number" step="0.01" id="target" readonly></div>
+                        <div class="form-group"><label>Shift Target</label><input type="number" id="stdProd" readonly></div>
+                    </div>
+
+                    <hr style="border: 0; border-top: 1px dashed #cbd5e1; margin: 20px 0;">
+                    <div class="form-group"><label style="color:#2980b9;">Total Parts Produced</label><input type="number" id="actual" placeholder="Enter total parts today" disabled oninput="updateInterlocks()" style="font-size:20px; font-weight:bold; color:#2980b9;"></div>
+                    
                     <div class="form-group hidden" id="lossReasonDiv">
-                        <label style="color:#dc2626;">Performance Loss Reason</label>
+                        <label style="color:#e74c3c;">Performance Loss Reason</label>
                         <select id="lossReasonSelect" onchange="handleOther('lossReason')" disabled><option value="">-- Select Reason --</option></select>
-                        <input type="text" id="lossReasonOther" class="hidden" placeholder="Type specific remarks..." style="margin-top:8px;">
+                        <input type="text" id="lossReasonOther" class="hidden" placeholder="Type specific reason here..." style="margin-top:10px;">
                     </div>
                 </div>
             </div>
@@ -182,27 +230,30 @@
             <div class="step-content" id="step4">
                 <div class="info-box" id="boxStep4">
                     <span id="qualStatus" class="status-badge">Pending</span>
-                    <h3 style="margin-top:0; color:#1e3d2f; font-size:18px;">Quality</h3>
-                    <p id="qualProdTarget" style="font-size:13px; color:#0d9488; font-weight:bold; margin-top:0;"></p>
-                    <div class="form-group"><label>Good Count</label><input type="number" id="goodParts" placeholder="Enter good parts" disabled oninput="calculateScrap()"></div>
-                    <div class="form-group"><label>Scrap Count (Auto calculated)</label><input type="number" id="rejectParts" readonly placeholder="0"></div>
+                    <h3 style="margin-top:0; color:#2c3e50; font-weight:700;">Quality</h3>
+                    <p id="qualProdTarget" style="font-size:13px; color:#16a085; font-weight:600; margin-top:-5px;"></p>
+                    
+                    <div class="form-group"><label>Good Count</label><input type="number" id="goodParts" placeholder="Enter OK parts" disabled oninput="calculateScrap()" style="font-size:20px; font-weight:bold; color:#27ae60;"></div>
+                    <div class="form-group"><label>Scrap Count (Auto)</label><input type="number" id="rejectParts" readonly placeholder="0" style="color:#e74c3c; font-weight:bold;"></div>
+                    
                     <div class="form-group" id="rejectReasonDiv">
                         <label>Reject Reason</label>
                         <select id="rejectReasonSelect" onchange="handleOther('rejectReason')" disabled><option value="">-- Select Reason --</option></select>
-                        <input type="text" id="rejectReasonOther" class="hidden" placeholder="Type specific remarks..." style="margin-top:8px;">
+                        <input type="text" id="rejectReasonOther" class="hidden" placeholder="Type specific reason here..." style="margin-top:10px;">
                     </div>
                 </div>
             </div>
 
             <div class="nav-buttons">
-                <button type="button" id="btnPrev" class="nav-btn btn-prev hidden" onclick="goPrev()">Back</button>
-                <button type="button" id="btnNext" class="nav-btn btn-next" onclick="goNext()">Next</button>
-                <button type="button" id="btnSubmit" class="nav-btn btn-submit hidden" onclick="submitData()">Submit Data</button>
+                <button type="button" id="btnPrev" class="btn-prev hidden" onclick="goPrev()">Back</button>
+                <button type="button" id="btnNext" class="btn-next" onclick="goNext()">Next</button>
+                <button type="button" id="btnSubmit" class="btn-submit hidden" onclick="submitData()">Save Data</button>
             </div>
         </form>
     </div>
 
     <script>
+        // 🔴 YAHAN APNA WOHI WORKING WEB APP URL DAALEIN 🔴
         const API_URL = "https://script.google.com/macros/s/AKfycbzREGDC03uDNfgswSy49bMwGtlzok9fiT2Ro1w78JwfmPTp93hhmFnaSRz0pmE3mXJrXA/exec";
         
         let allRegisteredMachines = []; let allLogs = [];
@@ -226,7 +277,6 @@
             if (!isSilent && cachedM && cachedL) {
                 allRegisteredMachines = JSON.parse(cachedM); allLogs = JSON.parse(cachedL);
                 document.getElementById('loadingStatus').style.display = 'none';
-                document.getElementById('oeeForm').style.display = 'block';
                 populateDeptDropdown(); processQRScan();
             }
 
@@ -236,12 +286,11 @@
                 localStorage.setItem("mes_logs", JSON.stringify(allLogs)); 
                 if (!isSilent && !cachedM) {
                     document.getElementById('loadingStatus').style.display = 'none';
-                    document.getElementById('oeeForm').style.display = 'block';
                     populateDeptDropdown(); processQRScan();
                 }
                 if (isSilent) checkBackendDataForToday();
             }).catch(e => {
-                if(!isSilent && !cachedM) document.getElementById('loadingStatus').innerText = "⚠️ Error loading data. Please check API URL."; 
+                if(!isSilent && !cachedM) document.getElementById('loadingStatus').innerText = "⚠️ Error syncing data."; 
             });
         }
 
@@ -383,8 +432,8 @@
 
         function goNext() {
             if(currentStep === 1) {
-                if(!document.getElementById('barcode').value || !document.getElementById('productSelect').value || !document.getElementById('shift').value) {
-                    alert("⚠️ Please fill all fields to continue."); return;
+                if(!document.getElementById('barcode').value || !document.getElementById('productSelect').value || !document.getElementById('shift').value || !document.getElementById('operatorName').value) {
+                    alert("⚠️ Please fill all required fields to continue."); return;
                 }
                 checkBackendDataForToday(); 
             }
@@ -393,7 +442,7 @@
                     let sVal = document.getElementById('setupTime').value;
                     let mVal = document.getElementById('maintTime').value;
                     if(sVal === "" && mVal === "") { alert("⚠️ Enter Setup or Maintenance Time (Enter 0 if ran fine)."); return; }
-                    if((parseFloat(mVal) || 0) > 0 && getFinalReason('maintReason') === "") { alert("⚠️ Please select a Maintenance Reason."); return; }
+                    if((parseFloat(mVal) || 0) > 0 && getFinalReason('maintReason') === "") { alert("⚠️ Please select a Fault Detail / Remark."); return; }
                 }
                 updateInterlocks(); 
             }
@@ -427,6 +476,7 @@
             ["setupTime", "maintTime", "downtime", "maintReasonOther", "techName", "actual", "lossReasonOther", "goodParts", "rejectParts", "rejectReasonOther"].forEach(id => { document.getElementById(id).value = ""; document.getElementById(id).disabled = false; });
             ["maintReasonSelect", "lossReasonSelect", "rejectReasonSelect"].forEach(id => document.getElementById(id).disabled = false);
             
+            // Availability Check
             let aLog = reversedLogs.find(l => {
                 let t = String(getSafeVal(l, ["EntryType", "Type"])).trim().toLowerCase();
                 return t === "availability" || t === "maintenance";
@@ -441,6 +491,7 @@
                 let mReason = getSafeVal(aLog, ["MaintReason", "Maint.Reason"]);
                 if((parseFloat(document.getElementById('maintTime').value) || 0) > 0 || mReason) {
                     document.getElementById("maintReasonDiv").classList.remove("hidden");
+                    // Assuming reason format is "Type - Remarks", we just set it directly to remarks dropdown
                     setReasonDropdown("maintReasonSelect", "maintReasonOther", mReason, true);
                 } else { document.getElementById("maintReasonDiv").classList.add("hidden"); }
 
@@ -451,6 +502,7 @@
                 document.getElementById("maintReasonDiv").classList.add("hidden");
             }
 
+            // Performance Check
             let pLog = reversedLogs.find(l => {
                 let t = String(getSafeVal(l, ["EntryType", "Type"])).trim().toLowerCase();
                 return t === "performance" || t === "production";
@@ -462,6 +514,7 @@
                 ["actual", "lossReasonSelect", "lossReasonOther"].forEach(id => document.getElementById(id).disabled = true);
             } else { document.getElementById("boxStep3").classList.remove("completed-box"); document.getElementById("perfStatus").innerText = "Pending"; }
 
+            // Quality Check
             let qLog = reversedLogs.find(l => String(getSafeVal(l, ["EntryType", "Type"])).trim().toLowerCase() === "quality");
             if(qLog) {
                 state.qualSaved = true; document.getElementById('goodParts').value = getSafeVal(qLog, ["GoodCount", "GoodParts"]);
@@ -502,7 +555,7 @@
             
             if (downtimeVal !== "" || state.availSaved || document.getElementById("setupTime").value !== "" || document.getElementById("maintTime").value !== "") {
                 let avail = 480 - downtime; document.getElementById("shiftTime").value = avail;
-                document.getElementById("lblShiftTime").innerHTML = downtime > 0 ? `Available Time (Mins) <span style="color:#dc2626; font-size:12px;">(-${downtime}m Downtime)</span>` : `Available Time (Mins)`;
+                document.getElementById("lblShiftTime").innerHTML = downtime > 0 ? `Available Time (Mins) <span style="color:#e74c3c; font-size:12px;">(-${downtime}m Down)</span>` : `Available Time (Mins)`;
                 let idealCT = parseFloat(document.getElementById("target").value) || 0;
                 if (idealCT > 0) document.getElementById("stdProd").value = Math.floor(avail / idealCT);
                 if (!state.perfSaved) { document.getElementById("actual").disabled = false; document.getElementById("lossReasonSelect").disabled = false; }
@@ -517,25 +570,14 @@
             } else { ["goodParts", "rejectReasonSelect"].forEach(id => document.getElementById(id).disabled = true); }
         }
 
-        function getFinalReason(id) { 
-            let val = document.getElementById(id + "Select").value; 
-            let typedVal = document.getElementById(id + "Other").value;
-            let finalVal = val === "Other" ? typedVal : val;
-            
-            // If it's maintenance, prefix with Mechanical or Electrical type
-            if(id === 'maintReason' && finalVal) {
-                let maintType = document.querySelector('input[name="maintType"]:checked').value;
-                return `[${maintType}] ${finalVal}`;
-            }
-            return finalVal;
-        }
+        function getFinalReason(id) { let val = document.getElementById(id + "Select").value; return val === "Other" ? document.getElementById(id + "Other").value : val; }
 
         function submitData() {
             if(currentStep === 2 && !state.availSaved && document.getElementById('setupTime').value === "" && document.getElementById('maintTime').value === "") { alert("⚠️ Enter Setup or Maintenance Time."); return; }
             if(currentStep === 3 && !state.perfSaved && document.getElementById('actual').value === "") { alert("⚠️ Enter Total Count."); return; }
             if(currentStep === 4 && !state.qualSaved && document.getElementById('goodParts').value === "") { alert("⚠️ Enter Good Count."); return; }
 
-            const btn = document.getElementById("btnSubmit"); btn.innerText = "Saving..."; btn.disabled = true;
+            const btn = document.getElementById("btnSubmit"); btn.innerText = "Saving Data..."; btn.disabled = true;
             let payloads = [];
             let commonData = {
                 formType: "dataEntry",
@@ -545,12 +587,17 @@
             };
 
             if(!state.availSaved && (document.getElementById("setupTime").value !== "" || document.getElementById("maintTime").value !== "")) {
+                // Combine Type & Remarks smartly
+                let fType = document.querySelector('input[name="faultType"]:checked').value;
+                let remarks = getFinalReason("maintReason");
+                let combinedMaintReason = (parseFloat(document.getElementById("maintTime").value) > 0) ? `[${fType}] ${remarks}` : remarks;
+
                 payloads.push({ 
                     entryType: "Availability", 
                     setupTime: document.getElementById("setupTime").value,
                     maintTime: document.getElementById("maintTime").value,
                     downtime: document.getElementById("downtime").value, 
-                    maintReason: getFinalReason("maintReason"), 
+                    maintReason: combinedMaintReason, 
                     techName: document.getElementById("techName").value, 
                     ...commonData 
                 });
@@ -562,7 +609,7 @@
                 payloads.push({ entryType: "Quality", goodParts: document.getElementById("goodParts").value, rejectParts: document.getElementById("rejectParts").value, rejectReason: getFinalReason("rejectReason"), ...commonData });
             }
 
-            if(payloads.length === 0) { alert("All steps are saved."); btn.innerText = "Submit Data"; btn.disabled = false; return; }
+            if(payloads.length === 0) { alert("All steps are saved."); btn.innerText = "Save Data"; btn.disabled = false; return; }
 
             (async () => {
                 try { 
@@ -574,14 +621,14 @@
                         let result = await response.json();
                         if (result.status === "error") throw new Error(result.message);
                     }
-                    alert("Data Saved Successfully!"); 
+                    alert("Data Saved Successfully! 🎉"); 
                     document.getElementById("oeeForm").reset();
                     let now = new Date(); now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
                     document.getElementById('entryDateTime').value = now.toISOString().slice(0,16);
-                    currentStep = 1; updateUI(); btn.innerText = "Submit Data"; btn.disabled = false; fetchData(true);
+                    currentStep = 1; updateUI(); btn.innerText = "Save Data"; btn.disabled = false; fetchData(true);
                 } catch(e) { 
                     alert("⚠️ Error saving data!\nDetails: " + e.message); 
-                    btn.innerText = "Submit Data"; 
+                    btn.innerText = "Save Data"; 
                     btn.disabled = false; 
                 }
             })();
