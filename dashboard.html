@@ -23,34 +23,26 @@
         .filter-group label { font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; }
         .filter-section select, .filter-section input { padding: 10px 15px; border-radius: 8px; border: 1px solid #334155; background: #080d14; color: white; font-family: 'Poppins', sans-serif; font-size: 14px; }
 
-        /* SCADA CARD LAYOUT (EXACTLY LIKE REFERENCE PICTURE) */
-        .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
-        .scada-card { background: #0f1722; border-radius: 16px; padding: 25px 20px; border: 1px solid #1e293b; box-shadow: 0 10px 30px rgba(0,0,0,0.6); text-align: center; transition: 0.3s; }
-        .scada-card:hover { transform: translateY(-4px); border-color: #4ade80; }
+        /* CARDS GRID */
+        .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+        .oee-card { background: #0f1722; border-radius: 16px; padding: 22px; border: 1px solid #1e293b; box-shadow: 0 8px 25px rgba(0,0,0,0.6); text-align: center; transition: 0.3s; }
+        .oee-card:hover { transform: translateY(-4px); border-color: #4ade80; }
         
-        .scada-title { font-size: 21px; font-weight: 700; color: #f8fafc; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .card-title { font-size: 18px; font-weight: 700; color: #f8fafc; margin-bottom: 5px; text-transform: uppercase; }
+        .card-subtitle { font-size: 12px; color: #94a3b8; margin-bottom: 15px; font-weight: 500; }
         
-        .order-box { background: #080d14; padding: 12px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #1e293b; }
-        .order-box span { display: block; font-size: 11px; color: #4ade80; text-transform: uppercase; font-weight: 600; margin-bottom: 3px; }
-        .order-box strong { font-size: 15px; color: #e2e8f0; font-weight: 500; }
+        .oee-main-box { background: #080d14; padding: 12px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #1e293b; }
+        .oee-main-box span { display: block; font-size: 11px; color: #4ade80; text-transform: uppercase; font-weight: 600; }
+        .oee-main-box h1 { margin: 5px 0 0 0; font-size: 34px; font-weight: 700; color: #ffffff; }
+
+        /* METRICS ROW (Avail, Perf, Qual) */
+        .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px; }
+        .metric-box { background: #080d14; padding: 10px; border-radius: 8px; border: 1px solid #1e293b; text-align: center; }
+        .metric-box span { display: block; font-size: 10px; color: #94a3b8; text-transform: uppercase; font-weight: 600; margin-bottom: 4px; }
+        .metric-box strong { font-size: 15px; color: #38bdf8; }
+
+        .details-box { background: #080d14; padding: 10px; border-radius: 8px; border: 1px solid #1e293b; font-size: 12px; color: #94a3b8; display: flex; justify-content: space-between; }
         
-        .oee-display { margin: 15px 0; }
-        .oee-display span { display: block; font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
-        .oee-display h1 { margin: 5px 0; font-size: 42px; font-weight: 700; color: #ffffff; letter-spacing: -1px; }
-
-        /* CIRCULAR GAUGES ROW */
-        .gauges-row { display: flex; justify-content: space-around; margin: 20px 0; background: #080d14; padding: 15px 10px; border-radius: 12px; border: 1px solid #1e293b; }
-        .gauge-box { text-align: center; width: 85px; position: relative; }
-        .gauge-box canvas { display: block; margin: 0 auto; }
-        .gauge-box span { display: block; font-size: 11px; color: #94a3b8; text-transform: uppercase; margin-top: 8px; font-weight: 600; }
-
-        /* PROCESS STEPS ROW */
-        .steps-box { margin-top: 20px; background: #080d14; padding: 15px; border-radius: 12px; border: 1px solid #1e293b; }
-        .steps-title { font-size: 12px; color: #4ade80; text-transform: uppercase; font-weight: 600; margin-bottom: 10px; display: block; }
-        .steps-row { display: flex; justify-content: center; gap: 12px; }
-        .step-bubble { width: 36px; height: 36px; border-radius: 50%; background: #1e293b; color: #94a3b8; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; border: 1px solid #334155; }
-        .step-bubble.active { background: rgba(74,222,128,0.2); color: #4ade80; border-color: #4ade80; box-shadow: 0 0 12px rgba(74,222,128,0.4); }
-
         .no-data { text-align: center; padding: 50px; color: #94a3b8; font-size: 16px; background: #0f1722; border-radius: 12px; grid-column: 1 / -1; }
         .live-indicator { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #4ade80; font-weight: 600; }
         .live-dot { width: 8px; height: 8px; background: #4ade80; border-radius: 50%; animation: blink 1.5s infinite; }
@@ -61,13 +53,11 @@
 
     <div class="header">
         <div>
-            <h2>🏭 Shop Floor SCADA Dashboard</h2>
+            <h2>🏭 OEE Live Monitoring</h2>
             <div class="live-indicator" style="margin-top: 5px;"><div class="live-dot"></div> Live Auto-Refreshing (Every 5s)</div>
         </div>
         <div class="kpi-container">
-            <div class="kpi-card"><span>Shop OEE</span><strong id="kpiOEE">0.0%</strong></div>
-            <div class="kpi-card"><span>Avg MTTR</span><strong id="kpiMTTR">14 min</strong></div>
-            <div class="kpi-card"><span>Avg MTBF</span><strong id="kpiMTBF">135 min</strong></div>
+            <div class="kpi-card"><span>Factory OEE</span><strong id="kpiOEE">0.0%</strong></div>
         </div>
     </div>
 
@@ -100,7 +90,6 @@
         
         let globalMachines = [];
         let globalLogs = [];
-        let chartInstances = {};
 
         function getSafeVal(obj, possibleKeys) {
             let lowerKeys = possibleKeys.map(k => k.toLowerCase().replace(/\s/g, ''));
@@ -148,127 +137,73 @@
             const container = document.getElementById("cardsContainer");
             container.innerHTML = "";
 
+            let targetItems = [];
             let isLineSpecific = selectedLine !== "";
-            let cardsToRender = [];
 
             if (!isLineSpecific) {
-                // ALL LINES VIEW: Get unique lines
                 let lines = [...new Set(globalMachines.map(m => getSafeVal(m, ["LineName", "Line"])))].filter(Boolean);
                 lines.forEach(lineName => {
                     let lineMachs = globalMachines.filter(m => getSafeVal(m, ["LineName", "Line"]) === lineName);
                     let stats = calculateStatsForGroup(lineMachs, selectedDate, selectedShift);
-                    cardsToRender.push({ title: lineName, subtitle: stats.productName, ...stats, isLine: true });
+                    targetItems.push({ title: lineName, subtitle: `Product: ${stats.productName}`, ...stats });
                 });
             } else {
-                // SPECIFIC LINE VIEW: Get individual machines/operations inside this line
                 let lineMachs = globalMachines.filter(m => getSafeVal(m, ["LineName", "Line"]) === selectedLine);
-                lineMachs.forEach((mach, idx) => {
+                lineMachs.forEach(mach => {
                     let stats = calculateStatsForGroup([mach], selectedDate, selectedShift);
-                    cardsToRender.push({ 
+                    targetItems.push({ 
                         title: stats.operation, 
                         subtitle: `Mach: ${stats.machName} (${stats.asset}) | ${stats.productName}`, 
-                        ...stats, 
-                        isLine: false 
+                        ...stats 
                     });
                 });
             }
 
-            if (cardsToRender.length === 0) {
-                container.innerHTML = `<div class="no-data">No production data found for this selection.</div>`;
+            if (targetItems.length === 0) {
+                container.innerHTML = `<div class="no-data">No production records found for this filter.</div>`;
                 return;
             }
 
             let totalShopOEE = 0;
-            cardsToRender.forEach((cardData, idx) => {
-                totalShopOEE += cardData.oee;
+            targetItems.forEach(item => {
+                totalShopOEE += item.oee;
 
                 let card = document.createElement("div");
-                card.className = "scada-card";
+                card.className = "oee-card";
                 card.innerHTML = `
-                    <div class="scada-title">${cardData.title}</div>
-                    <div class="order-box">
-                        <span>Current Order / Product</span>
-                        <strong>${cardData.subtitle}</strong>
+                    <div class="card-title">${item.title}</div>
+                    <div class="card-subtitle">${item.subtitle}</div>
+                    
+                    <div class="oee-main-box">
+                        <span>Overall OEE</span>
+                        <h1>${item.oee.toFixed(1)}%</h1>
                     </div>
-                    <div class="oee-display">
-                        <span>OEE Performance</span>
-                        <h1>${cardData.oee.toFixed(1)}%</h1>
-                    </div>
-                    <div class="gauges-row">
-                        <div class="gauge-box">
-                            <canvas id="gaugeQual_${idx}" width="70" height="70"></canvas>
-                            <span>Quality</span>
-                        </div>
-                        <div class="gauge-box">
-                            <canvas id="gaugePerf_${idx}" width="70" height="70"></canvas>
-                            <span>Performance</span>
-                        </div>
-                        <div class="gauge-box">
-                            <canvas id="gaugeAvail_${idx}" width="70" height="70"></canvas>
+
+                    <div class="metrics-grid">
+                        <div class="metric-box">
                             <span>Availability</span>
+                            <strong>${item.avail.toFixed(1)}%</strong>
+                        </div>
+                        <div class="metric-box">
+                            <span>Performance</span>
+                            <strong>${item.perf.toFixed(1)}%</strong>
+                        </div>
+                        <div class="metric-box">
+                            <span>Quality</span>
+                            <strong>${item.qual.toFixed(1)}%</strong>
                         </div>
                     </div>
-                    <div class="steps-box">
-                        <span class="steps-title">Process Step Sequence</span>
-                        <div class="steps-row">
-                            <div class="step-bubble ${cardData.opSeq === 1 ? 'active' : ''}">1</div>
-                            <div class="step-bubble ${cardData.opSeq === 2 ? 'active' : ''}">2</div>
-                            <div class="step-bubble ${cardData.opSeq === 3 ? 'active' : ''}">3</div>
-                            <div class="step-bubble ${cardData.opSeq === 4 ? 'active' : ''}">4</div>
-                        </div>
+
+                    <div class="details-box">
+                        <span>Produced: <b>${item.actual}</b></span>
+                        <span>Good: <b>${item.good}</b></span>
+                        <span>Down: <b>${item.downtime}m</b></span>
                     </div>
                 `;
                 container.appendChild(card);
-
-                // Render circular arc gauges using Chart.js doughnut
-                setTimeout(() => {
-                    createArcGauge(`gaugeQual_${idx}`, cardData.qual);
-                    createArcGauge(`gaugePerf_${idx}`, cardData.perf);
-                    createArcGauge(`gaugeAvail_${idx}`, cardData.avail);
-                }, 50);
             });
 
-            document.getElementById("kpiOEE").innerText = (totalShopOEE / cardsToRender.length).toFixed(1) + "%";
-        }
-
-        function createArcGauge(canvasId, percentage) {
-            const ctx = document.getElementById(canvasId);
-            if(!ctx) return;
-            if (chartInstances[canvasId]) chartInstances[canvasId].destroy();
-
-            let val = Math.min(Math.max(percentage, 0), 100);
-            chartInstances[canvasId] = new Chart(ctx.getContext('2d'), {
-                type: 'doughnut',
-                data: {
-                    datasets: [{
-                        data: [val, 100 - val],
-                        backgroundColor: ['#4ade80', '#1e293b'],
-                        borderWidth: 0
-                    }]
-                },
-                options: {
-                    responsive: false,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false }, tooltip: { enabled: false } },
-                    cutout: '75%',
-                    rotation: -90,
-                    circumference: 180
-                },
-                plugins: [{
-                    id: 'textCenter',
-                    beforeDraw: function(chart) {
-                        let width = chart.width, height = chart.height, ctx = chart.ctx;
-                        ctx.restore();
-                        let fontSize = (height / 32).toFixed(2);
-                        ctx.font = "bold " + fontSize + "rem Poppins, sans-serif";
-                        ctx.textBaseline = "middle";
-                        ctx.fillStyle = "#ffffff";
-                        let text = Math.round(val), textX = Math.round((width - ctx.measureText(text).width) / 2), textY = height / 1.5;
-                        ctx.fillText(text, textX, textY);
-                        ctx.save();
-                    }
-                }]
-            });
+            document.getElementById("kpiOEE").innerText = (totalShopOEE / targetItems.length).toFixed(1) + "%";
         }
 
         function calculateStatsForGroup(machinesArray, selectedDate, selectedShift) {
@@ -314,18 +249,18 @@
             let oee = (availability / 100) * (performance / 100) * (quality / 100) * 100;
             if(isNaN(oee)) oee = 0;
 
-            let parsedSeq = parseInt(getSafeVal(sampleMach, ["OpSequence", "Sequence"])) || 1;
-
             return {
-                productName: getSafeVal(sampleMach, ["ProductName", "Product"]) || 'Gas Valve',
+                productName: getSafeVal(sampleMach, ["ProductName", "Product"]) || 'Standard Product',
                 operation: getSafeVal(sampleMach, ["Operation"]) || 'Machining',
-                machName: getSafeVal(sampleMach, ["MachineName", "Machine"]) || 'Machine 1',
+                machName: getSafeVal(sampleMach, ["MachineName", "Machine"]) || 'Machine',
                 asset: getSafeVal(sampleMach, ["AssetNumber", "Barcode"]) || '000',
                 avail: availability > 100 ? 100 : availability,
                 perf: performance > 100 ? 100 : performance,
                 qual: quality > 100 ? 100 : quality,
                 oee: oee,
-                opSeq: parsedSeq > 4 ? 4 : (parsedSeq < 1 ? 1 : parsedSeq)
+                actual: totalActual,
+                good: totalGood,
+                downtime: totalDowntime
             };
         }
     </script>
