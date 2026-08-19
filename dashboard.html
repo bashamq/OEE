@@ -29,7 +29,6 @@
         
         .charts-wrapper { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
         
-        /* DOUGHNUT CHARTS CONTAINER */
         .doughnut-container { width: 100%; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); box-sizing: border-box; display: flex; flex-direction: column; align-items: center; }
         .doughnut-container h3 { margin-top: 0; color: #2c3e50; font-size: 16px; margin-bottom: 20px; }
         .donuts-grid { display: flex; justify-content: space-around; width: 100%; flex-wrap: wrap; gap: 15px; }
@@ -75,7 +74,6 @@
     </div>
 
     <div class="charts-wrapper" id="chartDiv" style="display:none;">
-        <!-- DOUGHNUT CHARTS + MTTR/MTBF CARDS ROW -->
         <div class="doughnut-container">
             <h3>OEE & Maintenance Performance Breakdown</h3>
             <div class="donuts-grid">
@@ -86,7 +84,6 @@
             </div>
         </div>
 
-        <!-- MTTR & MTBF CARDS SECTION (REPLACED DOWNTIME CHART) -->
         <div class="cards" style="width: 100%; margin-top: 10px; display: flex; justify-content: center; gap: 20px;">
             <div class="card" style="width: 40%; min-width: 220px; border-top-color: #8e44ad; padding: 20px;">
                 <h3 style="font-size: 16px;">Mean Time To Repair (MTTR)</h3>
@@ -115,20 +112,8 @@
         }
 
         function fetchAllData(isSilent = false) {
-            if (!isSilent) {
-                let cachedData = localStorage.getItem("mes_dashboard_data");
-                if (cachedData) {
-                    let parsedData = JSON.parse(cachedData);
-                    allLogs = parsedData.logs || [];
-                    allMachines = parsedData.machines || [];
-                    document.getElementById('loadingMsg').style.display = 'none';
-                    document.getElementById('dashboardCards').style.display = 'flex';
-                    document.getElementById('chartDiv').style.display = 'flex';
-                    if(document.getElementById("lineSelect").options.length === 1) populateLineDropdown();
-                    calculateDashboard();
-                    isSilent = true; 
-                }
-            }
+            // Clear local storage cache to force fresh fetch
+            localStorage.removeItem("mes_dashboard_data");
 
             if(isSilent) document.getElementById('syncIndicator').style.display = 'flex';
             
@@ -137,11 +122,10 @@
                 allMachines = data.machines || [];
                 localStorage.setItem("mes_dashboard_data", JSON.stringify(data));
                 
-                if(!isSilent) {
-                    document.getElementById('loadingMsg').style.display = 'none';
-                    document.getElementById('dashboardCards').style.display = 'flex';
-                    document.getElementById('chartDiv').style.display = 'flex';
-                }
+                document.getElementById('loadingMsg').style.display = 'none';
+                document.getElementById('dashboardCards').style.display = 'flex';
+                document.getElementById('chartDiv').style.display = 'flex';
+                
                 if(document.getElementById("lineSelect").options.length === 1) populateLineDropdown();
                 calculateDashboard();
                 if(isSilent) setTimeout(() => { document.getElementById('syncIndicator').style.display = 'none'; }, 2000);
@@ -153,6 +137,7 @@
 
         function populateLineDropdown() {
             const select = document.getElementById("lineSelect");
+            select.innerHTML = '<option value="All">🏭 Factory Aggregate (All Lines)</option>';
             let uniqueLines = [...new Set(allMachines.map(m => getSafeVal(m, ["LineName", "Line", "Department"])))].filter(Boolean);
             uniqueLines.forEach(l => { select.innerHTML += `<option value="${l}">🛠️ Line: ${l}</option>`; });
         }
@@ -215,77 +200,63 @@
             let totalLineGood = 0; 
             let totalLineScrap = 0; 
 
-            if (lineVal === "All") {
-                allLogs.forEach(row => { processLogRow(row); });
-                totalLineGood = allLogs.filter(l => String(getSafeVal(l, ["EntryType"]))==="Quality").reduce((s, r) => s + (Number(getSafeVal(r, ["GoodCount"]))||0), 0);
-            } else if (lineVal !== "All" && machVal === "All") {
+            let targetLogs = allLogs;
+
+            if (lineVal !== "All") {
                 let lineMachines = allMachines.filter(m => getSafeVal(m, ["LineName", "Line"]) === lineVal);
                 let lineAssets = lineMachines.map(m => String(getSafeVal(m, ["AssetNumber", "Barcode"])));
                 
-                let finalAssets = lineMachines.filter(m => String(getSafeVal(m, ["IsFinalOp"])).toUpperCase() === "TRUE").map(m => String(getSafeVal(m, ["AssetNumber", "Barcode"])));
-                if(finalAssets.length === 0) finalAssets = lineAssets; 
+                if (machVal !== "All") {
+                    targetLogs = allLogs.filter(log => String(getSafeVal(log, ["Barcode#", "Barcode"])) === machVal);
+                } else {
+                    targetLogs = allLogs.filter(log => lineAssets.includes(String(getSafeVal(log, ["Barcode#", "Barcode"]))));
+                }
+            }
 
-                let lineLogs = allLogs.filter(log => lineAssets.includes(String(getSafeVal(log, ["Barcode#", "Barcode"]))));
+            targetLogs.forEach(row => {
+                let eType = String(getSafeVal(row, ["EntryType", "Type"])).trim();
                 
-                lineLogs.forEach(row => { 
-                    processLogRow(row); 
-                    
-                    let eType = String(getSafeVal(row, ["EntryType"]));
-                    let rowAsset = String(getSafeVal(row, ["Barcode#", "Barcode"]));
-                    
-                    if (eType === "Quality") {
-                        totalLineScrap += Number(getSafeVal(row, ["ScrapCount", "RejectParts"])) || 0;
-                        if(finalAssets.includes(rowAsset)) {
-                            totalLineGood += Number(getSafeVal(row, ["GoodCount", "GoodParts"])) || 0;
-                        }
-                    }
-                });
-            } else if (machVal !== "All") {
-                let machLogs = allLogs.filter(log => String(getSafeVal(log, ["Barcode#", "Barcode"])) === machVal);
-                machLogs.forEach(row => { 
-                    processLogRow(row); 
-                    let eType = String(getSafeVal(row, ["EntryType"]));
-                    if (eType === "Quality") {
-                        totalLineGood += Number(getSafeVal(row, ["GoodCount", "GoodParts"])) || 0;
-                        totalLineScrap += Number(getSafeVal(row, ["ScrapCount", "RejectParts"])) || 0;
-                    }
-                });
-            }
-
-            function processLogRow(row) {
-                let entryType = String(getSafeVal(row, ["EntryType", "Type"]));
-                if (entryType === "Production") { 
-                    pt += Number(getSafeVal(row, ["PlannedTime(Min)", "ShiftTime"])) || 0; 
-                    it += (Number(getSafeVal(row, ["IdealCT(Min)", "Target"])) || 0) * (Number(getSafeVal(row, ["TotalCount", "Actual"])) || 0); 
+                if (eType === "Availability" || eType === "Maintenance") {
+                    let d = Number(getSafeVal(row, ["Downtime(Min)", "Downtime"])) || 0;
+                    dt += d;
+                    if(d > 0) dtC++;
                 }
-                else if (entryType === "Maintenance") { 
-                    let d = Number(getSafeVal(row, ["Downtime(Min)", "Downtime"])) || 0; 
-                    if(d > 0) { dt += d; dtC++; } 
+                else if (eType === "Performance" || eType === "Production") {
+                    pt += Number(getSafeVal(row, ["PlannedTime(Min)", "ShiftTime"])) || 480;
+                    let actual = Number(getSafeVal(row, ["TotalCount", "Actual"])) || 0;
+                    let idealCT = Number(getSafeVal(row, ["IdealCT(Min)", "IdealCT", "Target"])) || 0;
+                    it += idealCT * actual;
                 }
-            }
+                else if (eType === "Quality") {
+                    totalLineGood += Number(getSafeVal(row, ["GoodCount", "GoodParts"])) || 0;
+                    totalLineScrap += Number(getSafeVal(row, ["ScrapCount", "RejectParts"])) || 0;
+                }
+            });
 
-            let rt = pt - dt; if(rt<0) rt=0;
-            let a = pt>0 ? rt/pt : 0, p = rt>0 ? it/rt : 0;
+            let rt = pt - dt; if(rt < 0) rt = 0;
+            let a = pt > 0 ? rt / pt : 1;
+            let p = rt > 0 ? it / rt : 1;
+            if(p > 1) p = 1;
+
             let totalProcessedForQuality = totalLineGood + totalLineScrap;
-            let q = totalProcessedForQuality > 0 ? totalLineGood / totalProcessedForQuality : 0;
+            let q = totalProcessedForQuality > 0 ? totalLineGood / totalProcessedForQuality : 1;
             
-            if(p>1) p=1; let oee = a*p*q;
+            let oee = a * p * q;
 
             let mttrVal = dtC > 0 ? (dt / dtC).toFixed(1) : 0;
             let mtbfVal = dtC > 0 ? (rt / dtC).toFixed(1) : rt.toFixed(1);
 
-            document.getElementById("valOEE").innerText = (oee*100).toFixed(1)+"%";
-            document.getElementById("valA").innerText = (a*100).toFixed(1)+"%";
-            document.getElementById("valP").innerText = (p*100).toFixed(1)+"%";
-            document.getElementById("valQ").innerText = (q*100).toFixed(1)+"%";
+            document.getElementById("valOEE").innerText = (oee * 100).toFixed(1) + "%";
+            document.getElementById("valA").innerText = (a * 100).toFixed(1) + "%";
+            document.getElementById("valP").innerText = (p * 100).toFixed(1) + "%";
+            document.getElementById("valQ").innerText = (q * 100).toFixed(1) + "%";
             document.getElementById("valMTTR").innerText = mttrVal;
             document.getElementById("valMTBF").innerText = mtbfVal;
 
-            // Update bottom cards for MTTR and MTBF
             document.getElementById("cardMTTR").innerText = mttrVal + " Min";
             document.getElementById("cardMTBF").innerText = mtbfVal + " Min";
 
-            updateCharts(a*100, p*100, q*100, oee*100);
+            updateCharts(a * 100, p * 100, q * 100, oee * 100);
         }
 
         function createDonut(canvasId, val, color) {
