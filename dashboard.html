@@ -29,16 +29,15 @@
         
         .charts-wrapper { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
         
-        /* DOUGHNUT CHARTS GRID CONTAINER */
-        .doughnut-container { width: 48%; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); box-sizing: border-box; display: flex; flex-direction: column; align-items: center; }
-        .doughnut-container h3 { margin-top: 0; color: #2c3e50; font-size: 16px; }
+        /* DOUGHNUT CHARTS CONTAINER */
+        .doughnut-container { width: 100%; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); box-sizing: border-box; display: flex; flex-direction: column; align-items: center; }
+        .doughnut-container h3 { margin-top: 0; color: #2c3e50; font-size: 16px; margin-bottom: 20px; }
         .donuts-grid { display: flex; justify-content: space-around; width: 100%; flex-wrap: wrap; gap: 15px; }
-        .donut-box { width: 45%; text-align: center; position: relative; }
+        .donut-box { width: 22%; text-align: center; position: relative; min-width: 130px; }
         .donut-box canvas { max-width: 130px; max-height: 130px; margin: 0 auto; display: block; }
-        
-        .chart-container { width: 48%; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); box-sizing: border-box; }
+
         .loading { text-align: center; font-size: 18px; color: #2980b9; font-weight: bold; margin-top: 50px; }
-        @media (max-width: 900px) { .doughnut-container, .chart-container { width: 100%; } .card { width: 30%; } }
+        @media (max-width: 900px) { .donut-box { width: 45%; } .card { width: 30%; } }
     </style>
 </head>
 <body>
@@ -76,24 +75,36 @@
     </div>
 
     <div class="charts-wrapper" id="chartDiv" style="display:none;">
-        <!-- NEW SEPARATE DOUGHNUT CHARTS BOX -->
+        <!-- DOUGHNUT CHARTS + MTTR/MTBF CARDS ROW -->
         <div class="doughnut-container">
-            <h3>OEE & Metrics Breakdown</h3>
+            <h3>OEE & Maintenance Performance Breakdown</h3>
             <div class="donuts-grid">
-                <div class="donut-box"><canvas id="oeeDonut"></canvas><p style="margin:5px 0 0 0; font-weight:bold; font-size:13px; color:#2c3e50;">OEE</p></div>
-                <div class="donut-box"><canvas id="aDonut"></canvas><p style="margin:5px 0 0 0; font-weight:bold; font-size:13px; color:#3498db;">Availability</p></div>
-                <div class="donut-box"><canvas id="pDonut"></canvas><p style="margin:5px 0 0 0; font-weight:bold; font-size:13px; color:#f1c40f;">Performance</p></div>
-                <div class="donut-box"><canvas id="qDonut"></canvas><p style="margin:5px 0 0 0; font-weight:bold; font-size:13px; color:#e74c3c;">Quality</p></div>
+                <div class="donut-box"><canvas id="oeeDonut"></canvas><p style="margin:8px 0 0 0; font-weight:bold; font-size:13px; color:#2c3e50;">OEE</p></div>
+                <div class="donut-box"><canvas id="aDonut"></canvas><p style="margin:8px 0 0 0; font-weight:bold; font-size:13px; color:#3498db;">Availability</p></div>
+                <div class="donut-box"><canvas id="pDonut"></canvas><p style="margin:8px 0 0 0; font-weight:bold; font-size:13px; color:#f1c40f;">Performance</p></div>
+                <div class="donut-box"><canvas id="qDonut"></canvas><p style="margin:8px 0 0 0; font-weight:bold; font-size:13px; color:#e74c3c;">Quality</p></div>
             </div>
         </div>
 
-        <div class="chart-container"><canvas id="downtimeChart"></canvas></div>
+        <!-- MTTR & MTBF CARDS SECTION (REPLACED DOWNTIME CHART) -->
+        <div class="cards" style="width: 100%; margin-top: 10px; display: flex; justify-content: center; gap: 20px;">
+            <div class="card" style="width: 40%; min-width: 220px; border-top-color: #8e44ad; padding: 20px;">
+                <h3 style="font-size: 16px;">Mean Time To Repair (MTTR)</h3>
+                <div class="value" style="color:#8e44ad; font-size: 32px;" id="cardMTTR">0 Min</div>
+                <p style="font-size: 11px; color: #7f8c8d; margin-top: 5px;">Average downtime per failure</p>
+            </div>
+            <div class="card" style="width: 40%; min-width: 220px; border-top-color: #16a085; padding: 20px;">
+                <h3 style="font-size: 16px;">Mean Time Between Failures (MTBF)</h3>
+                <div class="value" style="color:#16a085; font-size: 32px;" id="cardMTBF">0 Min</div>
+                <p style="font-size: 11px; color: #7f8c8d; margin-top: 5px;">Average uptime between failures</p>
+            </div>
+        </div>
     </div>
 
     <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbyRkmh4_ofJjAftObCfnX9gmhqCa4xcsvSp143BXCUdQujfy4gaFkBMlEhsVrwa61HugQ/exec";
         let allLogs = [], allMachines = [];
-        let oeeDonutInst = null, aDonutInst = null, pDonutInst = null, qDonutInst = null, downtimeChartInstance = null;
+        let oeeDonutInst = null, aDonutInst = null, pDonutInst = null, qDonutInst = null;
 
         function getSafeVal(obj, possibleKeys) {
             let lowerKeys = possibleKeys.map(k => k.toLowerCase().replace(/\s/g, ''));
@@ -200,7 +211,7 @@
                 banner.style.display = "none";
             }
 
-            let pt = 0, dt = 0, it = 0, dtC = 0, dtR = {};
+            let pt = 0, dt = 0, it = 0, dtC = 0;
             let totalLineGood = 0; 
             let totalLineScrap = 0; 
 
@@ -249,7 +260,7 @@
                 }
                 else if (entryType === "Maintenance") { 
                     let d = Number(getSafeVal(row, ["Downtime(Min)", "Downtime"])) || 0; 
-                    if(d > 0) { dt += d; dtC++; let rn = getSafeVal(row, ["Maint.Reason", "MaintReason"]) || "N/A"; dtR[rn] = (dtR[rn] || 0) + d; } 
+                    if(d > 0) { dt += d; dtC++; } 
                 }
             }
 
@@ -260,15 +271,21 @@
             
             if(p>1) p=1; let oee = a*p*q;
 
+            let mttrVal = dtC > 0 ? (dt / dtC).toFixed(1) : 0;
+            let mtbfVal = dtC > 0 ? (rt / dtC).toFixed(1) : rt.toFixed(1);
+
             document.getElementById("valOEE").innerText = (oee*100).toFixed(1)+"%";
             document.getElementById("valA").innerText = (a*100).toFixed(1)+"%";
             document.getElementById("valP").innerText = (p*100).toFixed(1)+"%";
             document.getElementById("valQ").innerText = (q*100).toFixed(1)+"%";
-            document.getElementById("valMTTR").innerText = dtC>0 ? (dt/dtC).toFixed(1) : 0;
-            document.getElementById("valMTBF").innerText = dtC>0 ? (rt/dtC).toFixed(1) : rt.toFixed(1);
+            document.getElementById("valMTTR").innerText = mttrVal;
+            document.getElementById("valMTBF").innerText = mtbfVal;
 
-            let sDt = Object.keys(dtR).map(k => ({r:k, t:dtR[k]})).sort((x,y)=>y.t-x.t);
-            updateCharts(a*100, p*100, q*100, oee*100, sDt.map(i=>i.r), sDt.map(i=>i.t));
+            // Update bottom cards for MTTR and MTBF
+            document.getElementById("cardMTTR").innerText = mttrVal + " Min";
+            document.getElementById("cardMTBF").innerText = mtbfVal + " Min";
+
+            updateCharts(a*100, p*100, q*100, oee*100);
         }
 
         function createDonut(canvasId, val, color) {
@@ -306,7 +323,7 @@
             });
         }
 
-        function updateCharts(a, p, q, o, l, d) {
+        function updateCharts(a, p, q, o) {
             if (oeeDonutInst) oeeDonutInst.destroy();
             if (aDonutInst) aDonutInst.destroy();
             if (pDonutInst) pDonutInst.destroy();
@@ -316,12 +333,6 @@
             aDonutInst = createDonut('aDonut', a, '#3498db');
             pDonutInst = createDonut('pDonut', p, '#f1c40f');
             qDonutInst = createDonut('qDonut', q, '#e74c3c');
-
-            if (downtimeChartInstance) downtimeChartInstance.destroy();
-            downtimeChartInstance = new Chart(document.getElementById('downtimeChart'), { 
-                type: 'bar', data: { labels: l, datasets: [{ data: d, backgroundColor: '#95a5a6' }] }, 
-                options: { indexAxis: 'y', plugins: { legend: { display: false } } } 
-            });
         }
     </script>
 </body>
