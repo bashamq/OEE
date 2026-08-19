@@ -7,50 +7,51 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: 'Poppins', sans-serif; background-color: #0b131d; margin: 0; padding: 20px; color: #f8fafc; }
+        body { font-family: 'Poppins', sans-serif; background-color: #080d14; margin: 0; padding: 20px; color: #f8fafc; }
         
-        .header { display: flex; justify-content: space-between; align-items: center; background: #131f2e; color: white; padding: 18px 25px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #1e293b; box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
-        .header h2 { margin: 0; font-size: 22px; text-transform: uppercase; color: #38bdf8; }
+        .header { display: flex; justify-content: space-between; align-items: center; background: #0f1722; color: white; padding: 18px 25px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #1e293b; box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+        .header h2 { margin: 0; font-size: 22px; text-transform: uppercase; color: #4ade80; }
         
         .kpi-container { display: flex; gap: 15px; }
-        .kpi-card { background: rgba(19,31,46,0.8); padding: 10px 18px; border-radius: 8px; text-align: center; border: 1px solid #334155; }
+        .kpi-card { background: rgba(15,23,34,0.9); padding: 10px 18px; border-radius: 8px; text-align: center; border: 1px solid #334155; }
         .kpi-card span { display: block; font-size: 10px; color: #94a3b8; text-transform: uppercase; }
         .kpi-card strong { font-size: 18px; color: #4ade80; }
 
         /* FILTER BAR */
-        .filter-section { background: #131f2e; padding: 15px 20px; border-radius: 12px; margin-bottom: 25px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap; border: 1px solid #1e293b; }
+        .filter-section { background: #0f1722; padding: 15px 20px; border-radius: 12px; margin-bottom: 25px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap; border: 1px solid #1e293b; }
         .filter-group { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 200px; }
         .filter-group label { font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; }
-        .filter-section select, .filter-section input { padding: 10px 15px; border-radius: 8px; border: 1px solid #334155; background: #0b131d; color: white; font-family: 'Poppins', sans-serif; font-size: 14px; }
+        .filter-section select, .filter-section input { padding: 10px 15px; border-radius: 8px; border: 1px solid #334155; background: #080d14; color: white; font-family: 'Poppins', sans-serif; font-size: 14px; }
 
-        /* SCADA STYLE CARDS GRID (AS IN YOUR REFERENCE PICTURE) */
+        /* SCADA CARD LAYOUT (EXACTLY LIKE REFERENCE PICTURE) */
         .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
-        .scada-card { background: #131f2e; border-radius: 14px; padding: 22px; border: 1px solid #1e293b; box-shadow: 0 8px 25px rgba(0,0,0,0.5); text-align: center; transition: 0.3s; }
-        .scada-card:hover { transform: translateY(-4px); border-color: #38bdf8; }
+        .scada-card { background: #0f1722; border-radius: 16px; padding: 25px 20px; border: 1px solid #1e293b; box-shadow: 0 10px 30px rgba(0,0,0,0.6); text-align: center; transition: 0.3s; }
+        .scada-card:hover { transform: translateY(-4px); border-color: #4ade80; }
         
-        .scada-title { font-size: 20px; font-weight: 700; color: #f8fafc; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px; }
-        .order-box { background: #0b131d; padding: 12px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #1e293b; }
-        .order-box span { display: block; font-size: 11px; color: #38bdf8; text-transform: uppercase; font-weight: 600; }
-        .order-box strong { font-size: 14px; color: #e2e8f0; font-weight: 500; }
+        .scada-title { font-size: 21px; font-weight: 700; color: #f8fafc; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        .order-box { background: #080d14; padding: 12px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #1e293b; }
+        .order-box span { display: block; font-size: 11px; color: #4ade80; text-transform: uppercase; font-weight: 600; margin-bottom: 3px; }
+        .order-box strong { font-size: 15px; color: #e2e8f0; font-weight: 500; }
         
         .oee-display { margin: 15px 0; }
-        .oee-display span { display: block; font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
-        .oee-display h1 { margin: 5px 0; font-size: 38px; font-weight: 700; color: #38bdf8; }
+        .oee-display span { display: block; font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+        .oee-display h1 { margin: 5px 0; font-size: 42px; font-weight: 700; color: #ffffff; letter-spacing: -1px; }
 
-        /* METRICS CIRCLES ROW */
-        .metrics-row { display: flex; justify-content: space-around; margin: 20px 0; background: #0b131d; padding: 12px; border-radius: 10px; border: 1px solid #1e293b; }
-        .metric-item { text-align: center; width: 70px; }
-        .metric-item span { display: block; font-size: 10px; color: #94a3b8; text-transform: uppercase; margin-top: 5px; font-weight: 600; }
-        .metric-item strong { font-size: 13px; color: #4ade80; }
+        /* CIRCULAR GAUGES ROW */
+        .gauges-row { display: flex; justify-content: space-around; margin: 20px 0; background: #080d14; padding: 15px 10px; border-radius: 12px; border: 1px solid #1e293b; }
+        .gauge-box { text-align: center; width: 85px; position: relative; }
+        .gauge-box canvas { display: block; margin: 0 auto; }
+        .gauge-box span { display: block; font-size: 11px; color: #94a3b8; text-transform: uppercase; margin-top: 8px; font-weight: 600; }
 
         /* PROCESS STEPS ROW */
-        .steps-box { margin-top: 15px; background: #0b131d; padding: 12px; border-radius: 10px; border: 1px solid #1e293b; }
-        .steps-title { font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 600; margin-bottom: 8px; display: block; }
-        .steps-row { display: flex; justify-content: center; gap: 10px; }
-        .step-bubble { width: 32px; height: 32px; border-radius: 50%; background: #1e293b; color: #94a3b8; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; border: 1px solid #334155; }
-        .step-bubble.active { background: rgba(74,222,128,0.2); color: #4ade80; border-color: #4ade80; box-shadow: 0 0 10px rgba(74,222,128,0.3); }
+        .steps-box { margin-top: 20px; background: #080d14; padding: 15px; border-radius: 12px; border: 1px solid #1e293b; }
+        .steps-title { font-size: 12px; color: #4ade80; text-transform: uppercase; font-weight: 600; margin-bottom: 10px; display: block; }
+        .steps-row { display: flex; justify-content: center; gap: 12px; }
+        .step-bubble { width: 36px; height: 36px; border-radius: 50%; background: #1e293b; color: #94a3b8; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; border: 1px solid #334155; }
+        .step-bubble.active { background: rgba(74,222,128,0.2); color: #4ade80; border-color: #4ade80; box-shadow: 0 0 12px rgba(74,222,128,0.4); }
 
-        .no-data { text-align: center; padding: 50px; color: #94a3b8; font-size: 16px; background: #131f2e; border-radius: 12px; grid-column: 1 / -1; }
+        .no-data { text-align: center; padding: 50px; color: #94a3b8; font-size: 16px; background: #0f1722; border-radius: 12px; grid-column: 1 / -1; }
         .live-indicator { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #4ade80; font-weight: 600; }
         .live-dot { width: 8px; height: 8px; background: #4ade80; border-radius: 50%; animation: blink 1.5s infinite; }
         @keyframes blink { 0% { opacity: 0.3; } 50% { opacity: 1; } 100% { opacity: 0.3; } }
@@ -99,6 +100,7 @@
         
         let globalMachines = [];
         let globalLogs = [];
+        let chartInstances = {};
 
         function getSafeVal(obj, possibleKeys) {
             let lowerKeys = possibleKeys.map(k => k.toLowerCase().replace(/\s/g, ''));
@@ -146,106 +148,127 @@
             const container = document.getElementById("cardsContainer");
             container.innerHTML = "";
 
-            let linesToProcess = [];
             let isLineSpecific = selectedLine !== "";
+            let cardsToRender = [];
 
             if (!isLineSpecific) {
                 // ALL LINES VIEW: Get unique lines
-                linesToProcess = [...new Set(globalMachines.map(m => getSafeVal(m, ["LineName", "Line"])))].filter(Boolean);
+                let lines = [...new Set(globalMachines.map(m => getSafeVal(m, ["LineName", "Line"])))].filter(Boolean);
+                lines.forEach(lineName => {
+                    let lineMachs = globalMachines.filter(m => getSafeVal(m, ["LineName", "Line"]) === lineName);
+                    let stats = calculateStatsForGroup(lineMachs, selectedDate, selectedShift);
+                    cardsToRender.push({ title: lineName, subtitle: stats.productName, ...stats, isLine: true });
+                });
             } else {
-                // SPECIFIC LINE VIEW: Get operations/machines inside this line
-                linesToProcess = globalMachines.filter(m => getSafeVal(m, ["LineName", "Line"]) === selectedLine);
+                // SPECIFIC LINE VIEW: Get individual machines/operations inside this line
+                let lineMachs = globalMachines.filter(m => getSafeVal(m, ["LineName", "Line"]) === selectedLine);
+                lineMachs.forEach((mach, idx) => {
+                    let stats = calculateStatsForGroup([mach], selectedDate, selectedShift);
+                    cardsToRender.push({ 
+                        title: stats.operation, 
+                        subtitle: `Mach: ${stats.machName} (${stats.asset}) | ${stats.productName}`, 
+                        ...stats, 
+                        isLine: false 
+                    });
+                });
             }
 
-            if (linesToProcess.length === 0) {
+            if (cardsToRender.length === 0) {
                 container.innerHTML = `<div class="no-data">No production data found for this selection.</div>`;
                 return;
             }
 
             let totalShopOEE = 0;
-            let cardCount = 0;
+            cardsToRender.forEach((cardData, idx) => {
+                totalShopOEE += cardData.oee;
 
-            if (!isLineSpecific) {
-                // RENDER LINE CARDS FOR ALL LINES
-                linesToProcess.forEach(lineName => {
-                    let lineMachs = globalMachines.filter(m => getSafeVal(m, ["LineName", "Line"]) === lineName);
-                    let lineStats = calculateStatsForGroup(lineMachs, selectedDate, selectedShift);
-                    
-                    totalShopOEE += lineStats.oee;
-                    cardCount++;
+                let card = document.createElement("div");
+                card.className = "scada-card";
+                card.innerHTML = `
+                    <div class="scada-title">${cardData.title}</div>
+                    <div class="order-box">
+                        <span>Current Order / Product</span>
+                        <strong>${cardData.subtitle}</strong>
+                    </div>
+                    <div class="oee-display">
+                        <span>OEE Performance</span>
+                        <h1>${cardData.oee.toFixed(1)}%</h1>
+                    </div>
+                    <div class="gauges-row">
+                        <div class="gauge-box">
+                            <canvas id="gaugeQual_${idx}" width="70" height="70"></canvas>
+                            <span>Quality</span>
+                        </div>
+                        <div class="gauge-box">
+                            <canvas id="gaugePerf_${idx}" width="70" height="70"></canvas>
+                            <span>Performance</span>
+                        </div>
+                        <div class="gauge-box">
+                            <canvas id="gaugeAvail_${idx}" width="70" height="70"></canvas>
+                            <span>Availability</span>
+                        </div>
+                    </div>
+                    <div class="steps-box">
+                        <span class="steps-title">Process Step Sequence</span>
+                        <div class="steps-row">
+                            <div class="step-bubble ${cardData.opSeq === 1 ? 'active' : ''}">1</div>
+                            <div class="step-bubble ${cardData.opSeq === 2 ? 'active' : ''}">2</div>
+                            <div class="step-bubble ${cardData.opSeq === 3 ? 'active' : ''}">3</div>
+                            <div class="step-bubble ${cardData.opSeq === 4 ? 'active' : ''}">4</div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
 
-                    let card = document.createElement("div");
-                    card.className = "scada-card";
-                    card.innerHTML = `
-                        <div class="scada-title">${lineName}</div>
-                        <div class="order-box">
-                            <span>Current Product / Order</span>
-                            <strong>${lineStats.productName}</strong>
-                        </div>
-                        <div class="oee-display">
-                            <span>OEE Performance</span>
-                            <h1>${lineStats.oee.toFixed(1)}%</h1>
-                        </div>
-                        <div class="metrics-row">
-                            <div class="metric-item"><strong>${lineStats.qual.toFixed(0)}%</strong><span>Quality</span></div>
-                            <div class="metric-item"><strong>${lineStats.perf.toFixed(0)}%</strong><span>Perf</span></div>
-                            <div class="metric-item"><strong>${lineStats.avail.toFixed(0)}%</strong><span>Avail</span></div>
-                        </div>
-                        <div class="steps-box">
-                            <span class="steps-title">Process Step Status</span>
-                            <div class="steps-row">
-                                <div class="step-bubble active">1</div>
-                                <div class="step-bubble">2</div>
-                                <div class="step-bubble">3</div>
-                                <div class="step-bubble">4</div>
-                            </div>
-                        </div>
-                    `;
-                    container.appendChild(card);
-                });
-            } else {
-                // RENDER OPERATION / MACHINE CARDS FOR SELECTED LINE
-                linesToProcess.forEach((mach, index) => {
-                    let machStats = calculateStatsForGroup([mach], selectedDate, selectedShift);
-                    totalShopOEE += machStats.oee;
-                    cardCount++;
+                // Render circular arc gauges using Chart.js doughnut
+                setTimeout(() => {
+                    createArcGauge(`gaugeQual_${idx}`, cardData.qual);
+                    createArcGauge(`gaugePerf_${idx}`, cardData.perf);
+                    createArcGauge(`gaugeAvail_${idx}`, cardData.avail);
+                }, 50);
+            });
 
-                    let activeStep = (index % 4) + 1; // Simulated active process step 1 to 4
+            document.getElementById("kpiOEE").innerText = (totalShopOEE / cardsToRender.length).toFixed(1) + "%";
+        }
 
-                    let card = document.createElement("div");
-                    card.className = "scada-card";
-                    card.innerHTML = `
-                        <div class="scada-title">${machStats.operation}</div>
-                        <div class="order-box">
-                            <span>Machine: ${machStats.machName} (${machStats.asset})</span>
-                            <strong>Product: ${machStats.productName}</strong>
-                        </div>
-                        <div class="oee-display">
-                            <span>Operation OEE</span>
-                            <h1>${machStats.oee.toFixed(1)}%</h1>
-                        </div>
-                        <div class="metrics-row">
-                            <div class="metric-item"><strong>${machStats.qual.toFixed(0)}%</strong><span>Quality</span></div>
-                            <div class="metric-item"><strong>${machStats.perf.toFixed(0)}%</strong><span>Perf</span></div>
-                            <div class="metric-item"><strong>${machStats.avail.toFixed(0)}%</strong><span>Avail</span></div>
-                        </div>
-                        <div class="steps-box">
-                            <span class="steps-title">Process Step Sequence</span>
-                            <div class="steps-row">
-                                <div class="step-bubble ${activeStep === 1 ? 'active' : ''}">1</div>
-                                <div class="step-bubble ${activeStep === 2 ? 'active' : ''}">2</div>
-                                <div class="step-bubble ${activeStep === 3 ? 'active' : ''}">3</div>
-                                <div class="step-bubble ${activeStep === 4 ? 'active' : ''}">4</div>
-                            </div>
-                        </div>
-                    `;
-                    container.appendChild(card);
-                });
-            }
+        function createArcGauge(canvasId, percentage) {
+            const ctx = document.getElementById(canvasId);
+            if(!ctx) return;
+            if (chartInstances[canvasId]) chartInstances[canvasId].destroy();
 
-            if(cardCount > 0) {
-                document.getElementById("kpiOEE").innerText = (totalShopOEE / cardCount).toFixed(1) + "%";
-            }
+            let val = Math.min(Math.max(percentage, 0), 100);
+            chartInstances[canvasId] = new Chart(ctx.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    datasets: [{
+                        data: [val, 100 - val],
+                        backgroundColor: ['#4ade80', '#1e293b'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: false,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                    cutout: '75%',
+                    rotation: -90,
+                    circumference: 180
+                },
+                plugins: [{
+                    id: 'textCenter',
+                    beforeDraw: function(chart) {
+                        let width = chart.width, height = chart.height, ctx = chart.ctx;
+                        ctx.restore();
+                        let fontSize = (height / 32).toFixed(2);
+                        ctx.font = "bold " + fontSize + "rem Poppins, sans-serif";
+                        ctx.textBaseline = "middle";
+                        ctx.fillStyle = "#ffffff";
+                        let text = Math.round(val), textX = Math.round((width - ctx.measureText(text).width) / 2), textY = height / 1.5;
+                        ctx.fillText(text, textX, textY);
+                        ctx.save();
+                    }
+                }]
+            });
         }
 
         function calculateStatsForGroup(machinesArray, selectedDate, selectedShift) {
@@ -291,15 +314,18 @@
             let oee = (availability / 100) * (performance / 100) * (quality / 100) * 100;
             if(isNaN(oee)) oee = 0;
 
+            let parsedSeq = parseInt(getSafeVal(sampleMach, ["OpSequence", "Sequence"])) || 1;
+
             return {
-                productName: getSafeVal(sampleMach, ["ProductName", "Product"]) || 'Standard Part',
+                productName: getSafeVal(sampleMach, ["ProductName", "Product"]) || 'Gas Valve',
                 operation: getSafeVal(sampleMach, ["Operation"]) || 'Machining',
                 machName: getSafeVal(sampleMach, ["MachineName", "Machine"]) || 'Machine 1',
                 asset: getSafeVal(sampleMach, ["AssetNumber", "Barcode"]) || '000',
                 avail: availability > 100 ? 100 : availability,
                 perf: performance > 100 ? 100 : performance,
                 qual: quality > 100 ? 100 : quality,
-                oee: oee
+                oee: oee,
+                opSeq: parsedSeq > 4 ? 4 : (parsedSeq < 1 ? 1 : parsedSeq)
             };
         }
     </script>
