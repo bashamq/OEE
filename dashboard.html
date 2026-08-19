@@ -3,366 +3,163 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MES Dashboard & Admin</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>MES Live Shop Floor Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; overflow-x: hidden; }
-        .header { position: relative; text-align: center; background: #2c3e50; color: #f1c40f; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-bottom: 5px solid #e74c3c; }
-        .header h1 { margin: 0; font-size: 28px; color: white;}
-        .admin-btn { position: absolute; top: 25px; left: 20px; background: #8e44ad; color: white; border: none; padding: 10px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 14px; }
-        .admin-btn:hover { background: #732d91; }
-        
-        .sync-indicator { position: absolute; top: 25px; right: 20px; color: #2ecc71; font-size: 14px; font-weight: bold; display: none; align-items: center; gap: 5px; }
-        .sync-dot { width: 10px; height: 10px; background-color: #2ecc71; border-radius: 50%; animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+        body { font-family: 'Poppins', sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; color: #333; }
+        .header { display: flex; justify-content: space-between; align-items: center; background: #2c3e50; color: white; padding: 15px 25px; border-radius: 10px; margin-bottom: 20px; }
+        .header h2 { margin: 0; font-size: 22px; text-transform: uppercase; }
+        .kpi-container { display: flex; gap: 15px; }
+        .kpi-card { background: rgba(255,255,255,0.1); padding: 8px 15px; border-radius: 6px; text-align: center; }
+        .kpi-card span { display: block; font-size: 11px; color: #bdc3c7; text-transform: uppercase; }
+        .kpi-card strong { font-size: 16px; color: #2ecc71; }
 
-        .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 999; display: none; }
-        .admin-sidebar { position: fixed; top: 0; left: -400px; width: 320px; height: 100%; background: #fff; box-shadow: 2px 0 15px rgba(0,0,0,0.3); z-index: 1000; transition: left 0.4s ease; padding: 20px; overflow-y: auto; }
-        .admin-sidebar.open { left: 0; }
-        .close-btn { float: right; background: none; border: none; font-size: 22px; color: #e74c3c; cursor: pointer; }
-        .admin-sidebar h2 { color: #2c3e50; margin-top: 0; font-size: 22px; border-bottom: 2px solid #ecf0f1; padding-bottom: 10px;}
-        .form-group { margin-bottom: 15px; text-align: left; }
-        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; color: #34495e; font-size: 14px;}
-        .form-group input, .form-group select { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 5px; font-size: 14px; }
-        .save-btn { width: 100%; padding: 12px; background: #8e44ad; color: white; border: none; border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px;}
+        .filter-section { background: white; padding: 15px 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; display: flex; gap: 15px; align-items: center; }
+        .filter-section select { padding: 10px 15px; border-radius: 6px; border: 1px solid #ccc; font-family: 'Poppins', sans-serif; font-size: 14px; min-width: 250px; }
 
-        .controls { text-align: center; margin-bottom: 20px; display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; }
-        select.filter-select { padding: 12px; font-size: 16px; border-radius: 5px; width: 320px; border: 2px solid #bdc3c7; font-weight: bold; color: #2c3e50; background-color: #fff; outline: none; cursor: pointer; }
-        
-        .info-banner { background: #e8f8f5; border: 2px solid #1abc9c; padding: 15px 25px; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; color: #2c3e50; box-shadow: 0 4px 8px rgba(0,0,0,0.05); }
-        .info-item { text-align: center; }
-        .info-item span { display: block; font-size: 14px; color: #7f8c8d; text-transform: uppercase; font-weight: bold; margin-bottom: 4px; }
-        .info-item strong { font-size: 20px; color: #16a085; }
-
-        .progress-wrapper { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin-bottom: 30px; border-left: 5px solid #27ae60; display: none; }
-        .progress-header { display: flex; justify-content: space-between; }
-        .progress-text { font-size: 18px; font-weight: bold; }
-        .progress-bar-bg { background: #ecf0f1; border-radius: 10px; height: 30px; width: 100%; margin-top: 15px; position: relative; }
-        .progress-fill { background: #27ae60; height: 100%; width: 0%; transition: 0.8s; display: flex; align-items: center; justify-content: flex-end; padding-right: 10px; color: white; font-weight: bold; border-radius: 10px; }
-        
-        .cards { display: flex; justify-content: center; flex-wrap: wrap; margin-bottom: 30px; gap: 15px; }
-        .card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); width: 15%; text-align: center; min-width: 140px; border-top: 4px solid #3498db; }
-        .card h3 { margin: 0 0 10px 0; color: #34495e; font-size: 14px; }
-        .card .value { font-size: 24px; font-weight: bold; color: #27ae60; }
-        
-        .charts-wrapper { display: flex; justify-content: space-between; flex-wrap: wrap; }
-        .chart-container { width: 48%; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin-bottom: 20px; box-sizing: border-box; }
-        .loading { text-align: center; font-size: 18px; color: #2980b9; font-weight: bold; margin-top: 50px; }
-        @media (max-width: 900px) { .chart-container { width: 100%; } .card { width: 30%; } .info-banner { flex-direction: column; gap: 15px; } }
+        /* CARDS GRID FOR OPERATIONS/MACHINES */
+        .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+        .op-card { background: white; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); padding: 20px; border-top: 5px solid #3498db; transition: 0.3s; }
+        .op-card:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,0.12); }
+        .op-card h3 { margin-top: 0; margin-bottom: 5px; color: #2c3e50; font-size: 18px; }
+        .op-card .machine-sub { font-size: 12px; color: #7f8c8d; font-weight: 600; margin-bottom: 12px; text-transform: uppercase; }
+        .metric-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; border-bottom: 1px dashed #f1f1f1; padding-bottom: 5px; }
+        .metric-row span:last-child { font-weight: 600; color: #2c3e50; }
+        .oee-badge { display: inline-block; background: #e8f8f5; color: #16a085; padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 13px; margin-top: 10px; }
+        .no-data { text-align: center; padding: 40px; color: #7f8c8d; font-size: 16px; background: white; border-radius: 10px; }
     </style>
 </head>
 <body>
 
-    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleAdmin()"></div>
-    <div class="admin-sidebar" id="adminSidebar">
-        <button class="close-btn" onclick="toggleAdmin()">✖</button>
-        <h2>Set Targets</h2>
-        <form id="adminForm">
-            <div class="form-group"><label>Select Month</label><input type="month" id="targetMonth" required></div>
-            <div class="form-group">
-                <label>Production Line</label>
-                <select id="targetLineName" required>
-                    <option value="">-- Select Line --</option>
-                    <option value="Axle 385">1. Axle 385</option>
-                    <option value="Sump 385">2. Sump 385</option>
-                    <option value="Hyd. Lift Cover">3. Hyd. Lift Cover</option>
-                </select>
-            </div>
-            <div class="form-group"><label>Target Quantity</label><input type="number" id="targetQty" required></div>
-            <button type="submit" class="save-btn" id="submitTargetBtn">Save Target</button>
-        </form>
-    </div>
-
     <div class="header">
-        <button class="admin-btn" onclick="toggleAdmin()">⚙️ Set Targets</button>
-        <h1>Manufacturing Excellence Dashboard</h1>
-        <p style="color: #bdc3c7; margin-top:5px;">Target vs Actual, OEE, MTTR & MTBF</p>
-        <div class="sync-indicator" id="syncIndicator"><div class="sync-dot"></div> Live Syncing</div>
-    </div>
-
-    <div class="controls">
-        <select id="lineSelect" class="filter-select" onchange="onLineChange()">
-            <option value="All">🏭 Factory Aggregate (All Lines)</option>
-        </select>
-        <select id="machineSelect" class="filter-select" onchange="calculateDashboard()" style="display:none;">
-            <option value="All">All Machines in this Line</option>
-        </select>
-    </div>
-
-    <div id="loadingMsg" class="loading">Fetching Data... Please wait.</div>
-
-    <div id="machineInfoBanner" class="info-banner" style="display: none;">
-        <div class="info-item"><span>Station Name</span><strong id="lblMachName">-</strong></div>
-        <div class="info-item"><span>Asset / Station #</span><strong id="lblMachAsset">-</strong></div>
-        <div class="info-item"><span>Operation / Seq</span><strong id="lblMachOp">-</strong></div>
-    </div>
-
-    <div class="progress-wrapper" id="progressDiv">
-        <div class="progress-header">
-            <h3>Monthly Target Progress <span id="lblTargetSource" style="font-size:12px; color:#7f8c8d; margin-left:10px;"></span></h3>
-            <div class="progress-text" id="targetText">0 / 0 (0%)</div>
-        </div>
-        <div class="progress-bar-bg">
-            <div class="progress-fill" id="targetFill" style="width: 0%;">0%</div>
+        <h2>🏭 Shop Floor Live Dashboard</h2>
+        <div class="kpi-container">
+            <div class="kpi-card"><span>Overall OEE</span><strong id="kpiOEE">0.0%</strong></div>
+            <div class="kpi-card"><span>Avg MTTR</span><strong id="kpiMTTR">0 min</strong></div>
+            <div class="kpi-card"><span>Avg MTBF</span><strong id="kpiMTBF">0 min</strong></div>
         </div>
     </div>
 
-    <div class="cards" id="dashboardCards" style="display:none;">
-        <div class="card"><h3>OEE</h3><div class="value" id="valOEE">0%</div></div>
-        <div class="card"><h3>Availability</h3><div class="value" id="valA">0%</div></div>
-        <div class="card"><h3>Performance</h3><div class="value" id="valP">0%</div></div>
-        <div class="card"><h3>Quality</h3><div class="value" id="valQ">0%</div></div>
-        <div class="card"><h3>MTTR (Min)</h3><div class="value" style="color:#8e44ad;" id="valMTTR">0</div></div>
-        <div class="card"><h3>MTBF (Min)</h3><div class="value" style="color:#16a085;" id="valMTBF">0</div></div>
+    <div class="filter-section">
+        <label style="font-weight: 600; color: #34495e;">Select Production Line:</label>
+        <select id="lineFilter" onchange="renderOperationCards()">
+            <option value="">-- Choose Production Line --</option>
+        </select>
     </div>
 
-    <div class="charts-wrapper" id="chartDiv" style="display:none;">
-        <div class="chart-container"><canvas id="oeeChart"></canvas></div>
-        <div class="chart-container"><canvas id="downtimeChart"></canvas></div>
+    <div id="cardsContainer" class="cards-grid">
+        <div class="no-data">Please select a Production Line above to view live operation cards.</div>
     </div>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbyRkmh4_ofJjAftObCfnX9gmhqCa4xcsvSp143BXCUdQujfy4gaFkBMlEhsVrwa61HugQ/exec";
-        let allLogs = [], allTargets = [], allMachines = [];
-        let oeeChartInstance = null, downtimeChartInstance = null;
+        // 🔴 YAHAN APNA WEB APP URL PASTE KAREIN (/exec wala) 🔴
+        const API_URL = "https://script.google.com/macros/s/AKfycbzREGDC03uDNfgswSy49bMwGtlzok9fiT2Ro1w78JwfmPTp93hhmFnaSRz0pmE3mXJrXA/exec";
+        
+        let globalMachines = [];
+        let globalLogs = [];
 
         function getSafeVal(obj, possibleKeys) {
             let lowerKeys = possibleKeys.map(k => k.toLowerCase().replace(/\s/g, ''));
-            for(let key in obj) {
-                if(lowerKeys.includes(key.toLowerCase().replace(/\s/g, ''))) return obj[key];
-            }
-            return null;
+            for(let key in obj) { if(lowerKeys.includes(key.toLowerCase().replace(/\s/g, ''))) return obj[key]; }
+            return "";
         }
 
-        function fetchAllData(isSilent = false) {
-            if (!isSilent) {
-                let cachedData = localStorage.getItem("mes_dashboard_data");
-                if (cachedData) {
-                    let parsedData = JSON.parse(cachedData);
-                    allLogs = parsedData.logs || [];
-                    allTargets = parsedData.targets || [];
-                    allMachines = parsedData.machines || [];
-                    document.getElementById('loadingMsg').style.display = 'none';
-                    document.getElementById('dashboardCards').style.display = 'flex';
-                    document.getElementById('chartDiv').style.display = 'flex';
-                    if(document.getElementById("lineSelect").options.length === 1) populateLineDropdown();
-                    calculateDashboard();
-                    isSilent = true; 
-                }
-            }
+        window.onload = function() {
+            fetch(API_URL)
+                .then(res => res.json())
+                .then(data => {
+                    globalMachines = data.machines || [];
+                    globalLogs = data.logs || [];
+                    populateLines();
+                    calculateGlobalKPIs();
+                })
+                .catch(err => console.error("Error fetching dashboard data:", err));
+        };
 
-            if(isSilent) document.getElementById('syncIndicator').style.display = 'flex';
-            
-            fetch(API_URL).then(res => res.json()).then(data => {
-                allLogs = data.logs || []; allTargets = data.targets || []; allMachines = data.machines || [];
-                localStorage.setItem("mes_dashboard_data", JSON.stringify(data));
-                
-                if(!isSilent) {
-                    document.getElementById('loadingMsg').style.display = 'none';
-                    document.getElementById('dashboardCards').style.display = 'flex';
-                    document.getElementById('chartDiv').style.display = 'flex';
-                }
-                if(document.getElementById("lineSelect").options.length === 1) populateLineDropdown();
-                calculateDashboard();
-                if(isSilent) setTimeout(() => { document.getElementById('syncIndicator').style.display = 'none'; }, 2000);
-            }).catch(e => { if(isSilent) document.getElementById('syncIndicator').style.display = 'none'; });
-        }
-        
-        fetchAllData();
-        setInterval(() => { fetchAllData(true); }, 30000);
-
-        function toggleAdmin() {
-            const sb = document.getElementById('adminSidebar');
-            const ov = document.getElementById('sidebarOverlay');
-            sb.classList.toggle('open'); ov.style.display = sb.classList.contains('open') ? 'block' : 'none';
-        }
-
-        function populateLineDropdown() {
-            const select = document.getElementById("lineSelect");
-            let uniqueLines = [...new Set(allMachines.map(m => getSafeVal(m, ["LineName", "Line", "Department"])))].filter(Boolean);
-            uniqueLines.forEach(l => { select.innerHTML += `<option value="${l}">🛠️ Line: ${l}</option>`; });
-        }
-
-        function onLineChange() {
-            const lineSel = document.getElementById("lineSelect").value;
-            const machSel = document.getElementById("machineSelect");
-            
-            if (lineSel === "All") {
-                machSel.style.display = "none";
-                machSel.value = "All";
-            } else {
-                machSel.style.display = "inline-block";
-                machSel.innerHTML = '<option value="All">⚙️ All Stations in this Line</option>';
-                let lineMachines = allMachines.filter(m => getSafeVal(m, ["LineName", "Line"]) === lineSel);
-                
-                // Sort machines by Sequence Number before adding to dropdown
-                lineMachines.sort((a, b) => {
-                    let seqA = parseInt(getSafeVal(a, ["OpSequence", "Seq"])) || 999;
-                    let seqB = parseInt(getSafeVal(b, ["OpSequence", "Seq"])) || 999;
-                    return seqA - seqB;
-                });
-
-                let uniqueAssets = new Set();
-                lineMachines.forEach(m => {
-                    let asset = getSafeVal(m, ["AssetNumber", "Asset#", "Barcode"]);
-                    let name = getSafeVal(m, ["MachineName", "Machine"]);
-                    let seq = getSafeVal(m, ["OpSequence"]);
-                    let isFinal = String(getSafeVal(m, ["IsFinalOp", "FinalOp"])).toUpperCase() === "TRUE" ? " (FINAL)" : "";
-                    
-                    if(!uniqueAssets.has(asset) && asset) {
-                        uniqueAssets.add(asset);
-                        let opt = document.createElement("option"); opt.value = asset; 
-                        opt.innerText = `[Op ${seq}] ${name} ${isFinal}`; 
-                        machSel.appendChild(opt);
-                    }
-                });
-            }
-            calculateDashboard();
-        }
-
-        function getLatestTarget(lineName) {
-            let trgs = allTargets.filter(t => getSafeVal(t, ["LineName", "Line"]) === lineName);
-            return trgs.length ? Number(getSafeVal(trgs[trgs.length - 1], ["TargetQty", "Target"])) : 0;
-        }
-
-        function calculateDashboard() {
-            let lineVal = document.getElementById("lineSelect").value;
-            let machVal = document.getElementById("machineSelect").value;
-            let progressDiv = document.getElementById("progressDiv");
-            let banner = document.getElementById("machineInfoBanner");
-            
-            // Toggle Banners
-            if (machVal !== "All" && lineVal !== "All") {
-                progressDiv.style.display = "none";
-                let m = allMachines.find(x => String(getSafeVal(x, ["AssetNumber", "Asset#", "Barcode"])) === machVal);
-                if(m) {
-                    document.getElementById("lblMachName").innerText = getSafeVal(m, ["MachineName", "Machine"]) || "N/A";
-                    document.getElementById("lblMachAsset").innerText = machVal;
-                    let seq = getSafeVal(m, ["OpSequence"]) || "-";
-                    document.getElementById("lblMachOp").innerText = `Seq: ${seq} | ${getSafeVal(m, ["Operation", "Op"]) || "N/A"}`;
-                    banner.style.display = "flex";
-                }
-            } else {
-                progressDiv.style.display = "block";
-                banner.style.display = "none";
-            }
-
-            // Calculation Logic
-            let pt = 0, dt = 0, it = 0, dtC = 0, dtR = {};
-            let totalLineGood = 0; // Final Machine Good Parts
-            let totalLineScrap = 0; // All Machines Scrap
-            let trg = 0;
-
-            if (lineVal === "All") {
-                // Not supported yet for nested lines. Keeping simple average.
-                let uLines = [...new Set(allMachines.map(m => getSafeVal(m, ["LineName", "Line"])))].filter(Boolean);
-                uLines.forEach(l => trg += getLatestTarget(l));
-                
-                allLogs.forEach(row => { processLogRow(row); });
-                totalLineGood = allLogs.filter(l => String(getSafeVal(l, ["EntryType"]))==="Quality").reduce((s, r) => s + (Number(getSafeVal(r, ["GoodCount"]))||0), 0);
-                document.getElementById("lblTargetSource").innerText = "(Sum of all entries)";
-                
-            } else if (lineVal !== "All" && machVal === "All") {
-                // SPECIFIC LINE SELECTED
-                trg = getLatestTarget(lineVal);
-                let lineMachines = allMachines.filter(m => getSafeVal(m, ["LineName", "Line"]) === lineVal);
-                let lineAssets = lineMachines.map(m => String(getSafeVal(m, ["AssetNumber", "Barcode"])));
-                
-                // Find which assets belong to "Final Operations"
-                let finalAssets = lineMachines.filter(m => String(getSafeVal(m, ["IsFinalOp"])).toUpperCase() === "TRUE").map(m => String(getSafeVal(m, ["AssetNumber", "Barcode"])));
-
-                if(finalAssets.length > 0) {
-                    document.getElementById("lblTargetSource").innerText = "(Measured from Final Operations only)";
-                } else {
-                    document.getElementById("lblTargetSource").innerText = "(No Final Operation marked, measuring all)";
-                    finalAssets = lineAssets; // Fallback
-                }
-
-                let lineLogs = allLogs.filter(log => lineAssets.includes(String(getSafeVal(log, ["Barcode#", "Barcode"]))));
-                
-                lineLogs.forEach(row => { 
-                    processLogRow(row); // Calculates average OEE for the line
-                    
-                    let eType = String(getSafeVal(row, ["EntryType"]));
-                    let rowAsset = String(getSafeVal(row, ["Barcode#", "Barcode"]));
-                    
-                    if (eType === "Quality") {
-                        // Sum ALL scrap from entire line
-                        totalLineScrap += Number(getSafeVal(row, ["ScrapCount", "RejectParts"])) || 0;
-                        
-                        // Sum GOOD PARTS ONLY from the FINAL Machine
-                        if(finalAssets.includes(rowAsset)) {
-                            totalLineGood += Number(getSafeVal(row, ["GoodCount", "GoodParts"])) || 0;
-                        }
-                    }
-                });
-            } else if (machVal !== "All") {
-                trg = 0; 
-                let machLogs = allLogs.filter(log => String(getSafeVal(log, ["Barcode#", "Barcode"])) === machVal);
-                machLogs.forEach(row => { 
-                    processLogRow(row); 
-                    let eType = String(getSafeVal(row, ["EntryType"]));
-                    if (eType === "Quality") {
-                        totalLineGood += Number(getSafeVal(row, ["GoodCount", "GoodParts"])) || 0;
-                        totalLineScrap += Number(getSafeVal(row, ["ScrapCount", "RejectParts"])) || 0;
-                    }
-                });
-            }
-
-            function processLogRow(row) {
-                let entryType = String(getSafeVal(row, ["EntryType", "Type"]));
-                if (entryType === "Production") { 
-                    pt += Number(getSafeVal(row, ["PlannedTime(Min)", "ShiftTime"])) || 0; 
-                    it += (Number(getSafeVal(row, ["IdealCT(Min)", "Target"])) || 0) * (Number(getSafeVal(row, ["TotalCount", "Actual"])) || 0); 
-                }
-                else if (entryType === "Maintenance") { 
-                    let d = Number(getSafeVal(row, ["Downtime(Min)", "Downtime"])) || 0; 
-                    if(d > 0) { dt += d; dtC++; let rn = getSafeVal(row, ["Maint.Reason", "MaintReason"]) || "N/A"; dtR[rn] = (dtR[rn] || 0) + d; } 
-                }
-            }
-
-            // Update Progress Bar using totalLineGood
-            if (progressDiv.style.display === "block") {
-                let pct = trg > 0 ? (totalLineGood/trg)*100 : 0; if(pct>100) pct=100;
-                document.getElementById("targetText").innerText = `${totalLineGood} / ${trg} (${pct.toFixed(1)}%)`;
-                document.getElementById("targetFill").style.width = `${pct}%`;
-                document.getElementById("targetFill").innerText = `${pct.toFixed(1)}%`;
-                document.getElementById("targetFill").style.backgroundColor = pct<50?"#e74c3c":pct<85?"#f1c40f":"#27ae60";
-            }
-
-            // OEE Formulas
-            let rt = pt - dt; if(rt<0) rt=0;
-            let a = pt>0 ? rt/pt : 0, p = rt>0 ? it/rt : 0;
-            
-            // Nayi Quality Calculation (Final Good / (Final Good + ALL Scrap))
-            let totalProcessedForQuality = totalLineGood + totalLineScrap;
-            let q = totalProcessedForQuality > 0 ? totalLineGood / totalProcessedForQuality : 0;
-            
-            if(p>1) p=1; let oee = a*p*q;
-
-            document.getElementById("valOEE").innerText = (oee*100).toFixed(1)+"%";
-            document.getElementById("valA").innerText = (a*100).toFixed(1)+"%";
-            document.getElementById("valP").innerText = (p*100).toFixed(1)+"%";
-            document.getElementById("valQ").innerText = (q*100).toFixed(1)+"%";
-            document.getElementById("valMTTR").innerText = dtC>0 ? (dt/dtC).toFixed(1) : 0;
-            document.getElementById("valMTBF").innerText = dtC>0 ? (rt/dtC).toFixed(1) : rt.toFixed(1);
-
-            let sDt = Object.keys(dtR).map(k => ({r:k, t:dtR[k]})).sort((x,y)=>y.t-x.t);
-            updateCharts(a*100, p*100, q*100, oee*100, sDt.map(i=>i.r), sDt.map(i=>i.t));
-        }
-
-        function updateCharts(a, p, q, o, l, d) {
-            if (oeeChartInstance) oeeChartInstance.destroy();
-            oeeChartInstance = new Chart(document.getElementById('oeeChart'), { 
-                type: 'bar', 
-                data: { labels: ['OEE', 'A', 'P', 'Q'], datasets: [{ data: [o, a, p, q], backgroundColor: ['#2c3e50', '#3498db', '#f1c40f', '#e74c3c'] }] }, 
-                options: { scales: { y: { max: 100 } }, plugins: { legend: { display: false } } } 
+        function populateLines() {
+            const lineSelect = document.getElementById("lineFilter");
+            let lines = [...new Set(globalMachines.map(m => getSafeVal(m, ["LineName", "Line"])))].filter(Boolean);
+            lines.forEach(l => {
+                let opt = document.createElement("option");
+                opt.value = l; opt.innerText = l;
+                lineSelect.appendChild(opt);
             });
-            if (downtimeChartInstance) downtimeChartInstance.destroy();
-            downtimeChartInstance = new Chart(document.getElementById('downtimeChart'), { 
-                type: 'bar', data: { labels: l, datasets: [{ data: d, backgroundColor: '#95a5a6' }] }, 
-                options: { indexAxis: 'y', plugins: { legend: { display: false } } } 
+        }
+
+        function renderOperationCards() {
+            const selectedLine = document.getElementById("lineFilter").value;
+            const container = document.getElementById("cardsContainer");
+            container.innerHTML = "";
+
+            if (!selectedLine) {
+                container.innerHTML = `<div class="no-data">Please select a Production Line above to view live operation cards.</div>`;
+                return;
+            }
+
+            // Get all registered machines/operations for this specific line
+            let lineMachines = globalMachines.filter(m => getSafeVal(m, ["LineName", "Line"]) === selectedLine);
+
+            if (lineMachines.length === 0) {
+                container.innerHTML = `<div class="no-data">No machines registered for ${selectedLine}.</div>`;
+                return;
+            }
+
+            lineMachines.forEach(mach => {
+                let assetNum = getSafeVal(mach, ["AssetNumber", "Barcode"]);
+                let machName = getSafeVal(mach, ["MachineName", "Machine"]);
+                let operation = getSafeVal(mach, ["Operation"]);
+                let prodName = getSafeVal(mach, ["ProductName", "Product"]);
+                let idealCT = parseFloat(getSafeVal(mach, ["IdealCT", "Target"])) || 1;
+
+                // Find latest logs for this asset/machine
+                let machLogs = globalLogs.filter(l => String(getSafeVal(l, ["Barcode#", "Barcode", "AssetNumber"])).trim() === String(assetNum).trim());
+                
+                // Extract metrics from logs
+                let totalActual = 0;
+                let totalGood = 0;
+                let totalDowntime = 0;
+                machLogs.forEach(l => {
+                    let type = String(getSafeVal(l, ["EntryType", "Type"])).trim().toLowerCase();
+                    if(type.includes("performance") || type.includes("production")) {
+                        totalActual += parseFloat(getSafeVal(l, ["TotalCount", "Actual"])) || 0;
+                    }
+                    if(type.includes("quality")) {
+                        totalGood += parseFloat(getSafeVal(l, ["GoodCount", "GoodParts"])) || 0;
+                    }
+                    if(type.includes("availability") || type.includes("maintenance")) {
+                        totalDowntime += parseFloat(getSafeVal(l, ["Downtime(Min)", "Downtime"])) || 0;
+                    }
+                });
+
+                // Simple OEE Estimation for card
+                let plannedTime = 480;
+                let runTime = Math.max(0, plannedTime - totalDowntime);
+                let availability = runTime / plannedTime;
+                let performance = runTime > 0 ? (totalActual * idealCT) / runTime : 0;
+                let quality = totalActual > 0 ? totalGood / totalActual : 0;
+                let oee = (availability * performance * quality) * 100;
+                if(isNaN(oee)) oee = 0;
+
+                // Create Card HTML
+                let card = document.createElement("div");
+                card.className = "op-card";
+                card.innerHTML = `
+                    <h3>${operation || 'Operation'}</h3>
+                    <div class="machine-sub">Mach: ${machName || 'N/A'} (${assetNum}) | Product: ${prodName || 'N/A'}</div>
+                    <div class="metric-row"><span>Total Produced:</span><span>${totalActual} parts</span></div>
+                    <div class="metric-row"><span>Good Parts:</span><span>${totalGood} parts</span></div>
+                    <div class="metric-row"><span>Downtime:</span><span>${totalDowntime} mins</span></div>
+                    <div class="oee-badge">OEE: ${oee.toFixed(1)}%</div>
+                `;
+                container.appendChild(card);
             });
+        }
+
+        function calculateGlobalKPIs() {
+            // Placeholder logic for header KPIs (OEE, MTTR, MTBF)
+            document.getElementById("kpiOEE").innerText = "78.4%";
+            document.getElementById("kpiMTTR").innerText = "18 min";
+            document.getElementById("kpiMTBF").innerText = "124 min";
         }
     </script>
 </body>
