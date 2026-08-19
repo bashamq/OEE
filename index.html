@@ -2,159 +2,636 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MES Live Data Entry</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>OEE Live Data Entry</title>
+    <!-- Google Fonts for Professional Look -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; }
-        .container { max-width: 600px; margin: 0 auto; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        h2 { text-align: center; color: #2c3e50; margin-bottom: 25px; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; color: #34495e; font-size: 14px; }
-        input, select, textarea { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 5px; font-size: 14px; }
-        button { width: 100%; padding: 12px; background: #27ae60; color: white; border: none; border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 15px; transition: 0.3s; }
-        button:hover { background: #219653; }
-        .status-msg { text-align: center; margin-top: 15px; font-weight: bold; font-size: 14px; }
+        /* LIVE BACKGROUND ANIMATION */
+        @keyframes panBackground {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            margin: 0; 
+            padding: 15px; 
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            /* PROPER DARK INDUSTRIAL CNC & MACHINING FLOOR BACKGROUND */
+            background-image: url('https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?auto=format&fit=crop&w=1920&q=80');
+            background-size: cover;
+            background-position: center;
+            animation: panBackground 40s infinite alternate linear;
+        }
+
+        /* GLASSMORPHISM CONTAINER */
+        .container { 
+            width: 100%;
+            max-width: 480px; 
+            background: rgba(255, 255, 255, 0.85); 
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            padding: 25px 20px; 
+            border-radius: 16px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3); 
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        h2 { text-align: center; color: #1a252f; margin-top: 0; margin-bottom: 20px; font-size: 24px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+        
+        /* STEP PROGRESS BAR */
+        .step-indicator { display: flex; justify-content: space-between; margin-bottom: 20px; padding: 0 10px; position: relative; }
+        .step-dot { width: 30px; height: 30px; border-radius: 50%; background-color: #e0e6ed; color: #7f8c8d; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: bold; position: relative; z-index: 2; transition: 0.4s ease; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .step-dot.active { background-color: #2980b9; color: white; transform: scale(1.15); box-shadow: 0 0 12px rgba(41,128,185,0.6); }
+        .step-dot.completed { background-color: #27ae60; color: white; }
+        .step-line { flex: 1; height: 4px; background-color: #e0e6ed; margin-top: 13px; z-index: 1; margin-left: -5px; margin-right: -5px; transition: 0.4s ease; }
+        .step-line.completed { background-color: #27ae60; }
+        .step-labels { display: flex; justify-content: space-between; font-size: 11px; color: #34495e; font-weight: 600; margin-top: -15px; margin-bottom: 20px; padding: 0 5px; text-transform: uppercase; }
+        
+        .form-group { margin-bottom: 16px; }
+        label { display: block; margin-bottom: 6px; font-weight: 600; color: #2c3e50; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        /* PROFESSIONAL MOBILE-FRIENDLY INPUTS & DROPDOWNS */
+        input, select { 
+            width: 100%; 
+            padding: 14px; 
+            box-sizing: border-box; 
+            border: 1px solid #cbd5e1; 
+            border-radius: 10px; 
+            font-size: 16px; /* 16px prevents mobile auto-zoom */
+            font-family: 'Poppins', sans-serif;
+            background-color: rgba(255,255,255,0.9);
+            color: #1e293b;
+            transition: 0.3s;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+        }
+        input:focus, select:focus { outline: none; border-color: #3498db; box-shadow: 0 0 0 3px rgba(52,152,219,0.2); }
+        
+        /* CUSTOM ARROW FOR SELECT */
+        select {
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2334495e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 18px;
+            padding-right: 40px;
+        }
+
+        input[readonly], select:disabled, input:disabled { background-color: #f1f5f9; border-color: #cbd5e1; color: #64748b; font-weight: 600; cursor: not-allowed; }
+        
+        /* SLIDE TOGGLE BUTTONS (SEGMENTED CONTROL) */
+        .segmented-control { display: flex; background: #e2e8f0; border-radius: 10px; overflow: hidden; padding: 4px; gap: 4px; }
+        .segmented-control input[type="radio"] { display: none; }
+        .segmented-control label { flex: 1; text-align: center; padding: 10px 5px; cursor: pointer; transition: 0.3s ease; font-size: 13px; font-weight: 600; color: #475569; border-radius: 8px; }
+        .segmented-control input[type="radio"]:checked + label { background: #3498db; color: white; box-shadow: 0 2px 8px rgba(52,152,219,0.4); transform: scale(1.02); }
+
+        .step-content { display: none; animation: slideUp 0.4s ease forwards; opacity: 0; transform: translateY(15px); }
+        .step-content.active { display: block; }
+        @keyframes slideUp { to { opacity: 1; transform: translateY(0); } }
+        
+        .info-box { background: rgba(255,255,255,0.6); padding: 18px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.8); margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
+        .completed-box { background-color: rgba(213, 245, 227, 0.7); border-color: #2ecc71; }
+        .status-badge { float: right; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; background: #e74c3c; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold; }
+        .completed-box .status-badge { background: #27ae60; }
+        
+        .nav-buttons { display: flex; justify-content: space-between; gap: 12px; margin-top: 25px; }
+        button { flex: 1; padding: 15px; color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 700; text-transform: uppercase; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        button:active { transform: translateY(2px); box-shadow: none; }
+        .btn-prev { background: #7f8c8d; } 
+        .btn-prev:hover { background: #6c7a7d; }
+        .btn-next { background: #2980b9; } 
+        .btn-next:hover { background: #2471a3; }
+        .btn-submit { background: #27ae60; }
+        .btn-submit:hover { background: #219150; }
+        .hidden { display: none !important; }
+        .loading-text { font-size: 14px; font-weight: bold; margin-bottom: 15px; text-align: center; color: #d35400; background: rgba(255,255,255,0.8); padding: 10px; border-radius: 8px;}
+        
+        .downtime-row { display: flex; gap: 12px; }
+        .downtime-row .form-group { flex: 1; }
     </style>
 </head>
 <body>
-
     <div class="container">
-        <h2>📊 Live Shop Floor Data Entry</h2>
-        <form id="dataEntryForm" onsubmit="submitForm(event)">
-            
-            <div class="form-group">
-                <label>Date & Time</label>
-                <input type="datetime-local" id="manualDateTime" required>
+        <h2>OEE Live Data</h2>
+        
+        <div class="step-indicator">
+            <div class="step-dot active" id="dot1">1</div><div class="step-line" id="line1"></div>
+            <div class="step-dot" id="dot2">2</div><div class="step-line" id="line2"></div>
+            <div class="step-dot" id="dot3">3</div><div class="step-line" id="line3"></div>
+            <div class="step-dot" id="dot4">4</div>
+        </div>
+        <div class="step-labels"><span>Setup</span><span>Avail</span><span>Perf</span><span>Qual</span></div>
+
+        <div id="loadingStatus" class="loading-text">🔄 Syncing with Master System...</div>
+
+        <form id="oeeForm">
+            <!-- ================= STEP 1: SETUP ================= -->
+            <div class="step-content active" id="step1">
+                <div class="info-box">
+                    <div class="form-group"><label>Date & Time</label><input type="datetime-local" id="entryDateTime" required onchange="checkBackendDataForToday()"></div>
+                    
+                    <div class="form-group"><label style="color: #2980b9;">Department</label><select id="deptSelect" onchange="onDeptChange()"><option value="">-- Choose Dept --</option></select></div>
+                    <div class="form-group"><label style="color: #2980b9;">Production Line</label><select id="lineSelect" onchange="onLineChange()"><option value="">-- Select Line --</option></select></div>
+                    
+                    <div class="form-group">
+                        <label style="color: #2980b9;">Select Asset (Machine)</label>
+                        <select id="machineSelect" onchange="onMachineSelect()"><option value="">-- Select Machine --</option></select>
+                    </div>
+                    
+                    <div class="form-group"><label>Barcode #</label><input type="text" id="barcode" placeholder="Auto-filled" readonly></div>
+                    
+                    <div class="form-group">
+                        <label style="color: #8e44ad;">Product to Run</label>
+                        <select id="productSelect" onchange="onProductSelect()" required><option value="">-- Select Product --</option></select>
+                    </div>
+                </div>
+                <div class="form-group"><label>Operator Name</label><input type="text" id="operatorName" placeholder="Enter name" required></div>
+                <div class="form-group"><label>Shift</label><select id="shift" required onchange="checkBackendDataForToday()"><option value="">Select Shift</option><option value="Morning">Morning</option><option value="Evening">Evening</option><option value="Night">Night</option></select></div>
             </div>
 
-            <div class="form-group">
-                <label>Asset / Barcode #</label>
-                <input type="text" id="barcode" placeholder="e.g. 14185" required>
+            <!-- ================= STEP 2: AVAILABILITY ================= -->
+            <div class="step-content" id="step2">
+                <div class="info-box" id="boxStep2">
+                    <span id="availStatus" class="status-badge">Pending</span>
+                    <h3 style="margin-top:0; color:#2c3e50; font-weight:700;">Availability</h3>
+                    <p style="font-size:11px; color:#e74c3c; font-weight:600; margin-top:-5px;">* Enter 0 if no time lost.</p>
+                    
+                    <div class="form-group"><label>Planned Time (Mins)</label><input type="number" id="availPlannedTime" value="480" readonly></div>
+                    
+                    <div class="downtime-row">
+                        <div class="form-group"><label>Setup Time</label><input type="number" id="setupTime" placeholder="e.g. 15" oninput="calcAvail()"></div>
+                        <div class="form-group"><label>Maint. Time</label><input type="number" id="maintTime" placeholder="e.g. 20" oninput="calcAvail()"></div>
+                    </div>
+
+                    <div class="form-group"><label>Total Downtime</label><input type="number" id="downtime" placeholder="0" readonly></div>
+                    <div class="form-group"><label style="color:#2980b9;">Run Time (Mins)</label><input type="number" id="availRunTime" value="480" readonly></div>
+                    
+                    <div id="maintReasonDiv" class="hidden">
+                        <hr style="border: 0; border-top: 1px dashed #cbd5e1; margin: 20px 0;">
+                        
+                        <!-- SLIDE BUTTONS FOR MAINTENANCE TYPE -->
+                        <div class="form-group">
+                            <label style="color:#e74c3c;">Fault Category</label>
+                            <div class="segmented-control">
+                                <input type="radio" id="faultMech" name="faultType" value="Mechanical" checked>
+                                <label for="faultMech">⚙️ Mech</label>
+                                
+                                <input type="radio" id="faultElec" name="faultType" value="Electrical">
+                                <label for="faultElec">⚡ Elec</label>
+                                
+                                <input type="radio" id="faultBoth" name="faultType" value="Both (M+E)">
+                                <label for="faultBoth">🛠️ Both</label>
+                                
+                                <input type="radio" id="faultOther" name="faultType" value="Other">
+                                <label for="faultOther">❓ Other</label>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label style="color:#e74c3c;">Fault Details / Remarks</label>
+                            <select id="maintReasonSelect" onchange="handleOther('maintReason')"><option value="">-- Select Reason --</option></select>
+                            <input type="text" id="maintReasonOther" class="hidden" placeholder="Type specific remarks..." style="margin-top:10px;">
+                        </div>
+                        <div class="form-group"><label>Technician Name</label><input type="text" id="techName" placeholder="Who repaired it?"></div>
+                    </div>
+                </div>
             </div>
 
-            <div class="form-group">
-                <label>Operator Name</label>
-                <input type="text" id="operatorName" placeholder="Enter name" required>
+            <!-- ================= STEP 3: PERFORMANCE ================= -->
+            <div class="step-content" id="step3">
+                <div class="info-box" id="boxStep3">
+                    <span id="perfStatus" class="status-badge">Pending</span>
+                    <h3 style="margin-top:0; color:#2c3e50; font-weight:700;">Performance</h3>
+                    <div class="form-group"><label id="lblShiftTime">Available Time (Mins)</label><input type="number" id="shiftTime" value="480" readonly></div>
+                    
+                    <div class="downtime-row">
+                        <div class="form-group"><label>Ideal CT</label><input type="number" step="0.01" id="target" readonly></div>
+                        <div class="form-group"><label>Shift Target</label><input type="number" id="stdProd" readonly></div>
+                    </div>
+
+                    <hr style="border: 0; border-top: 1px dashed #cbd5e1; margin: 20px 0;">
+                    <div class="form-group"><label style="color:#2980b9;">Total Parts Produced</label><input type="number" id="actual" placeholder="Enter total parts today" disabled oninput="updateInterlocks()" style="font-size:20px; font-weight:bold; color:#2980b9;"></div>
+                    
+                    <div class="form-group hidden" id="lossReasonDiv">
+                        <label style="color:#e74c3c;">Performance Loss Reason</label>
+                        <select id="lossReasonSelect" onchange="handleOther('lossReason')" disabled><option value="">-- Select Reason --</option></select>
+                        <input type="text" id="lossReasonOther" class="hidden" placeholder="Type specific reason here..." style="margin-top:10px;">
+                    </div>
+                </div>
             </div>
 
-            <div class="form-group">
-                <label>Shift</label>
-                <select id="shift" required>
-                    <option value="">-- Choose Shift --</option>
-                    <option value="Morning">Morning</option>
-                    <option value="Evening">Evening</option>
-                    <option value="Night">Night</option>
-                </select>
+            <!-- ================= STEP 4: QUALITY ================= -->
+            <div class="step-content" id="step4">
+                <div class="info-box" id="boxStep4">
+                    <span id="qualStatus" class="status-badge">Pending</span>
+                    <h3 style="margin-top:0; color:#2c3e50; font-weight:700;">Quality</h3>
+                    <p id="qualProdTarget" style="font-size:13px; color:#16a085; font-weight:600; margin-top:-5px;"></p>
+                    
+                    <div class="form-group"><label>Good Count</label><input type="number" id="goodParts" placeholder="Enter OK parts" disabled oninput="calculateScrap()" style="font-size:20px; font-weight:bold; color:#27ae60;"></div>
+                    <div class="form-group"><label>Scrap Count (Auto)</label><input type="number" id="rejectParts" readonly placeholder="0" style="color:#e74c3c; font-weight:bold;"></div>
+                    
+                    <div class="form-group" id="rejectReasonDiv">
+                        <label>Reject Reason</label>
+                        <select id="rejectReasonSelect" onchange="handleOther('rejectReason')" disabled><option value="">-- Select Reason --</option></select>
+                        <input type="text" id="rejectReasonOther" class="hidden" placeholder="Type specific reason here..." style="margin-top:10px;">
+                    </div>
+                </div>
             </div>
 
-            <div class="form-group">
-                <label>Entry Type</label>
-                <select id="entryType" onchange="toggleFields()" required>
-                    <option value="">-- Choose Entry Type --</option>
-                    <option value="Production">Production / Performance</option>
-                    <option value="Availability">Availability / Maintenance</option>
-                    <option value="Quality">Quality / Scrap</option>
-                </select>
+            <div class="nav-buttons">
+                <button type="button" id="btnPrev" class="btn-prev hidden" onclick="goPrev()">Back</button>
+                <button type="button" id="btnNext" class="btn-next" onclick="goNext()">Next</button>
+                <button type="button" id="btnSubmit" class="btn-submit hidden" onclick="submitData()">Save Data</button>
             </div>
-
-            <!-- Dynamic Fields Container -->
-            <div id="dynamicFields"></div>
-
-            <button type="submit" id="submitBtn">Submit Entry</button>
-            <div class="status-msg" id="statusMsg"></div>
         </form>
     </div>
 
     <script>
-        // 🔴 YAHAN APNA APPS SCRIPT KA LIVE WEB APP URL PASTE KAREIN (/exec wala) 🔴
+        // 🔴 YAHAN APNA WOHI WORKING WEB APP URL DAALEIN 🔴
         const API_URL = "https://script.google.com/macros/s/AKfycbzREGDC03uDNfgswSy49bMwGtlzok9fiT2Ro1w78JwfmPTp93hhmFnaSRz0pmE3mXJrXA/exec";
+        
+        let allRegisteredMachines = []; let allLogs = [];
+        let state = { availSaved: false, perfSaved: false, qualSaved: false };
+        let currentStep = 1; let currentTotalProduced = 0;
+
+        function getSafeVal(obj, possibleKeys) {
+            let lowerKeys = possibleKeys.map(k => k.toLowerCase().replace(/\s/g, ''));
+            for(let key in obj) { if(lowerKeys.includes(key.toLowerCase().replace(/\s/g, ''))) return obj[key]; }
+            return "";
+        }
 
         window.onload = function() {
-            // Set current local date time by default
-            let now = new Date();
-            let tzOffset = now.getTimezoneOffset() * 60000;
-            let localISOTime = (new Date(now - tzOffset)).toISOString().slice(0, 16);
-            document.getElementById("manualDateTime").value = localISOTime;
+            let now = new Date(); now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            document.getElementById('entryDateTime').value = now.toISOString().slice(0,16);
+            fetchData();
         };
 
-        function toggleFields() {
-            let type = document.getElementById("entryType").value;
-            let container = document.getElementById("dynamicFields");
-            container.innerHTML = "";
+        function fetchData(isSilent = false) {
+            let cachedM = localStorage.getItem("mes_machines"); let cachedL = localStorage.getItem("mes_logs");
+            if (!isSilent && cachedM && cachedL) {
+                allRegisteredMachines = JSON.parse(cachedM); allLogs = JSON.parse(cachedL);
+                document.getElementById('loadingStatus').style.display = 'none';
+                populateDeptDropdown(); processQRScan();
+            }
 
-            if (type === "Production") {
-                container.innerHTML = `
-                    <div class="form-group"><label>Planned Time (Min)</label><input type="number" id="shiftTime" value="480" required></div>
-                    <div class="form-group"><label>Ideal CT (Min)</label><input type="number" step="any" id="target" placeholder="e.g. 7" required></div>
-                    <div class="form-group"><label>Total Count (Actual)</label><input type="number" id="actual" placeholder="Total produced parts" required></div>
-                `;
-            } else if (type === "Availability") {
-                container.innerHTML = `
-                    <div class="form-group"><label>Maintenance Reason</label><input type="text" id="maintReason" placeholder="e.g. Mechanical motor issue" required></div>
-                    <div class="form-group"><label>Downtime (Minutes)</label><input type="number" id="downtime" placeholder="e.g. 30" required></div>
-                    <div class="form-group"><label>Technician Name</label><input type="text" id="techName" placeholder="Tech name"></div>
-                `;
-            } else if (type === "Quality") {
-                container.innerHTML = `
-                    <div class="form-group"><label>Good Parts Count</label><input type="number" id="goodParts" placeholder="Passed parts" required></div>
-                    <div class="form-group"><label>Scrap / Reject Count</label><input type="number" id="rejectParts" placeholder="Rejected parts" required></div>
-                    <div class="form-group"><label>Reject Reason</label><input type="text" id="rejectReason" placeholder="Reason for rejection"></div>
-                `;
+            fetch(API_URL).then(res => res.json()).then(data => {
+                allRegisteredMachines = data.machines || []; allLogs = data.logs || [];
+                localStorage.setItem("mes_machines", JSON.stringify(allRegisteredMachines)); 
+                localStorage.setItem("mes_logs", JSON.stringify(allLogs)); 
+                if (!isSilent && !cachedM) {
+                    document.getElementById('loadingStatus').style.display = 'none';
+                    populateDeptDropdown(); processQRScan();
+                }
+                if (isSilent) checkBackendDataForToday();
+            }).catch(e => {
+                if(!isSilent && !cachedM) document.getElementById('loadingStatus').innerText = "⚠️ Error syncing data."; 
+            });
+        }
+
+        function processQRScan() {
+            const assetFromQR = new URLSearchParams(window.location.search).get('asset');
+            if(assetFromQR) {
+                let m = allRegisteredMachines.find(x => String(getSafeVal(x, ["AssetNumber", "Asset#", "Barcode"])).trim() === String(assetFromQR).trim());
+                if (m) {
+                    document.getElementById("deptSelect").value = getSafeVal(m, ["Department", "Dept"]);
+                    onDeptChange();
+                    document.getElementById("lineSelect").value = getSafeVal(m, ["LineName", "Line"]);
+                    onLineChange();
+                    document.getElementById("machineSelect").value = assetFromQR;
+                    onMachineSelect();
+                }
             }
         }
 
-        function submitForm(event) {
-            event.preventDefault();
-            let btn = document.getElementById("submitBtn");
-            let msg = document.getElementById("statusMsg");
-            
-            btn.disabled = true;
-            btn.innerText = "Submitting...";
-            msg.style.color = "#2980b9";
-            msg.innerText = "Sending data to Google Sheet...";
+        function populateDeptDropdown() {
+            const select = document.getElementById("deptSelect");
+            let depts = [...new Set(allRegisteredMachines.map(m => getSafeVal(m, ["Department", "Dept"])))].filter(Boolean);
+            depts.forEach(d => select.innerHTML += `<option value="${d}">${d}</option>`);
+        }
 
-            let payload = {
-                manualDateTime: document.getElementById("manualDateTime").value,
-                barcode: document.getElementById("barcode").value,
-                operatorName: document.getElementById("operatorName").value,
-                shift: document.getElementById("shift").value,
-                entryType: document.getElementById("entryType").value,
-                shiftTime: document.getElementById("shiftTime") ? document.getElementById("shiftTime").value : "",
-                target: document.getElementById("target") ? document.getElementById("target").value : "",
-                actual: document.getElementById("actual") ? document.getElementById("actual").value : "",
-                maintReason: document.getElementById("maintReason") ? document.getElementById("maintReason").value : "",
-                downtime: document.getElementById("downtime") ? document.getElementById("downtime").value : "",
-                techName: document.getElementById("techName") ? document.getElementById("techName").value : "",
-                goodParts: document.getElementById("goodParts") ? document.getElementById("goodParts").value : "",
-                rejectParts: document.getElementById("rejectParts") ? document.getElementById("rejectParts").value : "",
-                rejectReason: document.getElementById("rejectReason") ? document.getElementById("rejectReason").value : ""
+        function onDeptChange() {
+            const dept = document.getElementById("deptSelect").value;
+            const lineSel = document.getElementById("lineSelect");
+            lineSel.innerHTML = '<option value="">-- Select Line --</option>';
+            document.getElementById("machineSelect").innerHTML = '<option value="">-- Select Machine --</option>';
+            document.getElementById("productSelect").innerHTML = '<option value="">-- Select Product --</option>';
+            if(!dept) return;
+            let lines = [...new Set(allRegisteredMachines.filter(m => getSafeVal(m, ["Department", "Dept"]) === dept).map(m => getSafeVal(m, ["LineName", "Line"])))].filter(Boolean);
+            lines.forEach(l => lineSel.innerHTML += `<option value="${l}">${l}</option>`);
+        }
+
+        function onLineChange() {
+            const line = document.getElementById("lineSelect").value;
+            const machSel = document.getElementById("machineSelect");
+            machSel.innerHTML = '<option value="">-- Select Asset --</option>';
+            document.getElementById("productSelect").innerHTML = '<option value="">-- Select Product --</option>';
+            if (!line) return;
+            
+            let lineMachines = allRegisteredMachines.filter(m => getSafeVal(m, ["LineName", "Line"]) === line);
+            let uniqueAssets = new Set();
+            lineMachines.filter(m => getSafeVal(m, ["AssetNumber"]) !== "").forEach((m) => {
+                let name = getSafeVal(m, ["MachineName", "Machine"]);
+                let asset = getSafeVal(m, ["AssetNumber", "Barcode"]);
+                if(!uniqueAssets.has(asset)) {
+                    uniqueAssets.add(asset);
+                    machSel.innerHTML += `<option value="${asset}">${name} (${asset})</option>`;
+                }
+            });
+        }
+
+        function onMachineSelect() {
+            const asset = document.getElementById("machineSelect").value;
+            const prodSel = document.getElementById("productSelect");
+            prodSel.innerHTML = '<option value="">-- Select Product --</option>';
+            document.getElementById("barcode").value = asset;
+            if (!asset) return;
+
+            let machineData = allRegisteredMachines.filter(m => String(getSafeVal(m, ["AssetNumber", "Barcode"])) === asset);
+            let lineMachines = allRegisteredMachines.filter(m => getSafeVal(m, ["LineName", "Line"]) === document.getElementById("lineSelect").value);
+            
+            let am=[], ap=[], aq=[];
+            lineMachines.forEach(m => {
+                let mr=getSafeVal(m, ["MaintReasons"]); if(mr) am.push(...mr.split(',').map(s=>s.trim()));
+                let pr=getSafeVal(m, ["ProdReasons"]); if(pr) ap.push(...pr.split(',').map(s=>s.trim()));
+                let qr=getSafeVal(m, ["QualReasons"]); if(qr) aq.push(...qr.split(',').map(s=>s.trim()));
+            });
+            populateDropdownList('maintReasonSelect', [...new Set(am)].filter(Boolean).join(','), "Select Reason");
+            populateDropdownList('lossReasonSelect', [...new Set(ap)].filter(Boolean).join(','), "Select Reason");
+            populateDropdownList('rejectReasonSelect', [...new Set(aq)].filter(Boolean).join(','), "Select Reason");
+
+            machineData.forEach(m => {
+                let pName = getSafeVal(m, ["ProductName", "Product"]);
+                if(pName) {
+                    let opt = document.createElement("option");
+                    opt.value = pName; opt.innerText = pName;
+                    opt.dataset.ct = getSafeVal(m, ["IdealCT", "Target"]);
+                    opt.dataset.std = getSafeVal(m, ["StdProduction", "TargetQty"]);
+                    prodSel.appendChild(opt);
+                }
+            });
+            checkBackendDataForToday(); 
+        }
+
+        function onProductSelect() {
+            const prodSel = document.getElementById("productSelect");
+            const opt = prodSel.options[prodSel.selectedIndex];
+            if(opt && opt.value) {
+                document.getElementById("target").value = opt.dataset.ct || 0; 
+                document.getElementById("stdProd").value = opt.dataset.std || 0; 
+                updateInterlocks();
+            }
+        }
+
+        function populateDropdownList(id, commaStr, defaultText) {
+            const sel = document.getElementById(id);
+            sel.innerHTML = `<option value="">-- ${defaultText} --</option>`;
+            if (id === 'maintReasonSelect') sel.innerHTML = `<option value="No Issue">No Issue</option>`; 
+            if (commaStr) commaStr.split(',').forEach(r => { if (r.trim()) sel.innerHTML += `<option value="${r.trim()}">${r.trim()}</option>`; });
+            sel.innerHTML += `<option value="Other">Other (Type manually)</option>`;
+        }
+
+        function handleOther(type) {
+            let val = document.getElementById(type + "Select").value;
+            let oth = document.getElementById(type + "Other");
+            if (val === "Other") oth.classList.remove("hidden");
+            else { oth.classList.add("hidden"); oth.value = ""; }
+        }
+
+        function setReasonDropdown(selectId, otherInputId, savedValue, isCompleted) {
+            let selectElem = document.getElementById(selectId);
+            let otherInput = document.getElementById(otherInputId);
+            if (!savedValue) {
+                if(selectId === 'maintReasonSelect') selectElem.value = "No Issue";
+                otherInput.classList.add("hidden"); return;
+            }
+            if (Array.from(selectElem.options).some(opt => opt.value === savedValue)) {
+                selectElem.value = savedValue; otherInput.classList.add("hidden");
+            } else {
+                selectElem.value = "Other"; otherInput.value = savedValue; otherInput.classList.remove("hidden");
+            }
+            if (isCompleted) otherInput.disabled = true;
+        }
+
+        function updateUI() {
+            for(let i=1; i<=4; i++) {
+                document.getElementById('step'+i).classList.remove('active');
+                if(i <= currentStep) document.getElementById('dot'+i).classList.add('active'); else document.getElementById('dot'+i).classList.remove('active');
+                if(i < currentStep) document.getElementById('line'+i).classList.add('completed'); else if(document.getElementById('line'+i)) document.getElementById('line'+i).classList.remove('completed');
+            }
+            document.getElementById('step'+currentStep).classList.add('active');
+            document.getElementById('btnPrev').classList.toggle('hidden', currentStep === 1);
+            if(currentStep === 4) { document.getElementById('btnNext').classList.add('hidden'); document.getElementById('btnSubmit').classList.remove('hidden'); } 
+            else { document.getElementById('btnNext').classList.remove('hidden'); document.getElementById('btnSubmit').classList.toggle('hidden', currentStep === 1); }
+        }
+
+        function goNext() {
+            if(currentStep === 1) {
+                if(!document.getElementById('barcode').value || !document.getElementById('productSelect').value || !document.getElementById('shift').value || !document.getElementById('operatorName').value) {
+                    alert("⚠️ Please fill all required fields to continue."); return;
+                }
+                checkBackendDataForToday(); 
+            }
+            else if(currentStep === 2) {
+                if(!state.availSaved) {
+                    let sVal = document.getElementById('setupTime').value;
+                    let mVal = document.getElementById('maintTime').value;
+                    if(sVal === "" && mVal === "") { alert("⚠️ Enter Setup or Maintenance Time (Enter 0 if ran fine)."); return; }
+                    if((parseFloat(mVal) || 0) > 0 && getFinalReason('maintReason') === "") { alert("⚠️ Please select a Fault Detail / Remark."); return; }
+                }
+                updateInterlocks(); 
+            }
+            else if(currentStep === 3) {
+                if(!state.perfSaved) {
+                    if(document.getElementById('actual').value === "") { alert("⚠️ Please enter Total Count."); return; }
+                    if(parseFloat(document.getElementById('actual').value) < parseFloat(document.getElementById('stdProd').value) && getFinalReason('lossReason').trim() === "") { alert("⚠️ Target missed! Enter Performance Loss Reason."); return; }
+                }
+                updateInterlocks(); 
+            }
+            if(currentStep < 4) { currentStep++; updateUI(); }
+        }
+        function goPrev() { if(currentStep > 1) { currentStep--; updateUI(); } }
+
+        function checkBackendDataForToday() {
+            const shift = document.getElementById("shift").value;
+            const barcode = document.getElementById("barcode").value;
+            const product = document.getElementById("productSelect").value;
+            if(!shift || !barcode || !product) return;
+
+            let selectedDateStr = new Date(document.getElementById("entryDateTime").value).toDateString();
+            let reversedLogs = allLogs.filter(log => {
+                let rawDate = getSafeVal(log, ["Timestamp", "Date"]); if(!rawDate) return false;
+                return new Date(rawDate).toDateString() === selectedDateStr &&
+                       String(getSafeVal(log, ["Barcode#", "Barcode", "AssetNumber"])).trim() === barcode.trim() &&
+                       String(getSafeVal(log, ["Shift"])).trim().toLowerCase() === shift.trim().toLowerCase() &&
+                       String(getSafeVal(log, ["ProductName", "Product"])).trim() === product.trim();
+            }).slice().reverse();
+
+            state = { availSaved: false, perfSaved: false, qualSaved: false };
+            ["setupTime", "maintTime", "downtime", "maintReasonOther", "techName", "actual", "lossReasonOther", "goodParts", "rejectParts", "rejectReasonOther"].forEach(id => { document.getElementById(id).value = ""; document.getElementById(id).disabled = false; });
+            ["maintReasonSelect", "lossReasonSelect", "rejectReasonSelect"].forEach(id => document.getElementById(id).disabled = false);
+            
+            // Availability Check
+            let aLog = reversedLogs.find(l => {
+                let t = String(getSafeVal(l, ["EntryType", "Type"])).trim().toLowerCase();
+                return t === "availability" || t === "maintenance";
+            });
+            if(aLog) {
+                state.availSaved = true; 
+                document.getElementById('setupTime').value = getSafeVal(aLog, ["SetupTime"]) || 0;
+                document.getElementById('maintTime').value = getSafeVal(aLog, ["MaintTime"]) || 0;
+                document.getElementById('downtime').value = getSafeVal(aLog, ["Downtime(Min)", "Downtime"]) || 0;
+                document.getElementById('techName').value = getSafeVal(aLog, ["TechName"]); 
+                
+                let mReason = getSafeVal(aLog, ["MaintReason", "Maint.Reason"]);
+                if((parseFloat(document.getElementById('maintTime').value) || 0) > 0 || mReason) {
+                    document.getElementById("maintReasonDiv").classList.remove("hidden");
+                    // Assuming reason format is "Type - Remarks", we just set it directly to remarks dropdown
+                    setReasonDropdown("maintReasonSelect", "maintReasonOther", mReason, true);
+                } else { document.getElementById("maintReasonDiv").classList.add("hidden"); }
+
+                document.getElementById("boxStep2").classList.add("completed-box"); document.getElementById("availStatus").innerText = "Completed";
+                ["setupTime", "maintTime", "maintReasonSelect", "techName", "maintReasonOther"].forEach(id => document.getElementById(id).disabled = true);
+            } else { 
+                document.getElementById("boxStep2").classList.remove("completed-box"); document.getElementById("availStatus").innerText = "Pending"; 
+                document.getElementById("maintReasonDiv").classList.add("hidden");
+            }
+
+            // Performance Check
+            let pLog = reversedLogs.find(l => {
+                let t = String(getSafeVal(l, ["EntryType", "Type"])).trim().toLowerCase();
+                return t === "performance" || t === "production";
+            });
+            if(pLog) {
+                state.perfSaved = true; document.getElementById('actual').value = getSafeVal(pLog, ["TotalCount", "Actual", "TotalProduced"]);
+                setReasonDropdown("lossReasonSelect", "lossReasonOther", getSafeVal(pLog, ["LossReason", "Low Production Reason"]), true);
+                document.getElementById("boxStep3").classList.add("completed-box"); document.getElementById("perfStatus").innerText = "Completed";
+                ["actual", "lossReasonSelect", "lossReasonOther"].forEach(id => document.getElementById(id).disabled = true);
+            } else { document.getElementById("boxStep3").classList.remove("completed-box"); document.getElementById("perfStatus").innerText = "Pending"; }
+
+            // Quality Check
+            let qLog = reversedLogs.find(l => String(getSafeVal(l, ["EntryType", "Type"])).trim().toLowerCase() === "quality");
+            if(qLog) {
+                state.qualSaved = true; document.getElementById('goodParts').value = getSafeVal(qLog, ["GoodCount", "GoodParts"]);
+                document.getElementById('rejectParts').value = getSafeVal(qLog, ["ScrapCount", "RejectParts"]); setReasonDropdown("rejectReasonSelect", "rejectReasonOther", getSafeVal(qLog, ["RejectReason"]), true);
+                document.getElementById("boxStep4").classList.add("completed-box"); document.getElementById("qualStatus").innerText = "Completed";
+                ["goodParts", "rejectReasonSelect", "rejectReasonOther"].forEach(id => document.getElementById(id).disabled = true);
+            } else { document.getElementById("boxStep4").classList.remove("completed-box"); document.getElementById("qualStatus").innerText = "Pending"; }
+            updateInterlocks();
+        }
+
+        function calcAvail() {
+            let setup = parseFloat(document.getElementById("setupTime").value) || 0;
+            let maint = parseFloat(document.getElementById("maintTime").value) || 0;
+            let total = setup + maint;
+            
+            document.getElementById("downtime").value = total;
+            document.getElementById("availRunTime").value = Math.max(0, 480 - total);
+            
+            if (maint > 0) document.getElementById("maintReasonDiv").classList.remove("hidden");
+            else {
+                document.getElementById("maintReasonDiv").classList.add("hidden");
+                document.getElementById("maintReasonSelect").value = "";
+                document.getElementById("maintReasonOther").value = "";
+            }
+            updateInterlocks();
+        }
+
+        document.getElementById("actual").addEventListener("input", updateInterlocks);
+        document.getElementById("goodParts").addEventListener("input", function() {
+            let good = parseInt(this.value) || 0;
+            if (good > currentTotalProduced) { alert(`⚠️ Max allowed: ${currentTotalProduced}`); this.value = currentTotalProduced; good = currentTotalProduced; }
+            document.getElementById("rejectParts").value = currentTotalProduced - good;
+        });
+
+        function updateInterlocks() {
+            let downtimeVal = document.getElementById("downtime").value;
+            let downtime = downtimeVal === "" ? 0 : parseFloat(downtimeVal);
+            
+            if (downtimeVal !== "" || state.availSaved || document.getElementById("setupTime").value !== "" || document.getElementById("maintTime").value !== "") {
+                let avail = 480 - downtime; document.getElementById("shiftTime").value = avail;
+                document.getElementById("lblShiftTime").innerHTML = downtime > 0 ? `Available Time (Mins) <span style="color:#e74c3c; font-size:12px;">(-${downtime}m Down)</span>` : `Available Time (Mins)`;
+                let idealCT = parseFloat(document.getElementById("target").value) || 0;
+                if (idealCT > 0) document.getElementById("stdProd").value = Math.floor(avail / idealCT);
+                if (!state.perfSaved) { document.getElementById("actual").disabled = false; document.getElementById("lossReasonSelect").disabled = false; }
+            } else { ["actual", "lossReasonSelect"].forEach(id => document.getElementById(id).disabled = true); }
+
+            let actual = parseFloat(document.getElementById("actual").value) || 0;
+            document.getElementById("lossReasonDiv").classList.toggle("hidden", !(actual > 0 && actual < (parseFloat(document.getElementById("stdProd").value) || 0)));
+
+            if (document.getElementById("actual").value !== "" || state.perfSaved) {
+                currentTotalProduced = actual; document.getElementById("qualProdTarget").innerText = `Total Parts Produced: ${actual}`; document.getElementById("goodParts").placeholder = `Max allowed: ${actual}`;
+                if (!state.qualSaved) { document.getElementById("goodParts").disabled = false; document.getElementById("rejectReasonSelect").disabled = false; }
+            } else { ["goodParts", "rejectReasonSelect"].forEach(id => document.getElementById(id).disabled = true); }
+        }
+
+        function getFinalReason(id) { let val = document.getElementById(id + "Select").value; return val === "Other" ? document.getElementById(id + "Other").value : val; }
+
+        function submitData() {
+            if(currentStep === 2 && !state.availSaved && document.getElementById('setupTime').value === "" && document.getElementById('maintTime').value === "") { alert("⚠️ Enter Setup or Maintenance Time."); return; }
+            if(currentStep === 3 && !state.perfSaved && document.getElementById('actual').value === "") { alert("⚠️ Enter Total Count."); return; }
+            if(currentStep === 4 && !state.qualSaved && document.getElementById('goodParts').value === "") { alert("⚠️ Enter Good Count."); return; }
+
+            const btn = document.getElementById("btnSubmit"); btn.innerText = "Saving Data..."; btn.disabled = true;
+            let payloads = [];
+            let commonData = {
+                formType: "dataEntry",
+                manualDateTime: document.getElementById("entryDateTime").value, department: document.getElementById("deptSelect").value, lineName: document.getElementById("lineSelect").value,
+                productName: document.getElementById("productSelect").value, barcode: document.getElementById("barcode").value, operatorName: document.getElementById("operatorName").value,
+                shift: document.getElementById("shift").value, shiftTime: document.getElementById("availPlannedTime").value, target: document.getElementById("target").value
             };
 
-            fetch(API_URL, {
-                method: "POST",
-                body: JSON.stringify(payload)
-            })
-            .then(res => res.json())
-            .then(data => {
-                btn.disabled = false;
-                btn.innerText = "Submit Entry";
-                if(data.status === "success") {
-                    msg.style.color = "#27ae60";
-                    msg.innerText = "✅ Entry saved successfully to Google Sheet!";
-                    document.getElementById("dataEntryForm").reset();
-                    window.onload(); // Reset datetime
-                    document.getElementById("dynamicFields").innerHTML = "";
-                } else {
-                    msg.style.color = "#e74c3c";
-                    msg.innerText = "❌ Error: " + (data.message || "Unknown error");
+            if(!state.availSaved && (document.getElementById("setupTime").value !== "" || document.getElementById("maintTime").value !== "")) {
+                // Combine Type & Remarks smartly
+                let fType = document.querySelector('input[name="faultType"]:checked').value;
+                let remarks = getFinalReason("maintReason");
+                let combinedMaintReason = (parseFloat(document.getElementById("maintTime").value) > 0) ? `[${fType}] ${remarks}` : remarks;
+
+                payloads.push({ 
+                    entryType: "Availability", 
+                    setupTime: document.getElementById("setupTime").value,
+                    maintTime: document.getElementById("maintTime").value,
+                    downtime: document.getElementById("downtime").value, 
+                    maintReason: combinedMaintReason, 
+                    techName: document.getElementById("techName").value, 
+                    ...commonData 
+                });
+            }
+            if(!state.perfSaved && document.getElementById("actual").value !== "") {
+                payloads.push({ entryType: "Performance", actual: document.getElementById("actual").value, lossReason: getFinalReason("lossReason"), ...commonData });
+            }
+            if(!state.qualSaved && document.getElementById("goodParts").value !== "") {
+                payloads.push({ entryType: "Quality", goodParts: document.getElementById("goodParts").value, rejectParts: document.getElementById("rejectParts").value, rejectReason: getFinalReason("rejectReason"), ...commonData });
+            }
+
+            if(payloads.length === 0) { alert("All steps are saved."); btn.innerText = "Save Data"; btn.disabled = false; return; }
+
+            (async () => {
+                try { 
+                    for (let p of payloads) {
+                        let response = await fetch(API_URL, { 
+                            method: "POST", 
+                            body: JSON.stringify(p) 
+                        });
+                        let result = await response.json();
+                        if (result.status === "error") throw new Error(result.message);
+                    }
+                    alert("Data Saved Successfully! 🎉"); 
+                    document.getElementById("oeeForm").reset();
+                    let now = new Date(); now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+                    document.getElementById('entryDateTime').value = now.toISOString().slice(0,16);
+                    currentStep = 1; updateUI(); btn.innerText = "Save Data"; btn.disabled = false; fetchData(true);
+                } catch(e) { 
+                    alert("⚠️ Error saving data!\nDetails: " + e.message); 
+                    btn.innerText = "Save Data"; 
+                    btn.disabled = false; 
                 }
-            })
-            .catch(err => {
-                btn.disabled = false;
-                btn.innerText = "Submit Entry";
-                msg.style.color = "#e74c3c";
-                msg.innerText = "❌ Network Error: " + err.message;
-            });
+            })();
         }
     </script>
 </body>
