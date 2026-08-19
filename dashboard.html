@@ -27,10 +27,18 @@
         .card h3 { margin: 0 0 10px 0; color: #34495e; font-size: 14px; }
         .card .value { font-size: 24px; font-weight: bold; color: #27ae60; }
         
-        .charts-wrapper { display: flex; justify-content: space-between; flex-wrap: wrap; }
-        .chart-container { width: 48%; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin-bottom: 20px; box-sizing: border-box; }
+        .charts-wrapper { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
+        
+        /* DOUGHNUT CHARTS GRID CONTAINER */
+        .doughnut-container { width: 48%; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); box-sizing: border-box; display: flex; flex-direction: column; align-items: center; }
+        .doughnut-container h3 { margin-top: 0; color: #2c3e50; font-size: 16px; }
+        .donuts-grid { display: flex; justify-content: space-around; width: 100%; flex-wrap: wrap; gap: 15px; }
+        .donut-box { width: 45%; text-align: center; position: relative; }
+        .donut-box canvas { max-width: 130px; max-height: 130px; margin: 0 auto; display: block; }
+        
+        .chart-container { width: 48%; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); box-sizing: border-box; }
         .loading { text-align: center; font-size: 18px; color: #2980b9; font-weight: bold; margin-top: 50px; }
-        @media (max-width: 900px) { .chart-container { width: 100%; } .card { width: 30%; } .info-banner { flex-direction: column; gap: 15px; } }
+        @media (max-width: 900px) { .doughnut-container, .chart-container { width: 100%; } .card { width: 30%; } }
     </style>
 </head>
 <body>
@@ -46,7 +54,7 @@
             <option value="All">🏭 Factory Aggregate (All Lines)</option>
         </select>
         <select id="machineSelect" class="filter-select" onchange="calculateDashboard()" style="display:none;">
-            <option value="All">All Machines in this Line</option>
+            <option value="All">All Stations in this Line</option>
         </select>
     </div>
 
@@ -68,14 +76,24 @@
     </div>
 
     <div class="charts-wrapper" id="chartDiv" style="display:none;">
-        <div class="chart-container"><canvas id="oeeChart"></canvas></div>
+        <!-- NEW SEPARATE DOUGHNUT CHARTS BOX -->
+        <div class="doughnut-container">
+            <h3>OEE & Metrics Breakdown</h3>
+            <div class="donuts-grid">
+                <div class="donut-box"><canvas id="oeeDonut"></canvas><p style="margin:5px 0 0 0; font-weight:bold; font-size:13px; color:#2c3e50;">OEE</p></div>
+                <div class="donut-box"><canvas id="aDonut"></canvas><p style="margin:5px 0 0 0; font-weight:bold; font-size:13px; color:#3498db;">Availability</p></div>
+                <div class="donut-box"><canvas id="pDonut"></canvas><p style="margin:5px 0 0 0; font-weight:bold; font-size:13px; color:#f1c40f;">Performance</p></div>
+                <div class="donut-box"><canvas id="qDonut"></canvas><p style="margin:5px 0 0 0; font-weight:bold; font-size:13px; color:#e74c3c;">Quality</p></div>
+            </div>
+        </div>
+
         <div class="chart-container"><canvas id="downtimeChart"></canvas></div>
     </div>
 
     <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbyRkmh4_ofJjAftObCfnX9gmhqCa4xcsvSp143BXCUdQujfy4gaFkBMlEhsVrwa61HugQ/exec";
         let allLogs = [], allMachines = [];
-        let oeeChartInstance = null, downtimeChartInstance = null;
+        let oeeDonutInst = null, aDonutInst = null, pDonutInst = null, qDonutInst = null, downtimeChartInstance = null;
 
         function getSafeVal(obj, possibleKeys) {
             let lowerKeys = possibleKeys.map(k => k.toLowerCase().replace(/\s/g, ''));
@@ -253,13 +271,52 @@
             updateCharts(a*100, p*100, q*100, oee*100, sDt.map(i=>i.r), sDt.map(i=>i.t));
         }
 
-        function updateCharts(a, p, q, o, l, d) {
-            if (oeeChartInstance) oeeChartInstance.destroy();
-            oeeChartInstance = new Chart(document.getElementById('oeeChart'), { 
-                type: 'bar', 
-                data: { labels: ['OEE', 'A', 'P', 'Q'], datasets: [{ data: [o, a, p, q], backgroundColor: ['#2c3e50', '#3498db', '#f1c40f', '#e74c3c'] }] }, 
-                options: { scales: { y: { max: 100 } }, plugins: { legend: { display: false } } } 
+        function createDonut(canvasId, val, color) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            let v = Math.min(Math.max(val, 0), 100);
+            return new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    datasets: [{
+                        data: [v, 100 - v],
+                        backgroundColor: [color, '#ecf0f1'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                    cutout: '75%'
+                },
+                plugins: [{
+                    id: 'textCenter',
+                    beforeDraw: function(chart) {
+                        let width = chart.width, height = chart.height, ctx = chart.ctx;
+                        ctx.restore();
+                        let fontSize = (height / 5).toFixed(2);
+                        ctx.font = "bold " + fontSize + "px Segoe UI";
+                        ctx.textBaseline = "middle";
+                        ctx.fillStyle = "#2c3e50";
+                        let text = Math.round(v) + "%", textX = Math.round((width - ctx.measureText(text).width) / 2), textY = height / 2;
+                        ctx.fillText(text, textX, textY);
+                        ctx.save();
+                    }
+                }]
             });
+        }
+
+        function updateCharts(a, p, q, o, l, d) {
+            if (oeeDonutInst) oeeDonutInst.destroy();
+            if (aDonutInst) aDonutInst.destroy();
+            if (pDonutInst) pDonutInst.destroy();
+            if (qDonutInst) qDonutInst.destroy();
+
+            oeeDonutInst = createDonut('oeeDonut', o, '#2c3e50');
+            aDonutInst = createDonut('aDonut', a, '#3498db');
+            pDonutInst = createDonut('pDonut', p, '#f1c40f');
+            qDonutInst = createDonut('qDonut', q, '#e74c3c');
+
             if (downtimeChartInstance) downtimeChartInstance.destroy();
             downtimeChartInstance = new Chart(document.getElementById('downtimeChart'), { 
                 type: 'bar', data: { labels: l, datasets: [{ data: d, backgroundColor: '#95a5a6' }] }, 
