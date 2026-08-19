@@ -3,28 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MES Dashboard & Admin</title>
+    <title>MES Live Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; overflow-x: hidden; }
         .header { position: relative; text-align: center; background: #2c3e50; color: #f1c40f; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-bottom: 5px solid #e74c3c; }
         .header h1 { margin: 0; font-size: 28px; color: white;}
-        .admin-btn { position: absolute; top: 25px; left: 20px; background: #8e44ad; color: white; border: none; padding: 10px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 14px; }
-        .admin-btn:hover { background: #732d91; }
         
         .sync-indicator { position: absolute; top: 25px; right: 20px; color: #2ecc71; font-size: 14px; font-weight: bold; display: none; align-items: center; gap: 5px; }
         .sync-dot { width: 10px; height: 10px; background-color: #2ecc71; border-radius: 50%; animation: pulse 1.5s infinite; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
-
-        .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 999; display: none; }
-        .admin-sidebar { position: fixed; top: 0; left: -400px; width: 320px; height: 100%; background: #fff; box-shadow: 2px 0 15px rgba(0,0,0,0.3); z-index: 1000; transition: left 0.4s ease; padding: 20px; overflow-y: auto; }
-        .admin-sidebar.open { left: 0; }
-        .close-btn { float: right; background: none; border: none; font-size: 22px; color: #e74c3c; cursor: pointer; }
-        .admin-sidebar h2 { color: #2c3e50; margin-top: 0; font-size: 22px; border-bottom: 2px solid #ecf0f1; padding-bottom: 10px;}
-        .form-group { margin-bottom: 15px; text-align: left; }
-        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; color: #34495e; font-size: 14px;}
-        .form-group input, .form-group select { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 5px; font-size: 14px; }
-        .save-btn { width: 100%; padding: 12px; background: #8e44ad; color: white; border: none; border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px;}
 
         .controls { text-align: center; margin-bottom: 20px; display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; }
         select.filter-select { padding: 12px; font-size: 16px; border-radius: 5px; width: 320px; border: 2px solid #bdc3c7; font-weight: bold; color: #2c3e50; background-color: #fff; outline: none; cursor: pointer; }
@@ -34,12 +22,6 @@
         .info-item span { display: block; font-size: 14px; color: #7f8c8d; text-transform: uppercase; font-weight: bold; margin-bottom: 4px; }
         .info-item strong { font-size: 20px; color: #16a085; }
 
-        .progress-wrapper { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin-bottom: 30px; border-left: 5px solid #27ae60; display: none; }
-        .progress-header { display: flex; justify-content: space-between; }
-        .progress-text { font-size: 18px; font-weight: bold; }
-        .progress-bar-bg { background: #ecf0f1; border-radius: 10px; height: 30px; width: 100%; margin-top: 15px; position: relative; }
-        .progress-fill { background: #27ae60; height: 100%; width: 0%; transition: 0.8s; display: flex; align-items: center; justify-content: flex-end; padding-right: 10px; color: white; font-weight: bold; border-radius: 10px; }
-        
         .cards { display: flex; justify-content: center; flex-wrap: wrap; margin-bottom: 30px; gap: 15px; }
         .card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); width: 15%; text-align: center; min-width: 140px; border-top: 4px solid #3498db; }
         .card h3 { margin: 0 0 10px 0; color: #34495e; font-size: 14px; }
@@ -53,30 +35,9 @@
 </head>
 <body>
 
-    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleAdmin()"></div>
-    <div class="admin-sidebar" id="adminSidebar">
-        <button class="close-btn" onclick="toggleAdmin()">✖</button>
-        <h2>Set Targets</h2>
-        <form id="adminForm">
-            <div class="form-group"><label>Select Month</label><input type="month" id="targetMonth" required></div>
-            <div class="form-group">
-                <label>Production Line</label>
-                <select id="targetLineName" required>
-                    <option value="">-- Select Line --</option>
-                    <option value="Axle 385">1. Axle 385</option>
-                    <option value="Sump 385">2. Sump 385</option>
-                    <option value="Hyd. Lift Cover">3. Hyd. Lift Cover</option>
-                </select>
-            </div>
-            <div class="form-group"><label>Target Quantity</label><input type="number" id="targetQty" required></div>
-            <button type="submit" class="save-btn" id="submitTargetBtn">Save Target</button>
-        </form>
-    </div>
-
     <div class="header">
-        <button class="admin-btn" onclick="toggleAdmin()">⚙️ Set Targets</button>
         <h1>Manufacturing Excellence Dashboard</h1>
-        <p style="color: #bdc3c7; margin-top:5px;">Target vs Actual, OEE, MTTR & MTBF</p>
+        <p style="color: #bdc3c7; margin-top:5px;">OEE, MTTR & MTBF Live Monitoring</p>
         <div class="sync-indicator" id="syncIndicator"><div class="sync-dot"></div> Live Syncing</div>
     </div>
 
@@ -97,16 +58,6 @@
         <div class="info-item"><span>Operation / Seq</span><strong id="lblMachOp">-</strong></div>
     </div>
 
-    <div class="progress-wrapper" id="progressDiv">
-        <div class="progress-header">
-            <h3>Monthly Target Progress <span id="lblTargetSource" style="font-size:12px; color:#7f8c8d; margin-left:10px;"></span></h3>
-            <div class="progress-text" id="targetText">0 / 0 (0%)</div>
-        </div>
-        <div class="progress-bar-bg">
-            <div class="progress-fill" id="targetFill" style="width: 0%;">0%</div>
-        </div>
-    </div>
-
     <div class="cards" id="dashboardCards" style="display:none;">
         <div class="card"><h3>OEE</h3><div class="value" id="valOEE">0%</div></div>
         <div class="card"><h3>Availability</h3><div class="value" id="valA">0%</div></div>
@@ -123,7 +74,7 @@
 
     <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbyRkmh4_ofJjAftObCfnX9gmhqCa4xcsvSp143BXCUdQujfy4gaFkBMlEhsVrwa61HugQ/exec";
-        let allLogs = [], allTargets = [], allMachines = [];
+        let allLogs = [], allMachines = [];
         let oeeChartInstance = null, downtimeChartInstance = null;
 
         function getSafeVal(obj, possibleKeys) {
@@ -140,7 +91,6 @@
                 if (cachedData) {
                     let parsedData = JSON.parse(cachedData);
                     allLogs = parsedData.logs || [];
-                    allTargets = parsedData.targets || [];
                     allMachines = parsedData.machines || [];
                     document.getElementById('loadingMsg').style.display = 'none';
                     document.getElementById('dashboardCards').style.display = 'flex';
@@ -154,7 +104,8 @@
             if(isSilent) document.getElementById('syncIndicator').style.display = 'flex';
             
             fetch(API_URL).then(res => res.json()).then(data => {
-                allLogs = data.logs || []; allTargets = data.targets || []; allMachines = data.machines || [];
+                allLogs = data.logs || []; 
+                allMachines = data.machines || [];
                 localStorage.setItem("mes_dashboard_data", JSON.stringify(data));
                 
                 if(!isSilent) {
@@ -170,12 +121,6 @@
         
         fetchAllData();
         setInterval(() => { fetchAllData(true); }, 30000);
-
-        function toggleAdmin() {
-            const sb = document.getElementById('adminSidebar');
-            const ov = document.getElementById('sidebarOverlay');
-            sb.classList.toggle('open'); ov.style.display = sb.classList.contains('open') ? 'block' : 'none';
-        }
 
         function populateLineDropdown() {
             const select = document.getElementById("lineSelect");
@@ -195,7 +140,6 @@
                 machSel.innerHTML = '<option value="All">⚙️ All Stations in this Line</option>';
                 let lineMachines = allMachines.filter(m => getSafeVal(m, ["LineName", "Line"]) === lineSel);
                 
-                // Sort machines by Sequence Number before adding to dropdown
                 lineMachines.sort((a, b) => {
                     let seqA = parseInt(getSafeVal(a, ["OpSequence", "Seq"])) || 999;
                     let seqB = parseInt(getSafeVal(b, ["OpSequence", "Seq"])) || 999;
@@ -220,20 +164,12 @@
             calculateDashboard();
         }
 
-        function getLatestTarget(lineName) {
-            let trgs = allTargets.filter(t => getSafeVal(t, ["LineName", "Line"]) === lineName);
-            return trgs.length ? Number(getSafeVal(trgs[trgs.length - 1], ["TargetQty", "Target"])) : 0;
-        }
-
         function calculateDashboard() {
             let lineVal = document.getElementById("lineSelect").value;
             let machVal = document.getElementById("machineSelect").value;
-            let progressDiv = document.getElementById("progressDiv");
             let banner = document.getElementById("machineInfoBanner");
             
-            // Toggle Banners
             if (machVal !== "All" && lineVal !== "All") {
-                progressDiv.style.display = "none";
                 let m = allMachines.find(x => String(getSafeVal(x, ["AssetNumber", "Asset#", "Barcode"])) === machVal);
                 if(m) {
                     document.getElementById("lblMachName").innerText = getSafeVal(m, ["MachineName", "Machine"]) || "N/A";
@@ -243,61 +179,39 @@
                     banner.style.display = "flex";
                 }
             } else {
-                progressDiv.style.display = "block";
                 banner.style.display = "none";
             }
 
-            // Calculation Logic
             let pt = 0, dt = 0, it = 0, dtC = 0, dtR = {};
-            let totalLineGood = 0; // Final Machine Good Parts
-            let totalLineScrap = 0; // All Machines Scrap
-            let trg = 0;
+            let totalLineGood = 0; 
+            let totalLineScrap = 0; 
 
             if (lineVal === "All") {
-                // Not supported yet for nested lines. Keeping simple average.
-                let uLines = [...new Set(allMachines.map(m => getSafeVal(m, ["LineName", "Line"])))].filter(Boolean);
-                uLines.forEach(l => trg += getLatestTarget(l));
-                
                 allLogs.forEach(row => { processLogRow(row); });
                 totalLineGood = allLogs.filter(l => String(getSafeVal(l, ["EntryType"]))==="Quality").reduce((s, r) => s + (Number(getSafeVal(r, ["GoodCount"]))||0), 0);
-                document.getElementById("lblTargetSource").innerText = "(Sum of all entries)";
-                
             } else if (lineVal !== "All" && machVal === "All") {
-                // SPECIFIC LINE SELECTED
-                trg = getLatestTarget(lineVal);
                 let lineMachines = allMachines.filter(m => getSafeVal(m, ["LineName", "Line"]) === lineVal);
                 let lineAssets = lineMachines.map(m => String(getSafeVal(m, ["AssetNumber", "Barcode"])));
                 
-                // Find which assets belong to "Final Operations"
                 let finalAssets = lineMachines.filter(m => String(getSafeVal(m, ["IsFinalOp"])).toUpperCase() === "TRUE").map(m => String(getSafeVal(m, ["AssetNumber", "Barcode"])));
-
-                if(finalAssets.length > 0) {
-                    document.getElementById("lblTargetSource").innerText = "(Measured from Final Operations only)";
-                } else {
-                    document.getElementById("lblTargetSource").innerText = "(No Final Operation marked, measuring all)";
-                    finalAssets = lineAssets; // Fallback
-                }
+                if(finalAssets.length === 0) finalAssets = lineAssets; 
 
                 let lineLogs = allLogs.filter(log => lineAssets.includes(String(getSafeVal(log, ["Barcode#", "Barcode"]))));
                 
                 lineLogs.forEach(row => { 
-                    processLogRow(row); // Calculates average OEE for the line
+                    processLogRow(row); 
                     
                     let eType = String(getSafeVal(row, ["EntryType"]));
                     let rowAsset = String(getSafeVal(row, ["Barcode#", "Barcode"]));
                     
                     if (eType === "Quality") {
-                        // Sum ALL scrap from entire line
                         totalLineScrap += Number(getSafeVal(row, ["ScrapCount", "RejectParts"])) || 0;
-                        
-                        // Sum GOOD PARTS ONLY from the FINAL Machine
                         if(finalAssets.includes(rowAsset)) {
                             totalLineGood += Number(getSafeVal(row, ["GoodCount", "GoodParts"])) || 0;
                         }
                     }
                 });
             } else if (machVal !== "All") {
-                trg = 0; 
                 let machLogs = allLogs.filter(log => String(getSafeVal(log, ["Barcode#", "Barcode"])) === machVal);
                 machLogs.forEach(row => { 
                     processLogRow(row); 
@@ -321,20 +235,8 @@
                 }
             }
 
-            // Update Progress Bar using totalLineGood
-            if (progressDiv.style.display === "block") {
-                let pct = trg > 0 ? (totalLineGood/trg)*100 : 0; if(pct>100) pct=100;
-                document.getElementById("targetText").innerText = `${totalLineGood} / ${trg} (${pct.toFixed(1)}%)`;
-                document.getElementById("targetFill").style.width = `${pct}%`;
-                document.getElementById("targetFill").innerText = `${pct.toFixed(1)}%`;
-                document.getElementById("targetFill").style.backgroundColor = pct<50?"#e74c3c":pct<85?"#f1c40f":"#27ae60";
-            }
-
-            // OEE Formulas
             let rt = pt - dt; if(rt<0) rt=0;
             let a = pt>0 ? rt/pt : 0, p = rt>0 ? it/rt : 0;
-            
-            // Nayi Quality Calculation (Final Good / (Final Good + ALL Scrap))
             let totalProcessedForQuality = totalLineGood + totalLineScrap;
             let q = totalProcessedForQuality > 0 ? totalLineGood / totalProcessedForQuality : 0;
             
