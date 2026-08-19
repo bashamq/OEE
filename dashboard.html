@@ -112,9 +112,7 @@
         }
 
         function fetchAllData(isSilent = false) {
-            // Clear local storage cache to force fresh fetch
             localStorage.removeItem("mes_dashboard_data");
-
             if(isSilent) document.getElementById('syncIndicator').style.display = 'flex';
             
             fetch(API_URL).then(res => res.json()).then(data => {
@@ -183,6 +181,8 @@
             let machVal = document.getElementById("machineSelect").value;
             let banner = document.getElementById("machineInfoBanner");
             
+            let targetLogs = [];
+            
             if (machVal !== "All" && lineVal !== "All") {
                 let m = allMachines.find(x => String(getSafeVal(x, ["AssetNumber", "Asset#", "Barcode"])) === machVal);
                 if(m) {
@@ -192,26 +192,34 @@
                     document.getElementById("lblMachOp").innerText = `Seq: ${seq} | ${getSafeVal(m, ["Operation", "Op"]) || "N/A"}`;
                     banner.style.display = "flex";
                 }
+                targetLogs = allLogs.filter(log => String(getSafeVal(log, ["Barcode#", "Barcode"])) === machVal);
+            } else if (lineVal !== "All") {
+                banner.style.display = "none";
+                let lineMachines = allMachines.filter(m => getSafeVal(m, ["LineName", "Line"]) === lineVal);
+                let lineAssets = lineMachines.map(m => String(getSafeVal(m, ["AssetNumber", "Barcode"])));
+                targetLogs = allLogs.filter(log => lineAssets.includes(String(getSafeVal(log, ["Barcode#", "Barcode"]))));
             } else {
                 banner.style.display = "none";
+                targetLogs = allLogs;
+            }
+
+            // CHECK IF NO LOGS FOUND FOR THIS SELECTION
+            if (targetLogs.length === 0) {
+                document.getElementById("valOEE").innerText = "0.0%";
+                document.getElementById("valA").innerText = "0.0%";
+                document.getElementById("valP").innerText = "0.0%";
+                document.getElementById("valQ").innerText = "0.0%";
+                document.getElementById("valMTTR").innerText = "0";
+                document.getElementById("valMTBF").innerText = "0";
+                document.getElementById("cardMTTR").innerText = "0 Min";
+                document.getElementById("cardMTBF").innerText = "0 Min";
+                updateCharts(0, 0, 0, 0);
+                return;
             }
 
             let pt = 0, dt = 0, it = 0, dtC = 0;
             let totalLineGood = 0; 
             let totalLineScrap = 0; 
-
-            let targetLogs = allLogs;
-
-            if (lineVal !== "All") {
-                let lineMachines = allMachines.filter(m => getSafeVal(m, ["LineName", "Line"]) === lineVal);
-                let lineAssets = lineMachines.map(m => String(getSafeVal(m, ["AssetNumber", "Barcode"])));
-                
-                if (machVal !== "All") {
-                    targetLogs = allLogs.filter(log => String(getSafeVal(log, ["Barcode#", "Barcode"])) === machVal);
-                } else {
-                    targetLogs = allLogs.filter(log => lineAssets.includes(String(getSafeVal(log, ["Barcode#", "Barcode"]))));
-                }
-            }
 
             targetLogs.forEach(row => {
                 let eType = String(getSafeVal(row, ["EntryType", "Type"])).trim();
@@ -234,12 +242,12 @@
             });
 
             let rt = pt - dt; if(rt < 0) rt = 0;
-            let a = pt > 0 ? rt / pt : 1;
-            let p = rt > 0 ? it / rt : 1;
+            let a = pt > 0 ? rt / pt : 0;
+            let p = rt > 0 ? it / rt : 0;
             if(p > 1) p = 1;
 
             let totalProcessedForQuality = totalLineGood + totalLineScrap;
-            let q = totalProcessedForQuality > 0 ? totalLineGood / totalProcessedForQuality : 1;
+            let q = totalProcessedForQuality > 0 ? totalLineGood / totalProcessedForQuality : 0;
             
             let oee = a * p * q;
 
