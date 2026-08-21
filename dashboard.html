@@ -15,7 +15,9 @@
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
 
         .controls { text-align: center; margin-bottom: 20px; display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; }
-        select.filter-select { padding: 12px; font-size: 16px; border-radius: 5px; width: 320px; border: 2px solid #bdc3c7; font-weight: bold; color: #2c3e50; background-color: #fff; outline: none; cursor: pointer; }
+        select.filter-select, input[type="date"].filter-select { padding: 12px; font-size: 16px; border-radius: 5px; border: 2px solid #bdc3c7; font-weight: bold; color: #2c3e50; background-color: #fff; outline: none; cursor: pointer; }
+        select.filter-select { width: 320px; }
+        input[type="date"].filter-select { width: 180px; }
         
         .info-banner { background: #e8f8f5; border: 2px solid #1abc9c; padding: 15px 25px; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; color: #2c3e50; box-shadow: 0 4px 8px rgba(0,0,0,0.05); }
         .info-item { text-align: center; }
@@ -47,7 +49,9 @@
         <div class="sync-indicator" id="syncIndicator"><div class="sync-dot"></div> Live Syncing</div>
     </div>
 
+    <!-- DATE FILTER ADDED HERE -->
     <div class="controls">
+        <input type="date" id="dateSelect" class="filter-select" onchange="calculateDashboard()" title="Filter by Date">
         <select id="lineSelect" class="filter-select" onchange="onLineChange()">
             <option value="All">🏭 Factory Aggregate (All Lines)</option>
         </select>
@@ -111,6 +115,20 @@
             return null;
         }
 
+        window.onload = function() {
+            // Set Today's Date by Default
+            let d = new Date();
+            let month = '' + (d.getMonth() + 1);
+            let day = '' + d.getDate();
+            let year = d.getFullYear();
+            if (month.length < 2) month = '0' + month;
+            if (day.length < 2) day = '0' + day;
+            document.getElementById("dateSelect").value = [year, month, day].join('-');
+
+            fetchAllData();
+            setInterval(() => { fetchAllData(true); }, 30000);
+        };
+
         function fetchAllData(isSilent = false) {
             localStorage.removeItem("mes_dashboard_data");
             if(isSilent) document.getElementById('syncIndicator').style.display = 'flex';
@@ -129,9 +147,6 @@
                 if(isSilent) setTimeout(() => { document.getElementById('syncIndicator').style.display = 'none'; }, 2000);
             }).catch(e => { if(isSilent) document.getElementById('syncIndicator').style.display = 'none'; });
         }
-        
-        fetchAllData();
-        setInterval(() => { fetchAllData(true); }, 30000);
 
         function populateLineDropdown() {
             const select = document.getElementById("lineSelect");
@@ -177,12 +192,30 @@
         }
 
         function calculateDashboard() {
+            let dateVal = document.getElementById("dateSelect").value;
             let lineVal = document.getElementById("lineSelect").value;
             let machVal = document.getElementById("machineSelect").value;
             let banner = document.getElementById("machineInfoBanner");
             
-            let targetLogs = [];
+            let targetLogs = allLogs;
+
+            // 1. Apply Date Filter First
+            if (dateVal) {
+                targetLogs = targetLogs.filter(log => {
+                    let rawDate = getSafeVal(log, ["Timestamp", "Date"]);
+                    if (!rawDate) return false;
+                    let d = new Date(rawDate);
+                    let month = '' + (d.getMonth() + 1);
+                    let day = '' + d.getDate();
+                    let year = d.getFullYear();
+                    if (month.length < 2) month = '0' + month;
+                    if (day.length < 2) day = '0' + day;
+                    let logDateStr = [year, month, day].join('-');
+                    return logDateStr === dateVal;
+                });
+            }
             
+            // 2. Apply Line and Machine Filters
             if (machVal !== "All" && lineVal !== "All") {
                 let m = allMachines.find(x => String(getSafeVal(x, ["AssetNumber", "Asset#", "Barcode"])) === machVal);
                 if(m) {
@@ -192,18 +225,17 @@
                     document.getElementById("lblMachOp").innerText = `Seq: ${seq} | ${getSafeVal(m, ["Operation", "Op"]) || "N/A"}`;
                     banner.style.display = "flex";
                 }
-                targetLogs = allLogs.filter(log => String(getSafeVal(log, ["Barcode#", "Barcode"])) === machVal);
+                targetLogs = targetLogs.filter(log => String(getSafeVal(log, ["Barcode#", "Barcode"])) === machVal);
             } else if (lineVal !== "All") {
                 banner.style.display = "none";
                 let lineMachines = allMachines.filter(m => getSafeVal(m, ["LineName", "Line"]) === lineVal);
                 let lineAssets = lineMachines.map(m => String(getSafeVal(m, ["AssetNumber", "Barcode"])));
-                targetLogs = allLogs.filter(log => lineAssets.includes(String(getSafeVal(log, ["Barcode#", "Barcode"]))));
+                targetLogs = targetLogs.filter(log => lineAssets.includes(String(getSafeVal(log, ["Barcode#", "Barcode"]))));
             } else {
                 banner.style.display = "none";
-                targetLogs = allLogs;
             }
 
-            // CHECK IF NO LOGS FOUND FOR THIS SELECTION
+            // CHECK IF NO LOGS FOUND FOR THIS SELECTION AND DATE
             if (targetLogs.length === 0) {
                 document.getElementById("valOEE").innerText = "0.0%";
                 document.getElementById("valA").innerText = "0.0%";
