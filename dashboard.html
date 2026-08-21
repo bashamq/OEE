@@ -54,13 +54,17 @@
         .track-card.perf-card h3 { color: #d35400; }
         .problem-list { margin: 10px 0 0 0; padding-left: 20px; color: #7f8c8d; font-size: 14px; }
         
-        /* PROCESS FLOW STYLES */
-        .flow-wrapper { display: flex; align-items: center; overflow-x: auto; padding: 20px 10px; background: white; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); gap: 15px; }
-        .flow-node { min-width: 180px; background: #ecf0f1; border: 2px solid #bdc3c7; border-radius: 10px; padding: 15px; text-align: center; position: relative; transition: 0.3s; }
-        .flow-node h4 { margin: 0 0 10px 0; color: #2c3e50; font-size: 15px; }
-        .flow-node p { margin: 4px 0; font-size: 13px; color: #34495e; font-weight: 600; }
-        .flow-arrow { font-size: 24px; color: #95a5a6; }
+        /* PROCESS FLOW STYLES (UPDATED FOR WRAPPING & MINI CHARTS) */
+        .flow-wrapper { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; padding: 20px; background: white; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); gap: 15px; }
+        .flow-node { width: 240px; background: #ecf0f1; border: 2px solid #bdc3c7; border-radius: 10px; padding: 15px 10px; text-align: center; position: relative; transition: 0.3s; }
+        .flow-node h4 { margin: 0 0 10px 0; color: #2c3e50; font-size: 14px; }
+        .flow-arrow { font-size: 24px; color: #95a5a6; font-weight: bold; }
         
+        .flow-mini-charts { display: flex; justify-content: space-around; margin-top: 15px; }
+        .flow-mini-box { width: 50px; text-align: center; }
+        .flow-mini-box canvas { max-width: 50px; max-height: 50px; display: block; margin: 0 auto; }
+        .flow-mini-box span { display: block; font-size: 10px; font-weight: bold; color: #7f8c8d; margin-top: 5px; }
+
         /* ALERTS */
         .alert-downtime { border-color: #e74c3c; background: #fadbd8; box-shadow: 0 0 10px rgba(231, 76, 60, 0.5); }
         .alert-perf { border-color: #f39c12; background: #fdebd0; box-shadow: 0 0 10px rgba(243, 156, 18, 0.5); }
@@ -88,7 +92,7 @@
     </div>
 
     <div class="main-container">
-        <!-- GLOBAL CONTROLS (Applies to all views) -->
+        <!-- GLOBAL CONTROLS -->
         <div class="controls">
             <input type="date" id="dateSelect" class="filter-select" onchange="processAllViews()">
             <select id="lineSelect" class="filter-select" onchange="onLineChange()">
@@ -135,18 +139,14 @@
         <!-- VIEW 2: TRACKING -->
         <div id="view-tracking" class="view-section">
             <h2 style="color: #2c3e50; text-align: center; border-bottom: 2px solid #ccc; padding-bottom: 10px;">🚨 Issue Tracking & Analysis</h2>
-            <div class="track-grid" id="trackingContainer">
-                <!-- Rendered via JS -->
-            </div>
+            <div class="track-grid" id="trackingContainer"></div>
         </div>
 
         <!-- VIEW 3: PROCESS FLOW -->
         <div id="view-flow" class="view-section">
             <h2 style="color: #2c3e50; text-align: center; border-bottom: 2px solid #ccc; padding-bottom: 10px;">🔄 Line Process Flow</h2>
             <p style="text-align:center; color:#7f8c8d; font-size:14px;" id="flowNotice">Select a specific Production Line above to view its process flow.</p>
-            <div class="flow-wrapper" id="flowContainer" style="display:none;">
-                <!-- Rendered via JS -->
-            </div>
+            <div class="flow-wrapper" id="flowContainer" style="display:none;"></div>
         </div>
 
     </div>
@@ -155,6 +155,7 @@
         const API_URL = "https://script.google.com/macros/s/AKfycbyRkmh4_ofJjAftObCfnX9gmhqCa4xcsvSp143BXCUdQujfy4gaFkBMlEhsVrwa61HugQ/exec";
         let allLogs = [], allMachines = [];
         let oeeDonutInst = null, aDonutInst = null, pDonutInst = null, qDonutInst = null;
+        let flowChartInstances = [];
 
         function getSafeVal(obj, possibleKeys) {
             let lowerKeys = possibleKeys.map(k => k.toLowerCase().replace(/\s/g, ''));
@@ -348,7 +349,7 @@
             document.getElementById("trackingContainer").innerHTML = html;
         }
 
-        // 3. PROCESS FLOW LOGIC
+        // 3. PROCESS FLOW LOGIC (UPDATED WITH WRAP & MINI DONUTS)
         function calculateProcessFlow(logs) {
             let lineVal = document.getElementById("lineSelect").value;
             let flowCont = document.getElementById("flowContainer");
@@ -360,38 +361,91 @@
             let lineMachs = allMachines.filter(m => getSafeVal(m, ["LineName", "Line"]) === lineVal).sort((a, b) => (parseInt(getSafeVal(a, ["OpSequence"]))||999) - (parseInt(getSafeVal(b, ["OpSequence"]))||999));
             
             let html = "";
+            let chartsToRender = [];
+
+            // Clean up old instances
+            flowChartInstances.forEach(c => c.destroy());
+            flowChartInstances = [];
+
             lineMachs.forEach((m, idx) => {
                 let asset = String(getSafeVal(m, ["AssetNumber", "Barcode"]));
                 let mLogs = logs.filter(l => String(getSafeVal(l, ["Barcode#", "Barcode"])) === asset);
                 
-                let dt = 0, pt = 0, it = 0;
+                let dt = 0, pt = 0, it = 0, good = 0, scrap = 0;
                 mLogs.forEach(r => {
                     let type = String(getSafeVal(r, ["EntryType", "Type"])).trim();
-                    if(type === "Availability" || type === "Maintenance") dt += Number(getSafeVal(r, ["Downtime(Min)"])) || 0;
-                    else if(type === "Performance" || type === "Production") {
+                    if(type === "Availability" || type === "Maintenance") {
+                        dt += Number(getSafeVal(r, ["Downtime(Min)"])) || 0;
+                    } else if(type === "Performance" || type === "Production") {
                         pt += Number(getSafeVal(r, ["PlannedTime(Min)"])) || 480;
-                        it += (Number(getSafeVal(r, ["IdealCT(Min)"])) || 0) * (Number(getSafeVal(r, ["TotalCount"])) || 0);
+                        it += (Number(getSafeVal(r, ["IdealCT(Min)", "Target"])) || 0) * (Number(getSafeVal(r, ["TotalCount", "Actual"])) || 0);
+                    } else if (type === "Quality") {
+                        good += Number(getSafeVal(r, ["GoodCount", "GoodParts"])) || 0;
+                        scrap += Number(getSafeVal(r, ["ScrapCount", "RejectParts"])) || 0;
                     }
                 });
                 
-                let perf = (pt - dt) > 0 ? (it / (pt - dt)) * 100 : 100; if(perf > 100) perf = 100;
+                let rt = Math.max(0, pt - dt);
+                let a = pt > 0 ? rt / pt : 0;
+                let p = rt > 0 ? it / rt : 0; if(p > 1) p = 1;
+                let totalPQ = good + scrap; let q = totalPQ > 0 ? good / totalPQ : 0;
                 
-                // Set alerts
+                if (mLogs.length === 0) { a=0; p=0; q=0; }
+                let oee = a * p * q;
+
                 let alertClass = ""; let badge = "";
                 if (dt >= 30) { alertClass = "alert-downtime"; badge = "<div class='alert-badge'>!</div>"; } 
-                else if (pt > 0 && perf <= 75) { alertClass = "alert-perf"; badge = "<div class='alert-badge'>!</div>"; }
+                else if (pt > 0 && p <= 0.75) { alertClass = "alert-perf"; badge = "<div class='alert-badge'>!</div>"; }
 
                 html += `
                     <div class="flow-node ${alertClass}">
                         ${badge}
                         <h4>[Op ${getSafeVal(m, ["OpSequence"])||idx+1}] ${getSafeVal(m, ["MachineName"])}</h4>
-                        <p style="color:#2980b9;">Perf: ${pt > 0 ? perf.toFixed(1)+'%' : 'N/A'}</p>
-                        <p style="color:#e74c3c;">Down: ${dt}m</p>
+                        <p style="color:#e74c3c; font-size:12px;">Downtime: ${dt}m</p>
+                        <div class="flow-mini-charts">
+                            <div class="flow-mini-box"><canvas id="flow_oee_${idx}"></canvas><span>OEE</span></div>
+                            <div class="flow-mini-box"><canvas id="flow_perf_${idx}"></canvas><span>PERF</span></div>
+                            <div class="flow-mini-box"><canvas id="flow_qual_${idx}"></canvas><span>QUAL</span></div>
+                        </div>
                     </div>
                 `;
                 if(idx < lineMachs.length - 1) html += `<div class="flow-arrow">➔</div>`;
+
+                chartsToRender.push({ idx, oee: oee*100, perf: p*100, qual: q*100 });
             });
+            
             flowCont.innerHTML = html;
+
+            // Render mini charts after DOM update
+            setTimeout(() => {
+                chartsToRender.forEach(c => {
+                    flowChartInstances.push(createMiniProcessDonut(`flow_oee_${c.idx}`, c.oee, '#2c3e50'));
+                    flowChartInstances.push(createMiniProcessDonut(`flow_perf_${c.idx}`, c.perf, '#f1c40f'));
+                    flowChartInstances.push(createMiniProcessDonut(`flow_qual_${c.idx}`, c.qual, '#e74c3c'));
+                });
+            }, 50);
+        }
+
+        function createMiniProcessDonut(canvasId, val, color) {
+            let canvas = document.getElementById(canvasId);
+            if(!canvas) return null;
+            let v = Math.min(Math.max(val, 0), 100);
+            return new Chart(canvas.getContext('2d'), {
+                type: 'doughnut',
+                data: { datasets: [{ data: [v, 100 - v], backgroundColor: [color, '#ecf0f1'], borderWidth: 0 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { tooltip: { enabled: false } }, cutout: '65%' },
+                plugins: [{
+                    id: 'textCenter',
+                    beforeDraw: function(chart) {
+                        let width = chart.width, height = chart.height, ctx = chart.ctx;
+                        ctx.restore();
+                        ctx.font = "bold " + (height / 3.2).toFixed(2) + "px sans-serif";
+                        ctx.fillStyle = "#2c3e50"; ctx.textBaseline = "middle";
+                        let text = Math.round(v), textX = Math.round((width - ctx.measureText(text).width) / 2), textY = height / 2;
+                        ctx.fillText(text, textX, textY); ctx.save();
+                    }
+                }]
+            });
         }
     </script>
 </body>
