@@ -54,21 +54,26 @@
         .track-card.perf-card h3 { color: #d35400; }
         .problem-list { margin: 10px 0 0 0; padding-left: 20px; color: #7f8c8d; font-size: 14px; }
         
-        /* PROCESS FLOW STYLES (WRAP & MINI CHARTS) */
-        .flow-wrapper { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; padding: 20px; background: white; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); gap: 15px; }
-        .flow-node { width: 240px; background: #ecf0f1; border: 2px solid #bdc3c7; border-radius: 10px; padding: 15px 10px; text-align: center; position: relative; transition: 0.3s; }
+        /* PROCESS FLOW STYLES */
+        .flow-wrapper { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; padding: 30px 20px; background: white; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); gap: 20px; }
+        .flow-node { width: 250px; background: #ecf0f1; border: 2px solid #bdc3c7; border-radius: 10px; padding: 25px 10px 15px 10px; text-align: center; position: relative; transition: 0.3s; }
         .flow-node h4 { margin: 0 0 10px 0; color: #2c3e50; font-size: 14px; }
-        .flow-arrow { font-size: 24px; color: #95a5a6; font-weight: bold; }
+        .flow-arrow { font-size: 28px; color: #bdc3c7; font-weight: bold; }
         
         .flow-mini-charts { display: flex; justify-content: space-around; margin-top: 15px; }
         .flow-mini-box { width: 50px; text-align: center; }
         .flow-mini-box canvas { max-width: 50px; max-height: 50px; display: block; margin: 0 auto; }
         .flow-mini-box span { display: block; font-size: 10px; font-weight: bold; color: #7f8c8d; margin-top: 5px; }
 
-        /* ALERTS */
-        .alert-downtime { border-color: #e74c3c; background: #fadbd8; box-shadow: 0 0 10px rgba(231, 76, 60, 0.5); }
-        .alert-perf { border-color: #f39c12; background: #fdebd0; box-shadow: 0 0 10px rgba(243, 156, 18, 0.5); }
-        .alert-badge { position: absolute; top: -10px; right: -10px; background: #e74c3c; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; animation: blink 1s infinite; }
+        /* IN / OUT BADGES */
+        .badge-in { position: absolute; top: -12px; left: -10px; background: #3498db; color: white; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .badge-out { position: absolute; top: -12px; right: -10px; background: #27ae60; color: white; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+
+        /* ALERTS & BOTTLENECK */
+        .alert-bottleneck { border-color: #f1c40f !important; background: #fcf3cf !important; box-shadow: 0 0 10px rgba(241, 196, 15, 0.4) !important; }
+        .alert-downtime { border-color: #e74c3c !important; background: #fadbd8 !important; box-shadow: 0 0 10px rgba(231, 76, 60, 0.5) !important; }
+        .alert-perf { border-color: #f39c12 !important; background: #fdebd0 !important; box-shadow: 0 0 10px rgba(243, 156, 18, 0.5) !important; }
+        .alert-badge { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: #e74c3c; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; animation: blink 1s infinite; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
 
         .loading { text-align: center; font-size: 18px; color: #2980b9; font-weight: bold; margin-top: 50px; }
     </style>
@@ -92,7 +97,7 @@
     </div>
 
     <div class="main-container">
-        <!-- GLOBAL CONTROLS (Removed Machine Filter) -->
+        <!-- GLOBAL CONTROLS -->
         <div class="controls">
             <input type="date" id="dateSelect" class="filter-select" onchange="processAllViews()">
             <select id="lineSelect" class="filter-select" onchange="processAllViews()">
@@ -160,7 +165,6 @@
             return null;
         }
 
-        // SIDEBAR LOGIC
         function toggleSidebar() {
             document.getElementById("sidebar").classList.toggle("open");
             document.getElementById("overlay").classList.toggle("show");
@@ -201,7 +205,6 @@
             uniqueLines.forEach(l => { select.innerHTML += `<option value="${l}">🛠️ Line: ${l}</option>`; });
         }
 
-        // MASTER PROCESSING FUNCTION
         function processAllViews() {
             let dateVal = document.getElementById("dateSelect").value;
             let targetLogs = allLogs;
@@ -220,7 +223,7 @@
             calculateProcessFlow(targetLogs);
         }
 
-        // 1. DASHBOARD LOGIC (Line or Factory Level)
+        // 1. DASHBOARD LOGIC
         function calculateDashboard(logs) {
             let lineVal = document.getElementById("lineSelect").value;
             let filtered = logs;
@@ -333,7 +336,7 @@
             document.getElementById("trackingContainer").innerHTML = html;
         }
 
-        // 3. PROCESS FLOW LOGIC
+        // 3. PROCESS FLOW LOGIC (WITH IN/OUT, BOTTLENECK & MINI CHARTS)
         function calculateProcessFlow(logs) {
             let lineVal = document.getElementById("lineSelect").value;
             let flowCont = document.getElementById("flowContainer");
@@ -344,8 +347,16 @@
             
             let lineMachs = allMachines.filter(m => getSafeVal(m, ["LineName", "Line"]) === lineVal).sort((a, b) => (parseInt(getSafeVal(a, ["OpSequence"]))||999) - (parseInt(getSafeVal(b, ["OpSequence"]))||999));
             
+            // FIND BOTTLENECK (Maximum Ideal CT)
+            let maxCT = -1;
+            lineMachs.forEach(m => {
+                let ct = Number(getSafeVal(m, ["IdealCT", "Target"])) || 0;
+                if(ct > maxCT) maxCT = ct;
+            });
+
             let html = "";
             let chartsToRender = [];
+            let prevOut = 0; // Track previous operation's OUT (Good parts)
 
             flowChartInstances.forEach(c => c.destroy());
             flowChartInstances = [];
@@ -354,19 +365,26 @@
                 let asset = String(getSafeVal(m, ["AssetNumber", "Barcode"]));
                 let mLogs = logs.filter(l => String(getSafeVal(l, ["Barcode#", "Barcode"])) === asset);
                 
-                let dt = 0, pt = 0, it = 0, good = 0, scrap = 0;
+                let dt = 0, pt = 0, it = 0, good = 0, scrap = 0, actual = 0;
                 mLogs.forEach(r => {
                     let type = String(getSafeVal(r, ["EntryType", "Type"])).trim();
                     if(type === "Availability" || type === "Maintenance") {
                         dt += Number(getSafeVal(r, ["Downtime(Min)"])) || 0;
                     } else if(type === "Performance" || type === "Production") {
                         pt += Number(getSafeVal(r, ["PlannedTime(Min)"])) || 480;
-                        it += (Number(getSafeVal(r, ["IdealCT(Min)", "Target"])) || 0) * (Number(getSafeVal(r, ["TotalCount", "Actual"])) || 0);
+                        let act = Number(getSafeVal(r, ["TotalCount", "Actual"])) || 0;
+                        actual += act;
+                        it += (Number(getSafeVal(r, ["IdealCT(Min)", "Target"])) || 0) * act;
                     } else if (type === "Quality") {
                         good += Number(getSafeVal(r, ["GoodCount", "GoodParts"])) || 0;
                         scrap += Number(getSafeVal(r, ["ScrapCount", "RejectParts"])) || 0;
                     }
                 });
+
+                // Calculate IN and OUT parts
+                let partIn = (idx === 0) ? actual : prevOut;
+                let partOut = good > 0 ? good : 0; 
+                prevOut = partOut;
                 
                 let rt = Math.max(0, pt - dt);
                 let a = pt > 0 ? rt / pt : 0;
@@ -376,15 +394,32 @@
                 if (mLogs.length === 0) { a=0; p=0; q=0; }
                 let oee = a * p * q;
 
+                // Configure Alerts & Bottleneck
                 let alertClass = ""; let badge = "";
-                if (dt >= 30) { alertClass = "alert-downtime"; badge = "<div class='alert-badge'>!</div>"; } 
-                else if (pt > 0 && p <= 0.75) { alertClass = "alert-perf"; badge = "<div class='alert-badge'>!</div>"; }
+                let ct = Number(getSafeVal(m, ["IdealCT", "Target"])) || 0;
+
+                // Base style: Check if it's the bottleneck
+                if (ct > 0 && ct === maxCT) {
+                    alertClass = "alert-bottleneck"; 
+                    badge = "<div class='alert-badge' style='background:#f1c40f; color:#2c3e50;' title='Bottleneck'>B</div>";
+                }
+                
+                // Override with Critical Errors if any
+                if (dt >= 30) { 
+                    alertClass = "alert-downtime"; badge = "<div class='alert-badge'>!</div>"; 
+                } else if (pt > 0 && p <= 0.75) { 
+                    alertClass = "alert-perf"; badge = "<div class='alert-badge'>!</div>"; 
+                }
 
                 html += `
                     <div class="flow-node ${alertClass}">
                         ${badge}
+                        <div class="badge-in">IN: ${partIn}</div>
+                        <div class="badge-out">OUT: ${partOut}</div>
+                        
                         <h4>[Op ${getSafeVal(m, ["OpSequence"])||idx+1}] ${getSafeVal(m, ["MachineName"])}</h4>
-                        <p style="color:#e74c3c; font-size:12px;">Downtime: ${dt}m</p>
+                        <p style="color:#e74c3c; font-size:12px; margin-bottom:5px;">Downtime: ${dt}m</p>
+                        
                         <div class="flow-mini-charts">
                             <div class="flow-mini-box"><canvas id="flow_oee_${idx}"></canvas><span>OEE</span></div>
                             <div class="flow-mini-box"><canvas id="flow_perf_${idx}"></canvas><span>PERF</span></div>
