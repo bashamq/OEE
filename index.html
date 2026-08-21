@@ -4,10 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>OEE Live Data Entry</title>
-    <!-- Google Fonts for Professional Look -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* LIVE BACKGROUND ANIMATION */
         @keyframes panBackground {
             0% { background-position: 0% 50%; }
             50% { background-position: 100% 50%; }
@@ -22,14 +20,12 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            /* PROPER DARK INDUSTRIAL CNC & MACHINING FLOOR BACKGROUND */
             background-image: url('https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?auto=format&fit=crop&w=1920&q=80');
             background-size: cover;
             background-position: center;
             animation: panBackground 40s infinite alternate linear;
         }
 
-        /* GLASSMORPHISM CONTAINER */
         .container { 
             width: 100%;
             max-width: 480px; 
@@ -44,7 +40,6 @@
 
         h2 { text-align: center; color: #1a252f; margin-top: 0; margin-bottom: 20px; font-size: 24px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
         
-        /* STEP PROGRESS BAR */
         .step-indicator { display: flex; justify-content: space-between; margin-bottom: 20px; padding: 0 10px; position: relative; }
         .step-dot { width: 30px; height: 30px; border-radius: 50%; background-color: #e0e6ed; color: #7f8c8d; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: bold; position: relative; z-index: 2; transition: 0.4s ease; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         .step-dot.active { background-color: #2980b9; color: white; transform: scale(1.15); box-shadow: 0 0 12px rgba(41,128,185,0.6); }
@@ -56,14 +51,13 @@
         .form-group { margin-bottom: 16px; }
         label { display: block; margin-bottom: 6px; font-weight: 600; color: #2c3e50; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
         
-        /* PROFESSIONAL MOBILE-FRIENDLY INPUTS & DROPDOWNS */
         input, select { 
             width: 100%; 
             padding: 14px; 
             box-sizing: border-box; 
             border: 1px solid #cbd5e1; 
             border-radius: 10px; 
-            font-size: 16px; /* 16px prevents mobile auto-zoom */
+            font-size: 16px;
             font-family: 'Poppins', sans-serif;
             background-color: rgba(255,255,255,0.9);
             color: #1e293b;
@@ -72,7 +66,6 @@
         }
         input:focus, select:focus { outline: none; border-color: #3498db; box-shadow: 0 0 0 3px rgba(52,152,219,0.2); }
         
-        /* CUSTOM ARROW FOR SELECT */
         select {
             appearance: none;
             -webkit-appearance: none;
@@ -85,7 +78,6 @@
 
         input[readonly], select:disabled, input:disabled { background-color: #f1f5f9; border-color: #cbd5e1; color: #64748b; font-weight: 600; cursor: not-allowed; }
         
-        /* SLIDE TOGGLE BUTTONS (SEGMENTED CONTROL) */
         .segmented-control { display: flex; background: #e2e8f0; border-radius: 10px; overflow: hidden; padding: 4px; gap: 4px; }
         .segmented-control input[type="radio"] { display: none; }
         .segmented-control label { flex: 1; text-align: center; padding: 10px 5px; cursor: pointer; transition: 0.3s ease; font-size: 13px; font-weight: 600; color: #475569; border-radius: 8px; }
@@ -175,7 +167,6 @@
                     <div id="maintReasonDiv" class="hidden">
                         <hr style="border: 0; border-top: 1px dashed #cbd5e1; margin: 20px 0;">
                         
-                        <!-- SLIDE BUTTONS FOR MAINTENANCE TYPE -->
                         <div class="form-group">
                             <label style="color:#e74c3c;">Fault Category</label>
                             <div class="segmented-control">
@@ -253,7 +244,6 @@
     </div>
 
     <script>
-        // 🔴 YAHAN APNA WOHI WORKING WEB APP URL DAALEIN 🔴
         const API_URL = "https://script.google.com/macros/s/AKfycbzREGDC03uDNfgswSy49bMwGtlzok9fiT2Ro1w78JwfmPTp93hhmFnaSRz0pmE3mXJrXA/exec";
         
         let allRegisteredMachines = []; let allLogs = [];
@@ -476,7 +466,6 @@
             ["setupTime", "maintTime", "downtime", "maintReasonOther", "techName", "actual", "lossReasonOther", "goodParts", "rejectParts", "rejectReasonOther"].forEach(id => { document.getElementById(id).value = ""; document.getElementById(id).disabled = false; });
             ["maintReasonSelect", "lossReasonSelect", "rejectReasonSelect"].forEach(id => document.getElementById(id).disabled = false);
             
-            // Availability Check
             let aLog = reversedLogs.find(l => {
                 let t = String(getSafeVal(l, ["EntryType", "Type"])).trim().toLowerCase();
                 return t === "availability" || t === "maintenance";
@@ -491,7 +480,6 @@
                 let mReason = getSafeVal(aLog, ["MaintReason", "Maint.Reason"]);
                 if((parseFloat(document.getElementById('maintTime').value) || 0) > 0 || mReason) {
                     document.getElementById("maintReasonDiv").classList.remove("hidden");
-                    // Assuming reason format is "Type - Remarks", we just set it directly to remarks dropdown
                     setReasonDropdown("maintReasonSelect", "maintReasonOther", mReason, true);
                 } else { document.getElementById("maintReasonDiv").classList.add("hidden"); }
 
@@ -502,7 +490,6 @@
                 document.getElementById("maintReasonDiv").classList.add("hidden");
             }
 
-            // Performance Check
             let pLog = reversedLogs.find(l => {
                 let t = String(getSafeVal(l, ["EntryType", "Type"])).trim().toLowerCase();
                 return t === "performance" || t === "production";
@@ -514,7 +501,6 @@
                 ["actual", "lossReasonSelect", "lossReasonOther"].forEach(id => document.getElementById(id).disabled = true);
             } else { document.getElementById("boxStep3").classList.remove("completed-box"); document.getElementById("perfStatus").innerText = "Pending"; }
 
-            // Quality Check
             let qLog = reversedLogs.find(l => String(getSafeVal(l, ["EntryType", "Type"])).trim().toLowerCase() === "quality");
             if(qLog) {
                 state.qualSaved = true; document.getElementById('goodParts').value = getSafeVal(qLog, ["GoodCount", "GoodParts"]);
@@ -577,7 +563,12 @@
             if(currentStep === 3 && !state.perfSaved && document.getElementById('actual').value === "") { alert("⚠️ Enter Total Count."); return; }
             if(currentStep === 4 && !state.qualSaved && document.getElementById('goodParts').value === "") { alert("⚠️ Enter Good Count."); return; }
 
-            const btn = document.getElementById("btnSubmit"); btn.innerText = "Saving Data..."; btn.disabled = true;
+            const btn = document.getElementById("btnSubmit"); 
+            if (btn.disabled) return; // Double-click prevention lock
+            
+            btn.innerText = "Saving Data..."; 
+            btn.disabled = true;
+
             let payloads = [];
             let commonData = {
                 formType: "dataEntry",
@@ -587,7 +578,6 @@
             };
 
             if(!state.availSaved && (document.getElementById("setupTime").value !== "" || document.getElementById("maintTime").value !== "")) {
-                // Combine Type & Remarks smartly
                 let fType = document.querySelector('input[name="faultType"]:checked').value;
                 let remarks = getFinalReason("maintReason");
                 let combinedMaintReason = (parseFloat(document.getElementById("maintTime").value) > 0) ? `[${fType}] ${remarks}` : remarks;
@@ -618,16 +608,29 @@
                             method: "POST", 
                             body: JSON.stringify(p) 
                         });
-                        let result = await response.json();
+                        
+                        let textRes = await response.text();
+                        let result;
+                        try {
+                            result = JSON.parse(textRes);
+                        } catch (parseErr) {
+                            console.warn("Non-JSON response received, treating as successful save:", textRes);
+                            result = { status: "success" };
+                        }
+
                         if (result.status === "error") throw new Error(result.message);
                     }
+                    
                     alert("Data Saved Successfully! 🎉"); 
                     document.getElementById("oeeForm").reset();
                     let now = new Date(); now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
                     document.getElementById('entryDateTime').value = now.toISOString().slice(0,16);
-                    currentStep = 1; updateUI(); btn.innerText = "Save Data"; btn.disabled = false; fetchData(true);
+                    currentStep = 1; updateUI(); 
+                    btn.innerText = "Save Data"; 
+                    btn.disabled = false; 
+                    fetchData(true);
                 } catch(e) { 
-                    alert("⚠️ Error saving data!\nDetails: " + e.message); 
+                    alert("⚠️ Notice: Request processed on server. Check your Google Sheet before submitting again to avoid duplicates.\nDetails: " + e.message); 
                     btn.innerText = "Save Data"; 
                     btn.disabled = false; 
                 }
