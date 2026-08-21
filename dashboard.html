@@ -54,7 +54,7 @@
         .track-card.perf-card h3 { color: #d35400; }
         .problem-list { margin: 10px 0 0 0; padding-left: 20px; color: #7f8c8d; font-size: 14px; }
         
-        /* PROCESS FLOW STYLES (UPDATED FOR WRAPPING & MINI CHARTS) */
+        /* PROCESS FLOW STYLES (WRAP & MINI CHARTS) */
         .flow-wrapper { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; padding: 20px; background: white; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); gap: 15px; }
         .flow-node { width: 240px; background: #ecf0f1; border: 2px solid #bdc3c7; border-radius: 10px; padding: 15px 10px; text-align: center; position: relative; transition: 0.3s; }
         .flow-node h4 { margin: 0 0 10px 0; color: #2c3e50; font-size: 14px; }
@@ -92,14 +92,11 @@
     </div>
 
     <div class="main-container">
-        <!-- GLOBAL CONTROLS -->
+        <!-- GLOBAL CONTROLS (Removed Machine Filter) -->
         <div class="controls">
             <input type="date" id="dateSelect" class="filter-select" onchange="processAllViews()">
-            <select id="lineSelect" class="filter-select" onchange="onLineChange()">
+            <select id="lineSelect" class="filter-select" onchange="processAllViews()">
                 <option value="All">🏭 Factory Aggregate (All Lines)</option>
-            </select>
-            <select id="machineSelect" class="filter-select" onchange="processAllViews()" style="display:none;">
-                <option value="All">All Stations in this Line</option>
             </select>
         </div>
 
@@ -204,26 +201,6 @@
             uniqueLines.forEach(l => { select.innerHTML += `<option value="${l}">🛠️ Line: ${l}</option>`; });
         }
 
-        function onLineChange() {
-            const lineSel = document.getElementById("lineSelect").value;
-            const machSel = document.getElementById("machineSelect");
-            if (lineSel === "All") { machSel.style.display = "none"; machSel.value = "All"; } 
-            else {
-                machSel.style.display = "inline-block";
-                machSel.innerHTML = '<option value="All">⚙️ All Stations in this Line</option>';
-                let lineMachines = allMachines.filter(m => getSafeVal(m, ["LineName", "Line"]) === lineSel).sort((a, b) => (parseInt(getSafeVal(a, ["OpSequence"]))||999) - (parseInt(getSafeVal(b, ["OpSequence"]))||999));
-                let uniqueAssets = new Set();
-                lineMachines.forEach(m => {
-                    let asset = getSafeVal(m, ["AssetNumber", "Barcode"]);
-                    if(!uniqueAssets.has(asset) && asset) {
-                        uniqueAssets.add(asset);
-                        machSel.innerHTML += `<option value="${asset}">[Op ${getSafeVal(m, ["OpSequence"])}] ${getSafeVal(m, ["MachineName", "Machine"])}</option>`;
-                    }
-                });
-            }
-            processAllViews();
-        }
-
         // MASTER PROCESSING FUNCTION
         function processAllViews() {
             let dateVal = document.getElementById("dateSelect").value;
@@ -243,17 +220,15 @@
             calculateProcessFlow(targetLogs);
         }
 
-        // 1. DASHBOARD LOGIC
+        // 1. DASHBOARD LOGIC (Line or Factory Level)
         function calculateDashboard(logs) {
             let lineVal = document.getElementById("lineSelect").value;
-            let machVal = document.getElementById("machineSelect").value;
             let filtered = logs;
 
             if (lineVal !== "All") {
                 let lineMachines = allMachines.filter(m => getSafeVal(m, ["LineName", "Line"]) === lineVal);
                 let lineAssets = lineMachines.map(m => String(getSafeVal(m, ["AssetNumber", "Barcode"])));
-                if (machVal !== "All") filtered = logs.filter(l => String(getSafeVal(l, ["Barcode#", "Barcode"])) === machVal);
-                else filtered = logs.filter(l => lineAssets.includes(String(getSafeVal(l, ["Barcode#", "Barcode"]))));
+                filtered = logs.filter(l => lineAssets.includes(String(getSafeVal(l, ["Barcode#", "Barcode"]))));
             }
 
             if (filtered.length === 0) {
@@ -305,7 +280,16 @@
         // 2. TRACKING LOGIC
         function calculateTracking(logs) {
             let stats = {};
-            logs.forEach(r => {
+            let lineVal = document.getElementById("lineSelect").value;
+            let targetLogs = logs;
+
+            if (lineVal !== "All") {
+                let lineMachines = allMachines.filter(m => getSafeVal(m, ["LineName", "Line"]) === lineVal);
+                let lineAssets = lineMachines.map(m => String(getSafeVal(m, ["AssetNumber", "Barcode"])));
+                targetLogs = logs.filter(l => lineAssets.includes(String(getSafeVal(l, ["Barcode#", "Barcode"]))));
+            }
+
+            targetLogs.forEach(r => {
                 let asset = String(getSafeVal(r, ["Barcode#", "Barcode"])).trim();
                 if(!asset) return;
                 if(!stats[asset]) {
@@ -349,7 +333,7 @@
             document.getElementById("trackingContainer").innerHTML = html;
         }
 
-        // 3. PROCESS FLOW LOGIC (UPDATED WITH WRAP & MINI DONUTS)
+        // 3. PROCESS FLOW LOGIC
         function calculateProcessFlow(logs) {
             let lineVal = document.getElementById("lineSelect").value;
             let flowCont = document.getElementById("flowContainer");
@@ -363,7 +347,6 @@
             let html = "";
             let chartsToRender = [];
 
-            // Clean up old instances
             flowChartInstances.forEach(c => c.destroy());
             flowChartInstances = [];
 
@@ -416,7 +399,6 @@
             
             flowCont.innerHTML = html;
 
-            // Render mini charts after DOM update
             setTimeout(() => {
                 chartsToRender.forEach(c => {
                     flowChartInstances.push(createMiniProcessDonut(`flow_oee_${c.idx}`, c.oee, '#2c3e50'));
