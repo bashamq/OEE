@@ -58,7 +58,12 @@
         .flow-wrapper { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; padding: 30px 20px; background: white; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); gap: 20px; }
         .flow-node { width: 250px; background: #ecf0f1; border: 2px solid #bdc3c7; border-radius: 10px; padding: 25px 10px 15px 10px; text-align: center; position: relative; transition: 0.3s; }
         .flow-node h4 { margin: 0 0 10px 0; color: #2c3e50; font-size: 14px; }
-        .flow-arrow { font-size: 28px; color: #bdc3c7; font-weight: bold; }
+        
+        /* BUFFER & ARROW CONTAINER */
+        .arrow-container { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 60px; }
+        .flow-arrow { font-size: 28px; color: #bdc3c7; font-weight: bold; line-height: 1; margin-top: 5px; }
+        .buffer-badge { background: #f39c12; color: white; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .buffer-ok { background: #27ae60; }
         
         .flow-mini-charts { display: flex; justify-content: space-around; margin-top: 15px; }
         .flow-mini-box { width: 50px; text-align: center; }
@@ -336,7 +341,7 @@
             document.getElementById("trackingContainer").innerHTML = html;
         }
 
-        // 3. PROCESS FLOW LOGIC (WITH IN/OUT, BOTTLENECK & MINI CHARTS)
+        // 3. PROCESS FLOW LOGIC (WITH WIP/BUFFER)
         function calculateProcessFlow(logs) {
             let lineVal = document.getElementById("lineSelect").value;
             let flowCont = document.getElementById("flowContainer");
@@ -347,7 +352,6 @@
             
             let lineMachs = allMachines.filter(m => getSafeVal(m, ["LineName", "Line"]) === lineVal).sort((a, b) => (parseInt(getSafeVal(a, ["OpSequence"]))||999) - (parseInt(getSafeVal(b, ["OpSequence"]))||999));
             
-            // FIND BOTTLENECK (Maximum Ideal CT)
             let maxCT = -1;
             lineMachs.forEach(m => {
                 let ct = Number(getSafeVal(m, ["IdealCT", "Target"])) || 0;
@@ -356,11 +360,12 @@
 
             let html = "";
             let chartsToRender = [];
-            let prevOut = 0; // Track previous operation's OUT (Good parts)
+            let machineStats = [];
 
             flowChartInstances.forEach(c => c.destroy());
             flowChartInstances = [];
 
+            // Step 1: Gather raw stats for all machines first
             lineMachs.forEach((m, idx) => {
                 let asset = String(getSafeVal(m, ["AssetNumber", "Barcode"]));
                 let mLogs = logs.filter(l => String(getSafeVal(l, ["Barcode#", "Barcode"])) === asset);
@@ -381,11 +386,6 @@
                     }
                 });
 
-                // Calculate IN and OUT parts
-                let partIn = (idx === 0) ? actual : prevOut;
-                let partOut = good > 0 ? good : 0; 
-                prevOut = partOut;
-                
                 let rt = Math.max(0, pt - dt);
                 let a = pt > 0 ? rt / pt : 0;
                 let p = rt > 0 ? it / rt : 0; if(p > 1) p = 1;
@@ -394,20 +394,31 @@
                 if (mLogs.length === 0) { a=0; p=0; q=0; }
                 let oee = a * p * q;
 
-                // Configure Alerts & Bottleneck
-                let alertClass = ""; let badge = "";
-                let ct = Number(getSafeVal(m, ["IdealCT", "Target"])) || 0;
+                machineStats.push({ m, idx, actual, good, dt, pt, p, oee: oee*100, perf: p*100, qual: q*100 });
+            });
 
-                // Base style: Check if it's the bottleneck
+            // Step 2: Render HTML with Buffers
+            machineStats.forEach((stat, i) => {
+                let partIn = 0;
+                if (i === 0) {
+                    partIn = stat.actual; 
+                } else {
+                    partIn = stat.actual > 0 ? stat.actual : machineStats[i-1].good; 
+                }
+                
+                let partOut = stat.good > 0 ? stat.good : 0; 
+                
+                let ct = Number(getSafeVal(stat.m, ["IdealCT", "Target"])) || 0;
+                let alertClass = ""; let badge = "";
+                
                 if (ct > 0 && ct === maxCT) {
                     alertClass = "alert-bottleneck"; 
                     badge = "<div class='alert-badge' style='background:#f1c40f; color:#2c3e50;' title='Bottleneck'>B</div>";
                 }
                 
-                // Override with Critical Errors if any
-                if (dt >= 30) { 
+                if (stat.dt >= 30) { 
                     alertClass = "alert-downtime"; badge = "<div class='alert-badge'>!</div>"; 
-                } else if (pt > 0 && p <= 0.75) { 
+                } else if (stat.pt > 0 && stat.p <= 0.75) { 
                     alertClass = "alert-perf"; badge = "<div class='alert-badge'>!</div>"; 
                 }
 
@@ -417,19 +428,35 @@
                         <div class="badge-in">IN: ${partIn}</div>
                         <div class="badge-out">OUT: ${partOut}</div>
                         
-                        <h4>[Op ${getSafeVal(m, ["OpSequence"])||idx+1}] ${getSafeVal(m, ["MachineName"])}</h4>
-                        <p style="color:#e74c3c; font-size:12px; margin-bottom:5px;">Downtime: ${dt}m</p>
+                        <h4>[Op ${getSafeVal(stat.m, ["OpSequence"])||stat.idx+1}] ${getSafeVal(stat.m, ["MachineName"])}</h4>
+                        <p style="color:#e74c3c; font-size:12px; margin-bottom:5px;">Downtime: ${stat.dt}m</p>
                         
                         <div class="flow-mini-charts">
-                            <div class="flow-mini-box"><canvas id="flow_oee_${idx}"></canvas><span>OEE</span></div>
-                            <div class="flow-mini-box"><canvas id="flow_perf_${idx}"></canvas><span>PERF</span></div>
-                            <div class="flow-mini-box"><canvas id="flow_qual_${idx}"></canvas><span>QUAL</span></div>
+                            <div class="flow-mini-box"><canvas id="flow_oee_${stat.idx}"></canvas><span>OEE</span></div>
+                            <div class="flow-mini-box"><canvas id="flow_perf_${stat.idx}"></canvas><span>PERF</span></div>
+                            <div class="flow-mini-box"><canvas id="flow_qual_${stat.idx}"></canvas><span>QUAL</span></div>
                         </div>
                     </div>
                 `;
-                if(idx < lineMachs.length - 1) html += `<div class="flow-arrow">➔</div>`;
 
-                chartsToRender.push({ idx, oee: oee*100, perf: p*100, qual: q*100 });
+                // Calculate Buffer for arrow between machines
+                if(i < machineStats.length - 1) {
+                    let nextMachineIn = machineStats[i+1].actual > 0 ? machineStats[i+1].actual : 0;
+                    let bufferCount = partOut - nextMachineIn; 
+                    if (bufferCount < 0) bufferCount = 0; // Prevent negative buffer display
+                    
+                    let bufferClass = bufferCount > 0 ? "" : "buffer-ok";
+                    let bufferText = bufferCount > 0 ? `WIP: ${bufferCount}` : "Clear";
+
+                    html += `
+                        <div class="arrow-container">
+                            <div class="buffer-badge ${bufferClass}">${bufferText}</div>
+                            <div class="flow-arrow">➔</div>
+                        </div>
+                    `;
+                }
+
+                chartsToRender.push({ idx: stat.idx, oee: stat.oee, perf: stat.perf, qual: stat.qual });
             });
             
             flowCont.innerHTML = html;
