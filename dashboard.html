@@ -47,65 +47,54 @@
         .donut-box canvas { max-width: 120px; max-height: 120px; margin: 0 auto; display: block; }
 
         /* TRACKING STYLES */
-        .track-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
-        .track-card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); border-left: 5px solid #e74c3c; }
-        .track-card h3 { color: #c0392b; margin-top: 0; font-size: 18px; border-bottom: 1px dashed #ccc; padding-bottom: 10px; }
-        .track-card.perf-card { border-left-color: #f39c12; }
-        .track-card.perf-card h3 { color: #d35400; }
+        .track-grid { display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+        .track-card { flex: 1; min-width: 300px; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); border-top: 5px solid #bdc3c7; }
+        .track-card h3 { margin-top: 0; font-size: 18px; border-bottom: 1px dashed #ccc; padding-bottom: 10px; text-transform: uppercase; }
+        .track-downtime { border-top-color: #e74c3c; } .track-downtime h3 { color: #c0392b; }
+        .track-perf { border-top-color: #f39c12; } .track-perf h3 { color: #d35400; }
+        .track-qual { border-top-color: #9b59b6; } .track-qual h3 { color: #8e44ad; }
+        .machine-detail { background: #f8f9f9; padding: 10px; border-radius: 5px; margin-bottom: 15px; border-left: 3px solid #34495e; }
+        .machine-detail p { margin: 4px 0; font-size: 13px; color: #2c3e50; font-weight: 600; }
         .problem-list { margin: 10px 0 0 0; padding-left: 20px; color: #7f8c8d; font-size: 14px; }
         
         /* PROCESS FLOW STYLES */
         .flow-wrapper { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; padding: 30px 20px; background: white; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); gap: 20px; }
+        .flow-node { width: 240px; background: #ecf0f1; border: 2px solid #bdc3c7; border-radius: 10px; padding: 22px 10px 12px 10px; text-align: center; position: relative; transition: 0.3s; cursor: pointer; }
+        .flow-node:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,0.15); }
+        .flow-node h4 { margin: 0 0 2px 0; color: #2c3e50; font-size: 13px; font-weight: 700; }
+        .flow-node .op-name { font-size: 11px; color: #7f8c8d; margin-bottom: 8px; font-weight: 600; }
         
-        /* Added Hover & Cursor for Clickability */
-        .flow-node { width: 250px; background: #ecf0f1; border: 2px solid #bdc3c7; border-radius: 10px; padding: 25px 10px 15px 10px; text-align: center; position: relative; transition: 0.3s; cursor: pointer; }
-        .flow-node:hover { transform: scale(1.05); box-shadow: 0 10px 25px rgba(0,0,0,0.2); z-index: 10; border-color:#3498db; }
-        
-        .flow-node h4 { margin: 0 0 10px 0; color: #2c3e50; font-size: 14px; }
-        
+        /* ARROW & BUFFER */
         .arrow-container { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 60px; }
         .flow-arrow { font-size: 28px; color: #bdc3c7; font-weight: bold; line-height: 1; margin-top: 5px; }
         .buffer-badge { background: #f39c12; color: white; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
         .buffer-ok { background: #27ae60; }
         
-        .flow-mini-charts { display: flex; justify-content: space-around; margin-top: 15px; }
+        .flow-mini-charts { display: flex; justify-content: space-around; margin-top: 10px; }
         .flow-mini-box { width: 50px; text-align: center; }
         .flow-mini-box canvas { max-width: 50px; max-height: 50px; display: block; margin: 0 auto; }
-        .flow-mini-box span { display: block; font-size: 10px; font-weight: bold; color: #7f8c8d; margin-top: 5px; }
+        .flow-mini-box span { display: block; font-size: 9px; font-weight: bold; color: #7f8c8d; margin-top: 3px; }
 
-        .badge-in { position: absolute; top: -12px; left: -10px; background: #3498db; color: white; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-        .badge-out { position: absolute; top: -12px; right: -10px; background: #27ae60; color: white; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        /* IN / OUT BADGES */
+        .badge-in { position: absolute; top: -10px; left: -8px; background: #3498db; color: white; padding: 3px 8px; border-radius: 5px; font-size: 11px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .badge-out { position: absolute; top: -10px; right: -8px; background: #27ae60; color: white; padding: 3px 8px; border-radius: 5px; font-size: 11px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
 
-        .alert-bottleneck { border-color: #f1c40f !important; background: #fcf3cf !important; box-shadow: 0 0 10px rgba(241, 196, 15, 0.4) !important; }
-        .alert-downtime { border-color: #e74c3c !important; background: #fadbd8 !important; box-shadow: 0 0 10px rgba(231, 76, 60, 0.5) !important; }
-        .alert-perf { border-color: #f39c12 !important; background: #fdebd0 !important; box-shadow: 0 0 10px rgba(243, 156, 18, 0.5) !important; }
-        .alert-badge { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: #e74c3c; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; animation: blink 1s infinite; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+        /* ALERTS & BOTTLENECK */
+        .alert-bottleneck { border-color: #f1c40f !important; background: #fcf3cf !important; }
+        .alert-downtime { border-color: #e74c3c !important; background: #fadbd8 !important; }
+        .alert-perf { border-color: #f39c12 !important; background: #fdebd0 !important; }
+        .alert-badge { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: #e74c3c; color: white; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; animation: blink 1s infinite; z-index: 10; }
+
+        /* ZOOM-IN CARD MODAL */
+        .zoom-modal { display: none; position: fixed; z-index: 3000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+        .zoom-content { background: white; width: 90%; max-width: 500px; border-radius: 12px; padding: 25px; position: relative; animation: zoomIn 0.3s ease; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+        @keyframes zoomIn { from { transform: scale(0.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .zoom-close { position: absolute; top: 15px; right: 20px; font-size: 24px; cursor: pointer; color: #7f8c8d; }
+        .zoom-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #edf2f7; font-size: 14px; }
+        .zoom-row span:first-child { font-weight: bold; color: #4a5568; }
+        .zoom-row span:last-child { color: #2d3748; font-weight: 600; }
 
         .loading { text-align: center; font-size: 18px; color: #2980b9; font-weight: bold; margin-top: 50px; }
-
-        /* ================== MACHINE DETAIL MODAL ================== */
-        .modal-overlay { position: fixed; top:0; left:0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2000; display: none; backdrop-filter: blur(5px); }
-        .modal-overlay.show { display: block; }
-        
-        .detail-modal { 
-            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.8); 
-            background: white; padding: 25px; border-radius: 15px; box-shadow: 0 15px 40px rgba(0,0,0,0.4); 
-            z-index: 2001; width: 90%; max-width: 450px; opacity: 0; visibility: hidden; transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
-        }
-        .detail-modal.show { transform: translate(-50%, -50%) scale(1); opacity: 1; visibility: visible; }
-        
-        .modal-close { position:absolute; top:15px; right:20px; font-size:26px; cursor:pointer; color:#7f8c8d; transition:0.3s; }
-        .modal-close:hover { color:#e74c3c; transform:scale(1.2); }
-        
-        .detail-header { border-bottom: 2px solid #ecf0f1; padding-bottom: 10px; margin-bottom: 15px; }
-        .detail-header h3 { margin: 0; color: #2c3e50; font-size: 20px; }
-        
-        .status-banner { padding: 12px; border-radius: 8px; margin-bottom: 20px; font-weight: 600; font-size: 14px; text-align: center; }
-        
-        .detail-table { background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #bdc3c7; }
-        .detail-table h4 { margin: 0 0 12px 0; color: #34495e; font-size: 15px; text-transform: uppercase; border-bottom: 1px dashed #ccc; padding-bottom: 5px; }
-        .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 13px; color: #2c3e50; }
-        .detail-grid span { font-weight: bold; color: #2980b9; }
     </style>
 </head>
 <body>
@@ -180,39 +169,16 @@
             <p style="text-align:center; color:#7f8c8d; font-size:14px;" id="flowNotice">Select a specific Production Line above to view its process flow.</p>
             <div class="flow-wrapper" id="flowContainer" style="display:none;"></div>
         </div>
+
     </div>
 
-    <!-- ==========================================
-         MACHINE DETAIL MODAL (ZOOM IN VIEW)
-         ========================================== -->
-    <div class="modal-overlay" id="nodeModalOverlay" onclick="closeNodeDetail()"></div>
-    <div class="detail-modal" id="nodeDetailModal">
-        <span class="modal-close" onclick="closeNodeDetail()">&times;</span>
-        
-        <div class="detail-header">
-            <h3 id="modalOpTitle">[Op 1] Machine Name</h3>
-        </div>
-
-        <!-- Dynamic Status Explanation -->
-        <div id="modalStatusBanner" class="status-banner">
-            <!-- Will be injected via JS -->
-        </div>
-
-        <!-- Cloned Machine Card inside Modal -->
-        <div style="display:flex; justify-content:center; margin-bottom: 25px;">
-            <div id="modalNodeClone" style="transform: scale(1.15); pointer-events: none;">
-                <!-- Card HTML injected here -->
-            </div>
-        </div>
-
-        <!-- Master Data Info Table -->
-        <div class="detail-table">
-            <h4>⚙️ Asset Setup Details</h4>
-            <div class="detail-grid">
-                <div>Department:<br><span id="modalDept"></span></div>
-                <div>Line Name:<br><span id="modalLine"></span></div>
-                <div>Asset / Barcode:<br><span id="modalAsset"></span></div>
-                <div>Ideal Cycle Time:<br><span id="modalCT"></span> Mins</div>
+    <!-- ZOOM-IN MACHINE DETAIL MODAL -->
+    <div class="zoom-modal" id="zoomModal" onclick="closeZoomModal(event)">
+        <div class="zoom-content">
+            <span class="zoom-close" onclick="document.getElementById('zoomModal').style.display='none'">&times;</span>
+            <h3 id="zoomTitle" style="margin-top:0; color:#2c3e50; border-bottom:2px solid #e2e8f0; padding-bottom:10px;">Machine Deep Dive</h3>
+            <div id="zoomBody">
+                <!-- Dynamically populated -->
             </div>
         </div>
     </div>
@@ -222,10 +188,7 @@
         let allLogs = [], allMachines = [];
         let oeeDonutInst = null, aDonutInst = null, pDonutInst = null, qDonutInst = null;
         let flowChartInstances = [];
-        
-        // Global Array for Modal Data Storage
-        window.flowDataArray = [];
-        window.modalCharts = [];
+        let processedMachineCache = {}; // Stores details for zoom modal
 
         function getSafeVal(obj, possibleKeys) {
             let lowerKeys = possibleKeys.map(k => k.toLowerCase().replace(/\s/g, ''));
@@ -237,7 +200,6 @@
             document.getElementById("sidebar").classList.toggle("open");
             document.getElementById("overlay").classList.toggle("show");
         }
-        
         function switchView(viewId, element) {
             document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
             document.querySelectorAll('.sidebar a').forEach(a => a.classList.remove('active'));
@@ -344,7 +306,6 @@
         function createDonut(id, val, color) {
             return new Chart(document.getElementById(id).getContext('2d'), { type: 'doughnut', data: { datasets: [{ data: [val, 100-val], backgroundColor: [color, '#ecf0f1'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { tooltip: { enabled: false } }, cutout: '75%' }, plugins: [{ id: 'tc', beforeDraw: function(c) { let ctx=c.ctx; ctx.restore(); ctx.font="bold "+(c.height/5).toFixed(2)+"px sans-serif"; ctx.fillStyle="#2c3e50"; ctx.textBaseline="middle"; let t=Math.round(val)+"%"; ctx.fillText(t, (c.width-ctx.measureText(t).width)/2, c.height/2); ctx.save(); } }]});
         }
-        
         function updateCharts(a, p, q, o) {
             if(oeeDonutInst) oeeDonutInst.destroy(); if(aDonutInst) aDonutInst.destroy(); if(pDonutInst) pDonutInst.destroy(); if(qDonutInst) qDonutInst.destroy();
             oeeDonutInst = createDonut('oeeDonut', o, '#2c3e50'); aDonutInst = createDonut('aDonut', a, '#3498db'); pDonutInst = createDonut('pDonut', p, '#f1c40f'); qDonutInst = createDonut('qDonut', q, '#e74c3c');
@@ -368,9 +329,18 @@
                 
                 if(!stats[asset]) {
                     let m = allMachines.find(x => String(getSafeVal(x, ["AssetNumber", "Barcode"])) === asset);
-                    stats[asset] = { name: m ? getSafeVal(m, ["MachineName"]) : "Machine "+asset, dt: 0, dtReasons: {}, pt: 0, it: 0, actual: 0, lossReasons: {}, good: 0, scrap: 0, rejectReasons: {} };
+                    stats[asset] = { 
+                        name: m ? getSafeVal(m, ["MachineName"]) : "Machine "+asset, 
+                        line: m ? getSafeVal(m, ["LineName", "Line"]) : "Unknown Line",
+                        op: m ? getSafeVal(m, ["Operation", "Op"]) : "Unknown",
+                        dt: 0, dtReasons: {}, 
+                        pt: 0, it: 0, actual: 0, lossReasons: {},
+                        good: 0, scrap: 0, rejectReasons: {}
+                    };
                 }
+                
                 let type = String(getSafeVal(r, ["EntryType", "Type"])).trim();
+                
                 if (type === "Availability" || type === "Maintenance") {
                     let d = Number(getSafeVal(r, ["Downtime(Min)"])) || 0; stats[asset].dt += d;
                     let reason = getSafeVal(r, ["Maint.Reason"]) || "Other";
@@ -388,7 +358,10 @@
                 }
             });
 
-            let maxDtAsset = null, maxDt = 0, minPerfAsset = null, minPerf = 999, maxScrapAsset = null, maxScrap = 0;
+            let maxDtAsset = null, maxDt = 0;
+            let minPerfAsset = null, minPerf = 999;
+            let maxScrapAsset = null, maxScrap = 0;
+
             for(let a in stats) {
                 if(stats[a].dt > maxDt) { maxDt = stats[a].dt; maxDtAsset = a; }
                 let rt = Math.max(0, stats[a].pt - stats[a].dt);
@@ -398,41 +371,34 @@
             }
 
             let html = "";
-            
-            html += `<div class="track-card track-d"><h3>🚨 Highest Downtime</h3>`;
+            html += `<div class="track-card track-downtime"><h3>🚨 Highest Downtime</h3>`;
             if (maxDtAsset && maxDt > 0) {
                 let s = stats[maxDtAsset];
                 let rList = Object.keys(s.dtReasons).map(k => `<li>${k}: ${s.dtReasons[k]} mins</li>`).join('');
-                html += `<p style="margin:0; font-size:12px;"><b>Machine:</b> ${s.name}<br><b>Asset:</b> ${maxDtAsset}</p>
-                         <h2 style="margin:5px 0; color:#e74c3c;">${maxDt} Mins</h2>
-                         <ul class="problem-list">${rList || '<li>No reasons logged</li>'}</ul>`;
-            } else { html += `<p style="color:#27ae60; font-weight:bold;">✅ Optimal</p>`; }
+                html += `<div class="machine-detail"><p>🏭 Line: ${s.line}</p><p>⚙️ Operation: ${s.op}</p><p>🔧 Machine: ${s.name} (${maxDtAsset})</p></div><p><b>Total Down:</b> <span style="color:#e74c3c; font-weight:bold; font-size:18px;">${maxDt} Mins</span></p><ul class="problem-list">${rList || '<li>No specific reasons logged</li>'}</ul>`;
+            } else { html += `<p style="color:#27ae60; font-weight:bold; padding-top:10px;">✅ No downtime logged today.</p>`; }
             html += `</div>`;
 
-            html += `<div class="track-card track-p"><h3>⚠️ Lowest Performance</h3>`;
+            html += `<div class="track-card track-perf"><h3>⚠️ Lowest Performance</h3>`;
             if (minPerfAsset && minPerf < 1) {
                 let s = stats[minPerfAsset];
-                let pList = Object.keys(s.lossReasons).map(k => `<li>${k}: Flagged ${s.lossReasons[k]}x</li>`).join('');
-                html += `<p style="margin:0; font-size:12px;"><b>Machine:</b> ${s.name}<br><b>Asset:</b> ${minPerfAsset}</p>
-                         <h2 style="margin:5px 0; color:#f39c12;">${(minPerf*100).toFixed(1)}%</h2>
-                         <ul class="problem-list">${pList || '<li>No specific reasons</li>'}</ul>`;
-            } else { html += `<p style="color:#27ae60; font-weight:bold;">✅ Optimal</p>`; }
+                let pList = Object.keys(s.lossReasons).map(k => `<li>${k}: Flagged ${s.lossReasons[k]} times</li>`).join('');
+                html += `<div class="machine-detail"><p>🏭 Line: ${s.line}</p><p>⚙️ Operation: ${s.op}</p><p>🔧 Machine: ${s.name} (${minPerfAsset})</p></div><p><b>Performance:</b> <span style="color:#d35400; font-weight:bold; font-size:18px;">${(minPerf*100).toFixed(1)}%</span></p><ul class="problem-list">${pList || '<li>No specific loss reasons logged</li>'}</ul>`;
+            } else { html += `<p style="color:#27ae60; font-weight:bold; padding-top:10px;">✅ Performance is optimal.</p>`; }
             html += `</div>`;
 
-            html += `<div class="track-card track-q"><h3>📉 Highest Rejects</h3>`;
+            html += `<div class="track-card track-qual"><h3>📉 Highest Rejections</h3>`;
             if (maxScrapAsset && maxScrap > 0) {
                 let s = stats[maxScrapAsset];
                 let qList = Object.keys(s.rejectReasons).map(k => `<li>${k}: ${s.rejectReasons[k]} Parts</li>`).join('');
-                html += `<p style="margin:0; font-size:12px;"><b>Machine:</b> ${s.name}<br><b>Asset:</b> ${maxScrapAsset}</p>
-                         <h2 style="margin:5px 0; color:#9b59b6;">${maxScrap} Parts</h2>
-                         <ul class="problem-list">${qList || '<li>No reasons logged</li>'}</ul>`;
-            } else { html += `<p style="color:#27ae60; font-weight:bold;">✅ Zero Scrap</p>`; }
+                html += `<div class="machine-detail"><p>🏭 Line: ${s.line}</p><p>⚙️ Operation: ${s.op}</p><p>🔧 Machine: ${s.name} (${maxScrapAsset})</p></div><p><b>Total Rejected:</b> <span style="color:#8e44ad; font-weight:bold; font-size:18px;">${maxScrap} Parts</span></p><ul class="problem-list">${qList || '<li>No specific defect reasons logged</li>'}</ul>`;
+            } else { html += `<p style="color:#27ae60; font-weight:bold; padding-top:10px;">✅ Zero rejects logged today!</p>`; }
             html += `</div>`;
 
             document.getElementById("trackingContainer").innerHTML = html;
         }
 
-        // 3. PROCESS FLOW LOGIC
+        // 3. PROCESS FLOW LOGIC (WITH OP NAMES & ZOOM DEEP DIVE)
         function calculateProcessFlow(logs) {
             let lineVal = document.getElementById("lineSelect").value;
             let flowCont = document.getElementById("flowContainer");
@@ -452,9 +418,7 @@
             let html = "";
             let chartsToRender = [];
             let machineStats = [];
-            
-            // Clear global array for fresh data
-            window.flowDataArray = [];
+
             flowChartInstances.forEach(c => c.destroy());
             flowChartInstances = [];
 
@@ -486,51 +450,65 @@
                 if (mLogs.length === 0) { a=0; p=0; q=0; }
                 let oee = a * p * q;
 
-                machineStats.push({ m, idx, actual, good, dt, pt, p, oee: oee*100, perf: p*100, qual: q*100 });
+                let ct = Number(getSafeVal(m, ["IdealCT", "Target"])) || 0;
+                let opName = getSafeVal(m, ["Operation", "Op"]) || "Standard Op";
+                let dept = getSafeVal(m, ["Department", "Dept"]) || "Machining";
+                let machName = getSafeVal(m, ["MachineName", "Machine"]) || "Machine";
+                let lineName = getSafeVal(m, ["LineName", "Line"]) || lineVal;
+
+                machineStats.push({ m, idx, asset, machName, lineName, dept, opName, ct, actual, good, dt, pt, p, oee: oee*100, perf: p*100, qual: q*100 });
             });
 
             machineStats.forEach((stat, i) => {
-                let partIn = (i === 0) ? stat.actual : (stat.actual > 0 ? stat.actual : machineStats[i-1].good);
+                let partIn = 0;
+                if (i === 0) { partIn = stat.actual; } 
+                else { partIn = stat.actual > 0 ? stat.actual : machineStats[i-1].good; }
+                
                 let partOut = stat.good > 0 ? stat.good : 0; 
                 
-                let ct = Number(getSafeVal(stat.m, ["IdealCT", "Target"])) || 0;
                 let alertClass = ""; let badge = "";
-                let isBottleneck = false;
-                let isDtAlert = false;
-                let isPerfAlert = false;
-                
-                // Bottleneck
-                if (ct > 0 && ct === maxCT) {
+                let statusText = "Running Smoothly";
+
+                if (stat.ct > 0 && stat.ct === maxCT) {
                     alertClass = "alert-bottleneck"; 
                     badge = "<div class='alert-badge' style='background:#f1c40f; color:#2c3e50;' title='Bottleneck'>B</div>";
-                    isBottleneck = true;
+                    statusText = "Bottleneck (Highest Cycle Time)";
                 }
                 
-                // Critical Alerts overrides base color
                 if (stat.dt >= 30) { 
                     alertClass = "alert-downtime"; badge = "<div class='alert-badge'>!</div>"; 
-                    isDtAlert = true;
+                    statusText = `Critical Downtime (${stat.dt} mins)`;
                 } else if (stat.pt > 0 && stat.p <= 0.75) { 
                     alertClass = "alert-perf"; badge = "<div class='alert-badge'>!</div>"; 
-                    isPerfAlert = true;
+                    statusText = `Low Performance (${(stat.p*100).toFixed(1)}%)`;
                 }
 
-                // Push to global array for Modal Click
-                window.flowDataArray.push({
-                    idx: stat.idx, m: stat.m, ct: ct, partIn: partIn, partOut: partOut, dt: stat.dt, 
-                    oee: stat.oee, perf: stat.perf, qual: stat.qual, alertClass: alertClass, badge: badge,
-                    isBottleneck: isBottleneck, isDtAlert: isDtAlert, isPerfAlert: isPerfAlert
-                });
+                // Cache data for zoom modal
+                processedMachineCache[stat.idx] = {
+                    name: stat.machName,
+                    asset: stat.asset,
+                    line: stat.lineName,
+                    dept: stat.dept,
+                    op: stat.opName,
+                    ct: stat.ct,
+                    dt: stat.dt,
+                    oee: stat.oee.toFixed(1),
+                    perf: stat.perf.toFixed(1),
+                    qual: stat.qual.toFixed(1),
+                    status: statusText
+                };
 
-                // HTML generation with onclick
+                let opSeq = getSafeVal(stat.m, ["OpSequence"]) || stat.idx+1;
+
                 html += `
-                    <div class="flow-node ${alertClass}" onclick="openNodeDetail(${i})">
+                    <div class="flow-node ${alertClass}" onclick="openZoomModal(${stat.idx})">
                         ${badge}
                         <div class="badge-in">IN: ${partIn}</div>
                         <div class="badge-out">OUT: ${partOut}</div>
                         
-                        <h4>[Op ${getSafeVal(stat.m, ["OpSequence"])||stat.idx+1}] ${getSafeVal(stat.m, ["MachineName"])}</h4>
-                        <p style="color:#e74c3c; font-size:12px; margin-bottom:5px;">Downtime: ${stat.dt}m</p>
+                        <h4>[Op ${opSeq}] ${stat.machName}</h4>
+                        <div class="op-name">⚡ ${stat.opName}</div>
+                        <p style="color:#e74c3c; font-size:11px; margin-bottom:5px;">Downtime: ${stat.dt}m</p>
                         
                         <div class="flow-mini-charts">
                             <div class="flow-mini-box"><canvas id="flow_oee_${stat.idx}"></canvas><span>OEE</span></div>
@@ -540,7 +518,6 @@
                     </div>
                 `;
 
-                // Calculate Arrow Buffer
                 if(i < machineStats.length - 1) {
                     let nextMachineIn = machineStats[i+1].actual > 0 ? machineStats[i+1].actual : 0;
                     let bufferCount = partOut - nextMachineIn; 
@@ -571,86 +548,34 @@
             }, 50);
         }
 
-        // ==========================================
-        // MODAL CLICK & ZOOM IN LOGIC
-        // ==========================================
-        function openNodeDetail(index) {
-            let data = window.flowDataArray[index];
+        // ZOOM MODAL LOGIC FOR PROCESS FLOW CARDS
+        function openZoomModal(idx) {
+            let data = processedMachineCache[idx];
             if(!data) return;
 
-            // 1. Setup Title
-            let op = getSafeVal(data.m, ["OpSequence"]) || (index+1);
-            let machName = getSafeVal(data.m, ["MachineName", "Machine"]) || "Unknown Machine";
-            document.getElementById("modalOpTitle").innerText = `[Op ${op}] ${machName}`;
-
-            // 2. Determine Smart Status Banner
-            let banner = document.getElementById("modalStatusBanner");
-            let statusText = "";
-            banner.style.backgroundColor = "#e8f8f5"; 
-            banner.style.color = "#27ae60"; 
-            banner.style.border = "1px solid #27ae60"; // Default Green
-
-            if (data.isDtAlert) {
-                statusText += `🚨 Critical Alert: Machine is down for ${data.dt} mins.<br>`;
-                banner.style.backgroundColor = "#fadbd8"; banner.style.color = "#c0392b"; banner.style.border = "1px solid #e74c3c";
-            }
-            if (data.isPerfAlert) {
-                statusText += `⚠️ Performance Alert: Running at a critically low ${data.perf.toFixed(1)}%.<br>`;
-                banner.style.backgroundColor = "#fdebd0"; banner.style.color = "#d35400"; banner.style.border = "1px solid #f39c12";
-            }
-            if (data.isBottleneck) {
-                statusText += `🗜️ Bottleneck Node: Line speed depends on this (Max Cycle Time: ${data.ct} mins).`;
-                // If it's only a bottleneck but no critical alert, make it yellow
-                if(!data.isDtAlert && !data.isPerfAlert) {
-                    banner.style.backgroundColor = "#fcf3cf"; banner.style.color = "#b9770e"; banner.style.border = "1px solid #f1c40f";
-                }
-            }
-
-            if (statusText === "") {
-                statusText = "✅ Machine Status: Optimal / Healthy";
-            }
-            banner.innerHTML = statusText;
-
-            // 3. Render Zoomed Card Clone Inside Modal
-            let cloneHtml = `
-                <div class="flow-node ${data.alertClass}" style="margin:0;">
-                    ${data.badge}
-                    <div class="badge-in">IN: ${data.partIn}</div>
-                    <div class="badge-out">OUT: ${data.partOut}</div>
-                    <h4 style="margin:0 0 10px 0; color:#2c3e50; font-size:14px;">[Op ${op}] ${machName}</h4>
-                    <p style="color:#e74c3c; font-size:12px; margin-bottom:5px;">Downtime: ${data.dt}m</p>
-                    <div class="flow-mini-charts">
-                        <div class="flow-mini-box"><canvas id="modal_oee"></canvas><span>OEE</span></div>
-                        <div class="flow-mini-box"><canvas id="modal_perf"></canvas><span>PERF</span></div>
-                        <div class="flow-mini-box"><canvas id="modal_qual"></canvas><span>QUAL</span></div>
-                    </div>
+            document.getElementById('zoomTitle').innerText = `${data.name} (Op: ${data.op})`;
+            document.getElementById('zoomBody').innerHTML = `
+                <div class="zoom-row"><span>Machine Name:</span> <span>${data.name}</span></div>
+                <div class="zoom-row"><span>Asset / Barcode ID:</span> <span>${data.asset}</span></div>
+                <div class="zoom-row"><span>Line Name:</span> <span>${data.line}</span></div>
+                <div class="zoom-row"><span>Department:</span> <span>${data.dept}</span></div>
+                <div class="zoom-row"><span>Operation Name:</span> <span>${data.op}</span></div>
+                <div class="zoom-row"><span>Ideal Cycle Time (CT):</span> <span>${data.ct} mins</span></div>
+                <div class="zoom-row"><span>Accumulated Downtime:</span> <span style="color:#e74c3c;">${data.dt} mins</span></div>
+                <div class="zoom-row"><span>OEE Score:</span> <span style="color:#27ae60;">${data.oee}%</span></div>
+                <div class="zoom-row"><span>Performance:</span> <span style="color:#d35400;">${data.perf}%</span></div>
+                <div class="zoom-row"><span>Quality:</span> <span style="color:#8e44ad;">${data.qual}%</span></div>
+                <div class="zoom-row" style="border-bottom:none; margin-top:10px; background:#edf2f7; padding:10px; border-radius:6px;">
+                    <span>Current Status / Reason:</span> <span style="color:#c0392b;">${data.status}</span>
                 </div>
             `;
-            document.getElementById("modalNodeClone").innerHTML = cloneHtml;
-
-            // 4. Fill Machine Details Table
-            document.getElementById("modalDept").innerText = getSafeVal(data.m, ["Department"]) || "N/A";
-            document.getElementById("modalLine").innerText = getSafeVal(data.m, ["LineName", "Line"]) || "N/A";
-            document.getElementById("modalAsset").innerText = getSafeVal(data.m, ["AssetNumber", "Barcode"]) || "N/A";
-            document.getElementById("modalCT").innerText = data.ct;
-
-            // Show Modal
-            document.getElementById("nodeModalOverlay").classList.add("show");
-            document.getElementById("nodeDetailModal").classList.add("show");
-
-            // 5. Render Canvas Charts for Modal
-            setTimeout(() => {
-                if(window.modalCharts) window.modalCharts.forEach(c => c.destroy());
-                window.modalCharts = [];
-                window.modalCharts.push(createMiniProcessDonut('modal_oee', data.oee, '#2c3e50'));
-                window.modalCharts.push(createMiniProcessDonut('modal_perf', data.perf, '#f1c40f'));
-                window.modalCharts.push(createMiniProcessDonut('modal_qual', data.qual, '#e74c3c'));
-            }, 100);
+            document.getElementById('zoomModal').style.display = 'flex';
         }
 
-        function closeNodeDetail() {
-            document.getElementById("nodeModalOverlay").classList.remove("show");
-            document.getElementById("nodeDetailModal").classList.remove("show");
+        function closeZoomModal(event) {
+            if(event.target.id === 'zoomModal') {
+                document.getElementById('zoomModal').style.display = 'none';
+            }
         }
 
         function createMiniProcessDonut(canvasId, val, color) {
