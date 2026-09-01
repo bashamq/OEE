@@ -3,194 +3,208 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MES Live Dashboard (OEE & OLE)</title>
+    <title>Chenab MES Dashboard (OEE & OLE)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background-color: #f4f7f6; margin: 0; padding: 0; overflow-x: hidden; }
+        /* DYNAMIC THEME VARIABLES */
+        :root {
+            --primary: #2c3e50; --secondary: #e74c3c; --accent: #f1c40f; 
+            --success: #27ae60; --purple: #8e44ad;
+            --bg-body: #f4f7f6; --bg-card: #ffffff; --text-main: #333333; 
+            --text-muted: #7f8c8d; --nav-bg: #1a252f; --border-color: #bdc3c7;
+        }
+
+        body.dark-theme {
+            --primary: #ecf0f1; --bg-body: #121212; --bg-card: #1e1e1e; 
+            --text-main: #ecf0f1; --text-muted: #aaaaaa; --border-color: #333333; --nav-bg: #0a0f14;
+        }
+
+        body { font-family: 'Poppins', sans-serif; margin: 0; padding: 0; background-color: var(--bg-body); color: var(--text-main); transition: background-color 0.4s, color 0.4s; overflow-x: hidden; }
         
-        /* SIDEBAR STYLES */
-        .sidebar { position: fixed; left: -260px; top: 0; width: 260px; height: 100%; background: #2c3e50; transition: left 0.4s ease; z-index: 1000; box-shadow: 4px 0 15px rgba(0,0,0,0.2); }
-        .sidebar.open { left: 0; }
-        .sidebar-header { padding: 25px 20px; background: #1a252f; color: #4ade80; font-size: 20px; font-weight: bold; border-bottom: 2px solid #e74c3c; text-align: center; }
-        .sidebar a { display: block; padding: 16px 20px; color: #ecf0f1; text-decoration: none; font-size: 16px; border-bottom: 1px solid #34495e; cursor: pointer; transition: 0.3s; }
-        .sidebar a:hover, .sidebar a.active { background: #e74c3c; padding-left: 25px; font-weight: bold; }
-        .overlay { position: fixed; top:0; left:0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999; display: none; }
-        .overlay.show { display: block; }
-        
-        /* HEADER */
-        .header { position: relative; text-align: center; background: #2c3e50; color: #f1c40f; padding: 20px 20px 20px 60px; margin-bottom: 20px; border-bottom: 5px solid #e74c3c; }
-        .header h1 { margin: 0; font-size: 26px; color: white;}
-        .menu-btn { position: absolute; top: 25px; left: 15px; font-size: 28px; color: white; cursor: pointer; background: none; border: none; padding: 0; }
-        .sync-indicator { position: absolute; top: 25px; right: 20px; color: #2ecc71; font-size: 14px; font-weight: bold; display: none; align-items: center; gap: 5px; }
-        .sync-dot { width: 10px; height: 10px; background-color: #2ecc71; border-radius: 50%; animation: pulse 1.5s infinite; }
+        /* NAVBAR */
+        nav { background: var(--nav-bg); padding: 15px 30px; position: sticky; top: 0; z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.5); display: flex; justify-content: space-between; align-items: center; }
+        .nav-left { flex: 1; display: flex; flex-direction: column; color: #ecf0f1; }
+        .live-time { font-size: 22px; font-weight: 800; color: var(--accent); letter-spacing: 1px; line-height: 1; }
+        .live-date { font-size: 12px; font-weight: 600; color: #bdc3c7; text-transform: uppercase; margin-top: 4px; }
+        .nav-center { flex: 1; display: flex; justify-content: center; align-items: center; gap: 15px; }
+        .nav-center img { height: 60px; background: white; padding: 4px 12px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+        .nav-center .title { color: white; font-size: 24px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; border-left: 2px solid #7f8c8d; padding-left: 15px; }
+        .nav-center .title span { color: var(--secondary); }
+        .nav-right { flex: 1; display: flex; justify-content: flex-end; align-items: center; gap: 10px; color: white; font-weight: 600; font-size: 14px;}
+        .switch { position: relative; display: inline-block; width: 50px; height: 24px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #bdc3c7; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--secondary); }
+        input:checked + .slider:before { transform: translateX(26px); }
+
+        /* CONTROLS & SYNC */
+        .dashboard-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 30px; background: var(--bg-card); box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px;}
+        .controls { display: flex; gap: 15px; }
+        select.filter-select, input[type="date"].filter-select { padding: 10px; font-size: 14px; border-radius: 5px; border: 2px solid var(--border-color); font-weight: bold; background: var(--bg-body); color: var(--text-main); outline: none; cursor: pointer; }
+        .sync-indicator { color: var(--success); font-size: 14px; font-weight: bold; display: none; align-items: center; gap: 8px; }
+        .sync-dot { width: 10px; height: 10px; background-color: var(--success); border-radius: 50%; animation: pulse 1.5s infinite; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
 
-        .main-container { padding: 0 20px; transition: margin-left 0.4s; }
-        .view-section { display: none; animation: fadeIn 0.5s; }
-        .view-section.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .main-container { padding: 0 30px 30px 30px; }
 
-        /* CONTROLS */
-        .controls { text-align: center; margin-bottom: 20px; display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; }
-        select.filter-select, input[type="date"].filter-select { padding: 12px; font-size: 15px; border-radius: 5px; border: 2px solid #bdc3c7; font-weight: bold; color: #2c3e50; outline: none; cursor: pointer; }
-        
-        /* TOP CARDS (OEE, OLE, MTTR, MTBF) */
-        .cards { display: flex; justify-content: center; flex-wrap: wrap; margin-bottom: 20px; gap: 15px; }
-        .card { background: white; padding: 15px 25px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); text-align: center; border-top: 4px solid #3498db; }
-        .card h3 { margin: 0 0 10px 0; color: #34495e; font-size: 15px; text-transform: uppercase; }
-        .card .value { font-size: 28px; font-weight: bold; }
-        .val-oee { color: #2980b9; } .val-ole { color: #27ae60; }
-        .val-mttr { color: #8e44ad; } .val-mtbf { color: #16a085; }
+        /* TOP SUMMARY CARDS */
+        .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 25px; }
+        .card { background: var(--bg-card); padding: 20px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align: center; border-top: 4px solid #3498db; transition: background 0.4s; }
+        .card h3 { margin: 0 0 10px 0; color: var(--text-main); font-size: 16px; text-transform: uppercase; }
+        .card .value { font-size: 32px; font-weight: 800; }
 
-        /* DUAL OVERVIEW (OEE vs OLE) */
-        .dual-overview { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 20px; }
-        .overview-box { flex: 1; min-width: 300px; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); text-align: center; }
-        .overview-box.oee-box { border-top: 5px solid #2980b9; }
-        .overview-box.ole-box { border-top: 5px solid #27ae60; background: #f9fdfa; }
-        .overview-box h2 { margin-top: 0; font-size: 20px; color: #2c3e50; border-bottom: 2px solid #ecf0f1; padding-bottom: 10px; }
+        /* OEE vs OLE DUAL VIEW */
+        .dual-overview { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .overview-box { background: var(--bg-card); padding: 25px; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.08); text-align: center; transition: background 0.4s; }
+        .oee-box { border-top: 5px solid #2980b9; }
+        .ole-box { border-top: 5px solid #27ae60; }
+        .overview-box h2 { margin-top: 0; font-size: 20px; color: var(--text-main); border-bottom: 2px solid var(--border-color); padding-bottom: 15px; margin-bottom: 20px;}
         
-        .donuts-grid { display: flex; justify-content: space-around; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
-        .donut-box { width: 22%; min-width: 90px; position: relative; }
+        .donuts-grid { display: flex; justify-content: space-around; flex-wrap: wrap; gap: 15px; }
+        .donut-box { width: 20%; min-width: 90px; position: relative; }
         .donut-box canvas { max-width: 100px; max-height: 100px; margin: 0 auto; display: block; }
-        .donut-box p { margin-top:8px; font-size: 13px; font-weight:bold; color: #34495e; }
+        .donut-box p { margin-top:10px; font-size: 13px; font-weight:bold; color: var(--text-muted); }
 
-        /* TRACKING STYLES (4 CARDS NOW) */
-        .track-grid { display: flex; justify-content: space-between; gap: 15px; flex-wrap: wrap; }
-        .track-card { flex: 1; min-width: 250px; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); border-top: 5px solid #bdc3c7; }
-        .track-card h3 { margin-top: 0; font-size: 16px; border-bottom: 1px dashed #ccc; padding-bottom: 10px; text-transform: uppercase; }
-        .track-downtime { border-top-color: #e74c3c; } .track-downtime h3 { color: #c0392b; }
-        .track-perf { border-top-color: #f39c12; } .track-perf h3 { color: #d35400; }
-        .track-qual { border-top-color: #9b59b6; } .track-qual h3 { color: #8e44ad; }
-        .track-labor { border-top-color: #34495e; background: #fdfefe; } .track-labor h3 { color: #2c3e50; }
-        .machine-detail { background: #f8f9f9; padding: 10px; border-radius: 5px; margin-bottom: 15px; border-left: 3px solid #34495e; }
-        .machine-detail p { margin: 4px 0; font-size: 12px; color: #2c3e50; font-weight: 600; }
-        .problem-list { margin: 10px 0 0 0; padding-left: 20px; color: #7f8c8d; font-size: 13px; }
-        
+        /* SMART TRACKING CARDS */
+        .section-title { font-size: 22px; color: var(--text-main); border-bottom: 2px solid var(--border-color); padding-bottom: 10px; margin-top: 40px; margin-bottom: 20px; }
+        .track-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+        .track-card { background: var(--bg-card); padding: 20px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.08); border-top: 5px solid var(--border-color); }
+        .track-card h3 { margin-top: 0; font-size: 16px; border-bottom: 1px dashed var(--border-color); padding-bottom: 10px; text-transform: uppercase; }
+        .track-downtime { border-top-color: #e74c3c; } .track-downtime h3 { color: #e74c3c; }
+        .track-perf { border-top-color: #f39c12; } .track-perf h3 { color: #f39c12; }
+        .track-qual { border-top-color: #9b59b6; } .track-qual h3 { color: #9b59b6; }
+        .track-labor { border-top-color: #27ae60; } .track-labor h3 { color: #27ae60; }
+        .machine-detail { background: var(--bg-body); padding: 12px; border-radius: 6px; margin-bottom: 15px; border-left: 4px solid var(--primary); }
+        .machine-detail p { margin: 4px 0; font-size: 12px; color: var(--text-main); font-weight: 600; }
+        .problem-list { margin: 10px 0 0 0; padding-left: 20px; color: var(--text-muted); font-size: 13px; }
+
         /* PROCESS FLOW STYLES */
-        .flow-wrapper { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; padding: 30px 20px; background: white; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); gap: 20px; }
-        .flow-node { width: 240px; background: #ecf0f1; border: 2px solid #bdc3c7; border-radius: 10px; padding: 22px 10px 12px 10px; text-align: center; position: relative; transition: 0.3s; cursor: pointer; }
-        .flow-node:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,0.15); }
-        .flow-node h4 { margin: 0 0 2px 0; color: #2c3e50; font-size: 13px; font-weight: 700; }
-        .flow-node .op-name { font-size: 11px; color: #7f8c8d; margin-bottom: 8px; font-weight: 600; }
+        .flow-wrapper { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; padding: 40px 20px; background: var(--bg-card); border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.08); gap: 25px; transition: background 0.4s;}
+        .flow-node { width: 250px; background: var(--bg-body); border: 2px solid var(--border-color); border-radius: 10px; padding: 25px 15px 15px 15px; text-align: center; position: relative; transition: 0.3s; cursor: pointer; }
+        .flow-node:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0,0,0,0.15); border-color: var(--primary); }
+        .flow-node h4 { margin: 0 0 5px 0; color: var(--text-main); font-size: 14px; font-weight: 700; }
+        .flow-node .op-name { font-size: 12px; color: var(--text-muted); margin-bottom: 10px; font-weight: 600; }
         
         .arrow-container { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 60px; }
-        .flow-arrow { font-size: 28px; color: #bdc3c7; font-weight: bold; line-height: 1; margin-top: 5px; }
-        .buffer-badge { background: #f39c12; color: white; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .flow-arrow { font-size: 32px; color: var(--border-color); font-weight: bold; line-height: 1; margin-top: 5px; }
+        .buffer-badge { background: #f39c12; color: white; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
         .buffer-ok { background: #27ae60; }
         
-        .flow-mini-charts { display: flex; justify-content: space-around; margin-top: 10px; }
-        .flow-mini-box { width: 50px; text-align: center; }
-        .flow-mini-box canvas { max-width: 50px; max-height: 50px; display: block; margin: 0 auto; }
-        .flow-mini-box span { display: block; font-size: 9px; font-weight: bold; color: #7f8c8d; margin-top: 3px; }
+        .flow-mini-charts { display: flex; justify-content: space-around; margin-top: 15px; }
+        .flow-mini-box { width: 55px; text-align: center; }
+        .flow-mini-box canvas { max-width: 55px; max-height: 55px; display: block; margin: 0 auto; }
+        .flow-mini-box span { display: block; font-size: 10px; font-weight: bold; color: var(--text-muted); margin-top: 5px; }
 
-        .badge-in { position: absolute; top: -10px; left: -8px; background: #3498db; color: white; padding: 3px 8px; border-radius: 5px; font-size: 11px; font-weight: bold; }
-        .badge-out { position: absolute; top: -10px; right: -8px; background: #27ae60; color: white; padding: 3px 8px; border-radius: 5px; font-size: 11px; font-weight: bold; }
-        .alert-bottleneck { border-color: #f1c40f !important; background: #fcf3cf !important; }
-        .alert-downtime { border-color: #e74c3c !important; background: #fadbd8 !important; }
-        .alert-perf { border-color: #f39c12 !important; background: #fdebd0 !important; }
-        .alert-badge { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: #e74c3c; color: white; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; animation: blink 1s infinite; z-index: 10; }
+        .badge-in { position: absolute; top: -12px; left: -10px; background: #3498db; color: white; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.2);}
+        .badge-out { position: absolute; top: -12px; right: -10px; background: #27ae60; color: white; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.2);}
+        .alert-bottleneck { border-color: #f1c40f !important; background: rgba(241, 196, 15, 0.1) !important; }
+        .alert-downtime { border-color: #e74c3c !important; background: rgba(231, 76, 60, 0.1) !important; }
+        .alert-perf { border-color: #f39c12 !important; background: rgba(243, 156, 18, 0.1) !important; }
+        .alert-badge { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: #e74c3c; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; animation: blink 1s infinite; z-index: 10; box-shadow: 0 2px 5px rgba(0,0,0,0.3);}
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
 
-        .zoom-modal { display: none; position: fixed; z-index: 3000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); align-items: center; justify-content: center; backdrop-filter: blur(4px); }
-        .zoom-content { background: white; width: 90%; max-width: 500px; border-radius: 12px; padding: 25px; position: relative; animation: zoomIn 0.3s ease; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
-        @keyframes zoomIn { from { transform: scale(0.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        .zoom-close { position: absolute; top: 15px; right: 20px; font-size: 24px; cursor: pointer; color: #7f8c8d; }
-        .zoom-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #edf2f7; font-size: 14px; }
-        .zoom-row span:first-child { font-weight: bold; color: #4a5568; }
-        .zoom-row span:last-child { color: #2d3748; font-weight: 600; }
+        /* ZOOM-IN MODAL */
+        .zoom-modal { display: none; position: fixed; z-index: 3000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+        .zoom-content { background: var(--bg-card); width: 90%; max-width: 550px; border-radius: 15px; padding: 30px; position: relative; animation: zoomIn 0.3s ease; box-shadow: 0 15px 40px rgba(0,0,0,0.4); }
+        @keyframes zoomIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .zoom-close { position: absolute; top: 15px; right: 20px; font-size: 28px; cursor: pointer; color: var(--text-muted); }
+        .zoom-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border-color); font-size: 14px; }
+        .zoom-row span:first-child { font-weight: bold; color: var(--text-muted); }
+        .zoom-row span:last-child { color: var(--text-main); font-weight: 600; text-align: right;}
 
-        .loading { text-align: center; font-size: 18px; color: #2980b9; font-weight: bold; margin-top: 50px; }
+        .loading { text-align: center; font-size: 18px; color: #3498db; font-weight: bold; padding: 50px; }
     </style>
 </head>
 <body>
 
-    <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
-    <div class="sidebar" id="sidebar">
-        <div class="sidebar-header">⚙️ MES Control</div>
-        <a class="active" onclick="switchView('view-dashboard', this)">📊 Live Dashboard</a>
-        <a onclick="switchView('view-tracking', this)">🚨 Smart Tracking</a>
-        <a onclick="switchView('view-flow', this)">🔄 Process Flow</a>
-    </div>
+    <nav>
+        <div class="nav-left">
+            <div id="liveTime" class="live-time">--:--:--</div>
+            <div id="liveDate" class="live-date">--/--/----</div>
+        </div>
+        <div class="nav-center">
+            <img src="1787641899345.png" alt="Chenab Engineering">
+            <div class="title">Chenab<span>MES</span></div>
+        </div>
+        <div class="nav-right">
+            <span><i class="fa-solid fa-moon"></i> Dark Mode</span>
+            <label class="switch">
+                <input type="checkbox" id="themeToggle" onchange="toggleTheme()">
+                <span class="slider round"></span>
+            </label>
+        </div>
+    </nav>
 
-    <div class="header">
-        <button class="menu-btn" onclick="toggleSidebar()">☰</button>
-        <h1>Manufacturing Excellence Dashboard</h1>
-        <div class="sync-indicator" id="syncIndicator"><div class="sync-dot"></div> Live Syncing</div>
-    </div>
-
-    <div class="main-container">
+    <div class="dashboard-header">
         <div class="controls">
             <input type="date" id="dateSelect" class="filter-select" onchange="processAllViews()">
             <select id="lineSelect" class="filter-select" onchange="processAllViews()">
                 <option value="All">🏭 Factory Aggregate (All Lines)</option>
             </select>
         </div>
+        <div class="sync-indicator" id="syncIndicator"><div class="sync-dot"></div> Live Syncing</div>
+    </div>
 
-        <div id="loadingMsg" class="loading">Fetching Data... Please wait.</div>
+    <div class="main-container">
+        <div id="loadingMsg" class="loading"><i class="fa-solid fa-circle-notch fa-spin"></i> Fetching Live Data...</div>
 
-        <!-- VIEW 1: LIVE DASHBOARD (OEE vs OLE) -->
-        <div id="view-dashboard" class="view-section active">
+        <div id="dashboardContent" style="display:none;">
             
             <div class="cards">
-                <div class="card" style="border-top-color:#2980b9;"><h3>Overall OEE</h3><div class="value val-oee" id="cardOEE">0%</div></div>
-                <div class="card" style="border-top-color:#27ae60;"><h3>Overall OLE</h3><div class="value val-ole" id="cardOLE">0%</div></div>
-                <div class="card" style="border-top-color:#8e44ad;"><h3>Avg MTTR</h3><div class="value val-mttr" id="cardMTTR">0 Min</div></div>
-                <div class="card" style="border-top-color:#16a085;"><h3>Avg MTBF</h3><div class="value val-mtbf" id="cardMTBF">0 Min</div></div>
+                <div class="card" style="border-top-color:#2980b9;"><h3>Overall OEE</h3><div class="value" style="color:#2980b9;" id="cardOEE">0%</div></div>
+                <div class="card" style="border-top-color:#27ae60;"><h3>Overall OLE</h3><div class="value" style="color:#27ae60;" id="cardOLE">0%</div></div>
+                <div class="card" style="border-top-color:#8e44ad;"><h3>Avg MTTR</h3><div class="value" style="color:#8e44ad;" id="cardMTTR">0 Min</div></div>
+                <div class="card" style="border-top-color:#16a085;"><h3>Avg MTBF</h3><div class="value" style="color:#16a085;" id="cardMTBF">0 Min</div></div>
             </div>
             
             <div class="dual-overview">
-                <!-- OEE OVERVIEW -->
                 <div class="overview-box oee-box">
                     <h2><i class="fa-solid fa-gears"></i> Equipment Performance (OEE)</h2>
                     <div class="donuts-grid">
                         <div class="donut-box"><canvas id="oeeDonut"></canvas><p>OEE</p></div>
-                        <div class="donut-box"><canvas id="oeeADonut"></canvas><p style="color:#3498db;">Avail</p></div>
-                        <div class="donut-box"><canvas id="oeePDonut"></canvas><p style="color:#f1c40f;">Perf</p></div>
-                        <div class="donut-box"><canvas id="oeeQDonut"></canvas><p style="color:#e74c3c;">Qual</p></div>
+                        <div class="donut-box"><canvas id="oeeADonut"></canvas><p style="color:#3498db;">Availability</p></div>
+                        <div class="donut-box"><canvas id="oeePDonut"></canvas><p style="color:#f1c40f;">Performance</p></div>
+                        <div class="donut-box"><canvas id="oeeQDonut"></canvas><p style="color:#e74c3c;">Quality</p></div>
                     </div>
                 </div>
 
-                <!-- OLE OVERVIEW -->
                 <div class="overview-box ole-box">
                     <h2><i class="fa-solid fa-users"></i> Labor Effectiveness (OLE)</h2>
                     <div class="donuts-grid">
                         <div class="donut-box"><canvas id="oleDonut"></canvas><p>OLE</p></div>
-                        <div class="donut-box"><canvas id="oleADonut"></canvas><p style="color:#27ae60;">Avail</p></div>
-                        <div class="donut-box"><canvas id="olePDonut"></canvas><p style="color:#d35400;">Perf</p></div>
-                        <div class="donut-box"><canvas id="oleQDonut"></canvas><p style="color:#8e44ad;">Qual</p></div>
+                        <div class="donut-box"><canvas id="oleADonut"></canvas><p style="color:#2ecc71;">Labor Avail</p></div>
+                        <div class="donut-box"><canvas id="olePDonut"></canvas><p style="color:#e67e22;">Labor Perf</p></div>
+                        <div class="donut-box"><canvas id="oleQDonut"></canvas><p style="color:#9b59b6;">Error-Free</p></div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- VIEW 2: SMART TRACKING -->
-        <div id="view-tracking" class="view-section">
-            <h2 style="color: #2c3e50; text-align: center; border-bottom: 2px solid #ccc; padding-bottom: 10px;">🚨 Issue Tracking & Analyzer</h2>
+            <h2 class="section-title"><i class="fa-solid fa-magnifying-glass-chart"></i> Issue Tracking & Analyzer</h2>
             <div class="track-grid" id="trackingContainer"></div>
-        </div>
 
-        <!-- VIEW 3: PROCESS FLOW -->
-        <div id="view-flow" class="view-section">
-            <h2 style="color: #2c3e50; text-align: center; border-bottom: 2px solid #ccc; padding-bottom: 10px;">🔄 Line Process Flow</h2>
-            <p style="text-align:center; color:#7f8c8d; font-size:14px;" id="flowNotice">Select a specific Production Line above to view its process flow.</p>
+            <h2 class="section-title"><i class="fa-solid fa-route"></i> Line Process Flow & Bottlenecks</h2>
+            <p style="text-align:center; color:var(--text-muted); font-size:15px;" id="flowNotice">Please select a specific Production Line from the top menu to view its Process Flow.</p>
             <div class="flow-wrapper" id="flowContainer" style="display:none;"></div>
         </div>
-
     </div>
 
-    <!-- ZOOM-IN MODAL -->
     <div class="zoom-modal" id="zoomModal" onclick="closeZoomModal(event)">
         <div class="zoom-content">
             <span class="zoom-close" onclick="document.getElementById('zoomModal').style.display='none'">&times;</span>
-            <h3 id="zoomTitle" style="margin-top:0; color:#2c3e50; border-bottom:2px solid #e2e8f0; padding-bottom:10px;">Machine Deep Dive</h3>
+            <h3 id="zoomTitle" style="margin-top:0; color:var(--primary); border-bottom:2px solid var(--border-color); padding-bottom:10px;">Machine Deep Dive</h3>
             <div id="zoomBody"></div>
         </div>
     </div>
 
     <script>
-        const API_URL = "YOUR_GOOGLE_SCRIPT_WEB_APP_URL_HERE"; // Backend URL yahan daalein
+        // API URL (Data Entry wali script ka same URL)
+        const API_URL = "https://script.google.com/macros/s/AKfycbzREGDC03uDNfgswSy49bMwGtlzok9fiT2Ro1w78JwfmPTp93hhmFnaSRz0pmE3mXJrXA/exec";
         
         let allLogs = [], allMachines = [];
-        let charts = {}; // Store chart instances dynamically
+        let charts = {}; 
         let flowChartInstances = [];
         let processedMachineCache = {}; 
 
@@ -200,32 +214,37 @@
             return null;
         }
 
-        function toggleSidebar() {
-            document.getElementById("sidebar").classList.toggle("open");
-            document.getElementById("overlay").classList.toggle("show");
-        }
-        function switchView(viewId, element) {
-            document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
-            document.querySelectorAll('.sidebar a').forEach(a => a.classList.remove('active'));
-            document.getElementById(viewId).classList.add('active');
-            element.classList.add('active');
-            toggleSidebar();
-            processAllViews();
-        }
-
         window.onload = function() {
             let d = new Date(); let month = '' + (d.getMonth() + 1), day = '' + d.getDate(), year = d.getFullYear();
             if (month.length < 2) month = '0' + month; if (day.length < 2) day = '0' + day;
             document.getElementById("dateSelect").value = [year, month, day].join('-');
+            
+            // Pakistan Time Update Loop
+            setInterval(updateTime, 1000); updateTime();
+            
             fetchAllData();
             setInterval(() => { fetchAllData(true); }, 30000);
         };
+
+        function updateTime() {
+            const now = new Date();
+            const optionsTime = { timeZone: 'Asia/Karachi', hour12: true, hour: '2-digit', minute: '2-digit', second: '2-digit' };
+            const optionsDate = { timeZone: 'Asia/Karachi', year: 'numeric', month: 'short', day: 'numeric', weekday: 'short' };
+            document.getElementById('liveTime').innerText = now.toLocaleTimeString('en-US', optionsTime);
+            document.getElementById('liveDate').innerText = now.toLocaleDateString('en-US', optionsDate);
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('dark-theme', document.getElementById('themeToggle').checked);
+            processAllViews(); // Re-render charts for dark mode colors
+        }
 
         function fetchAllData(isSilent = false) {
             if(isSilent) document.getElementById('syncIndicator').style.display = 'flex';
             fetch(API_URL).then(res => res.json()).then(data => {
                 allLogs = data.logs || []; allMachines = data.machines || [];
                 document.getElementById('loadingMsg').style.display = 'none';
+                document.getElementById('dashboardContent').style.display = 'block';
                 if(document.getElementById("lineSelect").options.length === 1) populateLineDropdown();
                 processAllViews();
                 if(isSilent) setTimeout(() => { document.getElementById('syncIndicator').style.display = 'none'; }, 2000);
@@ -234,7 +253,6 @@
 
         function populateLineDropdown() {
             const select = document.getElementById("lineSelect");
-            select.innerHTML = '<option value="All">🏭 Factory Aggregate (All Lines)</option>';
             let uniqueLines = [...new Set(allMachines.map(m => getSafeVal(m, ["LineName", "Line"])))].filter(Boolean);
             uniqueLines.forEach(l => { select.innerHTML += `<option value="${l}">🛠️ Line: ${l}</option>`; });
         }
@@ -245,53 +263,50 @@
 
             if (dateVal) {
                 targetLogs = targetLogs.filter(log => {
-                    let rawDate = getSafeVal(log, ["Timestamp", "Date"]); if (!rawDate) return false;
+                    let rawDate = getSafeVal(log, ["Timestamp", "Date", "EntryDateTime"]); if (!rawDate) return false;
                     let d = new Date(rawDate), month = ''+(d.getMonth()+1), day = ''+d.getDate(), year = d.getFullYear();
                     if (month.length<2) month='0'+month; if (day.length<2) day='0'+day;
                     return [year, month, day].join('-') === dateVal;
                 });
             }
 
-            // Generate Sessions to prevent double counting
             let sessions = generateSessions(targetLogs);
-
             calculateDashboard(sessions);
             calculateTracking(sessions);
             calculateProcessFlow(sessions);
         }
 
-        // --- SESSION AGGREGATOR FOR ACCURATE OEE & OLE ---
+        // --- SESSION AGGREGATOR (COMBINES MACHINE & LABOR DATA) ---
         function generateSessions(logs) {
             let lineVal = document.getElementById("lineSelect").value;
             let filteredLogs = logs;
             if (lineVal !== "All") {
                 let lineMachines = allMachines.filter(m => getSafeVal(m, ["LineName", "Line"]) === lineVal);
                 let lineAssets = lineMachines.map(m => String(getSafeVal(m, ["AssetNumber", "Barcode"])));
-                filteredLogs = logs.filter(l => lineAssets.includes(String(getSafeVal(l, ["Barcode#", "Barcode"]))));
+                filteredLogs = logs.filter(l => lineAssets.includes(String(getSafeVal(l, ["Barcode#", "Barcode", "AssetNumber"]))));
             }
 
             let sessions = {};
             filteredLogs.forEach(r => {
-                let dStr = ""; 
-                let rawDate = getSafeVal(r, ["Timestamp", "Date"]); 
+                let dStr = ""; let rawDate = getSafeVal(r, ["Timestamp", "Date", "EntryDateTime"]); 
                 if(rawDate) dStr = new Date(rawDate).toDateString();
                 
                 let shift = getSafeVal(r, ["Shift"]) || "Unknown";
-                let barcode = String(getSafeVal(r, ["Barcode#", "Barcode"])).trim();
+                let barcode = String(getSafeVal(r, ["Barcode#", "Barcode", "AssetNumber"])).trim();
                 let key = `${dStr}_${shift}_${barcode}`;
 
                 if(!sessions[key]) {
                     sessions[key] = { 
-                        barcode: barcode,
-                        pt: 480, dt: 0, actual: 0, idealCT: 0, good: 0, scrap: 0, 
+                        barcode: barcode, pt: 480, dt: 0, actual: 0, idealCT: 0, good: 0, scrap: 0, 
                         schedLabor: 480, actManpower: 1, laborLoss: 0, stdManpower: 1,
                         dtReasons: {}, lossReasons: {}, rejectReasons: {}, laborLossReasons: {}
                     };
                     let mach = allMachines.find(m => String(getSafeVal(m, ["AssetNumber", "Barcode"])) === barcode);
                     if(mach) {
-                        sessions[key].stdManpower = Number(getSafeVal(mach, ["StdManpower"])) || 1;
+                        sessions[key].stdManpower = Number(getSafeVal(mach, ["StdManpower", "Std Manpower"])) || 1;
                         sessions[key].machName = getSafeVal(mach, ["MachineName"]);
                         sessions[key].line = getSafeVal(mach, ["LineName", "Line"]);
+                        sessions[key].dept = getSafeVal(mach, ["Department", "Dept"]);
                         sessions[key].op = getSafeVal(mach, ["Operation", "Op"]);
                     }
                 }
@@ -300,19 +315,19 @@
                 
                 if (eType === "Availability" || eType === "Maintenance") {
                     sessions[key].dt += Number(getSafeVal(r, ["Downtime(Min)", "Downtime"])) || 0;
-                    sessions[key].laborLoss += Number(getSafeVal(r, ["LaborLossTime"])) || 0;
-                    if(Number(getSafeVal(r, ["ScheduledLaborTime"]))) sessions[key].schedLabor = Number(getSafeVal(r, ["ScheduledLaborTime"]));
-                    if(Number(getSafeVal(r, ["ActualManpower"]))) sessions[key].actManpower = Number(getSafeVal(r, ["ActualManpower"]));
+                    sessions[key].laborLoss += Number(getSafeVal(r, ["LaborLossTime", "Labor Loss Time"])) || 0;
+                    if(Number(getSafeVal(r, ["ScheduledLaborTime", "Scheduled Labor Time"]))) sessions[key].schedLabor = Number(getSafeVal(r, ["ScheduledLaborTime", "Scheduled Labor Time"]));
+                    if(Number(getSafeVal(r, ["ActualManpower", "Actual Manpower"]))) sessions[key].actManpower = Number(getSafeVal(r, ["ActualManpower", "Actual Manpower"]));
                     
                     let mR = getSafeVal(r, ["Maint.Reason", "MaintReason"]); if(mR && sessions[key].dt > 0) sessions[key].dtReasons[mR] = (sessions[key].dtReasons[mR] || 0) + sessions[key].dt;
-                    let llR = getSafeVal(r, ["LaborLossReason"]); if(llR && sessions[key].laborLoss > 0) sessions[key].laborLossReasons[llR] = (sessions[key].laborLossReasons[llR] || 0) + sessions[key].laborLoss;
+                    let llR = getSafeVal(r, ["LaborLossReason", "Labor Loss Reason"]); if(llR && sessions[key].laborLoss > 0) sessions[key].laborLossReasons[llR] = (sessions[key].laborLossReasons[llR] || 0) + sessions[key].laborLoss;
                 
                 } else if (eType === "Performance" || eType === "Production") {
                     sessions[key].pt = Number(getSafeVal(r, ["PlannedTime(Min)", "ShiftTime"])) || 480;
                     sessions[key].idealCT = Number(getSafeVal(r, ["IdealCT(Min)", "Target"])) || 0;
                     sessions[key].actual += Number(getSafeVal(r, ["TotalCount", "Actual"])) || 0;
-                    if(Number(getSafeVal(r, ["ScheduledLaborTime"]))) sessions[key].schedLabor = Number(getSafeVal(r, ["ScheduledLaborTime"]));
-                    if(Number(getSafeVal(r, ["ActualManpower"]))) sessions[key].actManpower = Number(getSafeVal(r, ["ActualManpower"]));
+                    if(Number(getSafeVal(r, ["ScheduledLaborTime", "Scheduled Labor Time"]))) sessions[key].schedLabor = Number(getSafeVal(r, ["ScheduledLaborTime", "Scheduled Labor Time"]));
+                    if(Number(getSafeVal(r, ["ActualManpower", "Actual Manpower"]))) sessions[key].actManpower = Number(getSafeVal(r, ["ActualManpower", "Actual Manpower"]));
                     
                     let pR = getSafeVal(r, ["Low Production Reason", "LossReason"]); if(pR) sessions[key].lossReasons[pR] = (sessions[key].lossReasons[pR] || 0) + 1;
 
@@ -325,95 +340,81 @@
             return Object.values(sessions);
         }
 
-        // 1. DASHBOARD LOGIC (OEE & OLE)
+        // --- DASHBOARD CHARTS ---
         function calculateDashboard(sessions) {
+            let tColor = document.body.classList.contains('dark-theme') ? '#ecf0f1' : '#2c3e50';
+
             if (sessions.length === 0) {
                 document.getElementById("cardOEE").innerText = "0%"; document.getElementById("cardOLE").innerText = "0%";
                 document.getElementById("cardMTTR").innerText = "0 Min"; document.getElementById("cardMTBF").innerText = "0 Min";
-                renderDonut('oeeDonut', 0, '#2c3e50'); renderDonut('oeeADonut', 0, '#3498db'); renderDonut('oeePDonut', 0, '#f1c40f'); renderDonut('oeeQDonut', 0, '#e74c3c');
-                renderDonut('oleDonut', 0, '#27ae60'); renderDonut('oleADonut', 0, '#2ecc71'); renderDonut('olePDonut', 0, '#d35400'); renderDonut('oleQDonut', 0, '#8e44ad');
+                renderDonut('oeeDonut', 0, '#3498db', tColor); renderDonut('oeeADonut', 0, '#3498db', tColor); renderDonut('oeePDonut', 0, '#f1c40f', tColor); renderDonut('oeeQDonut', 0, '#e74c3c', tColor);
+                renderDonut('oleDonut', 0, '#27ae60', tColor); renderDonut('oleADonut', 0, '#2ecc71', tColor); renderDonut('olePDonut', 0, '#e67e22', tColor); renderDonut('oleQDonut', 0, '#9b59b6', tColor);
                 return;
             }
 
-            let tPT=0, tDT=0, tIT=0, dtCount=0;
-            let tGood=0, tScrap=0;
+            let tPT=0, tDT=0, tIT=0, dtCount=0, tGood=0, tScrap=0;
             let tSchedLabor=0, tLaborLoss=0, tExpectedLabor=0, tActualLabor=0;
 
             sessions.forEach(s => {
-                // OEE Variables
-                tPT += s.pt; 
-                tDT += s.dt; if(s.dt > 0) dtCount++;
-                tIT += (s.idealCT * s.actual);
-                tGood += s.good; tScrap += s.scrap;
-
-                // OLE Variables
-                tSchedLabor += s.schedLabor;
-                tLaborLoss += s.laborLoss;
-                tActualLabor += (s.schedLabor * s.actManpower); // Total human minutes deployed
-                tExpectedLabor += (s.idealCT * s.actual * s.stdManpower); // Total human minutes earned
+                tPT += s.pt; tDT += s.dt; if(s.dt > 0) dtCount++;
+                tIT += (s.idealCT * s.actual); tGood += s.good; tScrap += s.scrap;
+                
+                tSchedLabor += s.schedLabor; tLaborLoss += s.laborLoss;
+                tActualLabor += (s.schedLabor * s.actManpower); // Total human mins present
+                tExpectedLabor += (s.idealCT * s.actual * s.stdManpower); // Total human mins earned
             });
 
-            // OEE Calcs
+            // OEE
             let oeeA = tPT > 0 ? Math.max(0, tPT - tDT) / tPT : 0;
             let oeeP = (tPT - tDT) > 0 ? Math.min(1, tIT / (tPT - tDT)) : 0;
             let qual = (tGood + tScrap) > 0 ? tGood / (tGood + tScrap) : 0;
             let oee = oeeA * oeeP * qual;
 
-            // OLE Calcs
+            // OLE
             let oleA = tSchedLabor > 0 ? Math.max(0, tSchedLabor - tLaborLoss) / tSchedLabor : 0;
             let oleP = tActualLabor > 0 ? Math.min(1, tExpectedLabor / tActualLabor) : 0;
             let ole = oleA * oleP * qual;
 
-            // MTTR & MTBF
-            let mttr = dtCount > 0 ? (tDT / dtCount).toFixed(1) : 0;
-            let mtbf = dtCount > 0 ? ((tPT - tDT) / dtCount).toFixed(1) : Math.max(0, tPT - tDT).toFixed(1);
-
             document.getElementById("cardOEE").innerText = (oee * 100).toFixed(1) + "%";
             document.getElementById("cardOLE").innerText = (ole * 100).toFixed(1) + "%";
-            document.getElementById("cardMTTR").innerText = mttr + " Min"; 
-            document.getElementById("cardMTBF").innerText = mtbf + " Min";
+            document.getElementById("cardMTTR").innerText = (dtCount > 0 ? (tDT / dtCount).toFixed(1) : 0) + " Min"; 
+            document.getElementById("cardMTBF").innerText = (dtCount > 0 ? ((tPT - tDT) / dtCount).toFixed(1) : Math.max(0, tPT - tDT).toFixed(1)) + " Min";
 
-            // Render OEE
-            renderDonut('oeeDonut', oee*100, '#2c3e50'); renderDonut('oeeADonut', oeeA*100, '#3498db'); 
-            renderDonut('oeePDonut', oeeP*100, '#f1c40f'); renderDonut('oeeQDonut', qual*100, '#e74c3c');
-            // Render OLE
-            renderDonut('oleDonut', ole*100, '#27ae60'); renderDonut('oleADonut', oleA*100, '#2ecc71'); 
-            renderDonut('olePDonut', oleP*100, '#d35400'); renderDonut('oleQDonut', qual*100, '#8e44ad');
+            renderDonut('oeeDonut', oee*100, '#3498db', tColor); renderDonut('oeeADonut', oeeA*100, '#3498db', tColor); renderDonut('oeePDonut', oeeP*100, '#f1c40f', tColor); renderDonut('oeeQDonut', qual*100, '#e74c3c', tColor);
+            renderDonut('oleDonut', ole*100, '#27ae60', tColor); renderDonut('oleADonut', oleA*100, '#2ecc71', tColor); renderDonut('olePDonut', oleP*100, '#e67e22', tColor); renderDonut('oleQDonut', qual*100, '#9b59b6', tColor);
         }
 
-        function renderDonut(id, val, color) {
+        function renderDonut(id, val, color, textColor) {
             if(charts[id]) charts[id].destroy();
             let safeVal = Math.min(Math.max(val, 0), 100);
+            let bgFill = document.body.classList.contains('dark-theme') ? '#2c3e50' : '#ecf0f1';
+            
             charts[id] = new Chart(document.getElementById(id).getContext('2d'), { 
                 type: 'doughnut', 
-                data: { datasets: [{ data: [safeVal, 100-safeVal], backgroundColor: [color, '#ecf0f1'], borderWidth: 0 }] }, 
+                data: { datasets: [{ data: [safeVal, 100-safeVal], backgroundColor: [color, bgFill], borderWidth: 0 }] }, 
                 options: { responsive: true, maintainAspectRatio: false, plugins: { tooltip: { enabled: false } }, cutout: '75%' }, 
                 plugins: [{ id: 'tc', beforeDraw: function(c) { 
                     let ctx=c.ctx; ctx.restore(); ctx.font="bold "+(c.height/4).toFixed(2)+"px sans-serif"; 
-                    ctx.fillStyle="#2c3e50"; ctx.textBaseline="middle"; let t=Math.round(safeVal)+"%"; 
+                    ctx.fillStyle = textColor; ctx.textBaseline="middle"; let t=Math.round(safeVal)+"%"; 
                     ctx.fillText(t, (c.width-ctx.measureText(t).width)/2, c.height/2); ctx.save(); 
                 }}]
             });
         }
 
-        // 2. SMART TRACKING LOGIC (ADDED LABOR LOSS CARD)
+        // --- SMART TRACKING (WITH LABOR LOSS CARD) ---
         function calculateTracking(sessions) {
-            let stats = {};
-            let globalLaborLosses = {};
+            let stats = {}; let globalLaborLosses = {};
 
             sessions.forEach(s => {
                 let a = s.barcode;
-                if(!stats[a]) {
-                    stats[a] = { name: s.machName || a, line: s.line, op: s.op, dt: 0, dtReasons: {}, pt: 0, it: 0, actual: 0, lossReasons: {}, good: 0, scrap: 0, rejectReasons: {} };
-                }
+                if(!stats[a]) stats[a] = { name: s.machName || a, line: s.line, op: s.op, dt: 0, dtReasons: {}, pt: 0, it: 0, actual: 0, lossReasons: {}, good: 0, scrap: 0, rejectReasons: {} };
+                
                 stats[a].dt += s.dt; stats[a].pt += s.pt; stats[a].it += (s.idealCT * s.actual); 
                 stats[a].actual += s.actual; stats[a].good += s.good; stats[a].scrap += s.scrap;
                 
                 for(let k in s.dtReasons) stats[a].dtReasons[k] = (stats[a].dtReasons[k]||0) + s.dtReasons[k];
                 for(let k in s.lossReasons) stats[a].lossReasons[k] = (stats[a].lossReasons[k]||0) + s.lossReasons[k];
                 for(let k in s.rejectReasons) stats[a].rejectReasons[k] = (stats[a].rejectReasons[k]||0) + s.rejectReasons[k];
-                
-                // Aggregate Labor Losses Globally
                 for(let k in s.laborLossReasons) globalLaborLosses[k] = (globalLaborLosses[k]||0) + s.laborLossReasons[k];
             });
 
@@ -429,46 +430,43 @@
 
             let html = "";
             
-            // Card 1: Downtime
+            // Downtime
             html += `<div class="track-card track-downtime"><h3>🚨 Highest Downtime</h3>`;
             if (maxDtAsset && maxDt > 0) {
-                let s = stats[maxDtAsset];
-                let rList = Object.keys(s.dtReasons).map(k => `<li>${k}: ${s.dtReasons[k]} mins</li>`).join('');
-                html += `<div class="machine-detail"><p>🏭 Line: ${s.line}</p><p>⚙️ Op: ${s.op}</p><p>🔧 Mach: ${s.name}</p></div><p><b>Total Down:</b> <span style="color:#e74c3c; font-weight:bold; font-size:18px;">${maxDt} Mins</span></p><ul class="problem-list">${rList || '<li>No details</li>'}</ul>`;
-            } else { html += `<p style="color:#27ae60; font-weight:bold; padding-top:10px;">✅ No downtime logged.</p>`; }
+                let s = stats[maxDtAsset]; let rList = Object.keys(s.dtReasons).map(k => `<li>${k}: ${s.dtReasons[k]} mins</li>`).join('');
+                html += `<div class="machine-detail"><p>🏭 Line: ${s.line}</p><p>⚙️ Op: ${s.op}</p><p>🔧 Mach: ${s.name}</p></div><p><b>Down:</b> <span style="color:#e74c3c; font-weight:bold; font-size:18px;">${maxDt} Mins</span></p><ul class="problem-list">${rList}</ul>`;
+            } else { html += `<p style="color:#27ae60; font-weight:bold;">✅ No downtime logged.</p>`; }
             html += `</div>`;
 
-            // Card 2: Performance
+            // Performance
             html += `<div class="track-card track-perf"><h3>⚠️ Lowest Performance</h3>`;
             if (minPerfAsset && minPerf < 1) {
-                let s = stats[minPerfAsset];
-                let pList = Object.keys(s.lossReasons).map(k => `<li>${k}: Flagged ${s.lossReasons[k]} times</li>`).join('');
-                html += `<div class="machine-detail"><p>🏭 Line: ${s.line}</p><p>⚙️ Op: ${s.op}</p><p>🔧 Mach: ${s.name}</p></div><p><b>Performance:</b> <span style="color:#d35400; font-weight:bold; font-size:18px;">${(minPerf*100).toFixed(1)}%</span></p><ul class="problem-list">${pList || '<li>No details</li>'}</ul>`;
-            } else { html += `<p style="color:#27ae60; font-weight:bold; padding-top:10px;">✅ Performance is optimal.</p>`; }
+                let s = stats[minPerfAsset]; let pList = Object.keys(s.lossReasons).map(k => `<li>${k}</li>`).join('');
+                html += `<div class="machine-detail"><p>🏭 Line: ${s.line}</p><p>⚙️ Op: ${s.op}</p><p>🔧 Mach: ${s.name}</p></div><p><b>Perf:</b> <span style="color:#f39c12; font-weight:bold; font-size:18px;">${(minPerf*100).toFixed(1)}%</span></p><ul class="problem-list">${pList}</ul>`;
+            } else { html += `<p style="color:#27ae60; font-weight:bold;">✅ Performance is optimal.</p>`; }
             html += `</div>`;
 
-            // Card 3: Quality
-            html += `<div class="track-card track-qual"><h3>📉 Highest Rejections</h3>`;
+            // Quality
+            html += `<div class="track-card track-qual"><h3>📉 Highest Rejects</h3>`;
             if (maxScrapAsset && maxScrap > 0) {
-                let s = stats[maxScrapAsset];
-                let qList = Object.keys(s.rejectReasons).map(k => `<li>${k}: ${s.rejectReasons[k]} Parts</li>`).join('');
-                html += `<div class="machine-detail"><p>🏭 Line: ${s.line}</p><p>⚙️ Op: ${s.op}</p><p>🔧 Mach: ${s.name}</p></div><p><b>Rejected:</b> <span style="color:#8e44ad; font-weight:bold; font-size:18px;">${maxScrap} Parts</span></p><ul class="problem-list">${qList || '<li>No details</li>'}</ul>`;
-            } else { html += `<p style="color:#27ae60; font-weight:bold; padding-top:10px;">✅ Zero rejects logged!</p>`; }
+                let s = stats[maxScrapAsset]; let qList = Object.keys(s.rejectReasons).map(k => `<li>${k}: ${s.rejectReasons[k]} Parts</li>`).join('');
+                html += `<div class="machine-detail"><p>🏭 Line: ${s.line}</p><p>⚙️ Op: ${s.op}</p><p>🔧 Mach: ${s.name}</p></div><p><b>Scrap:</b> <span style="color:#9b59b6; font-weight:bold; font-size:18px;">${maxScrap} Parts</span></p><ul class="problem-list">${qList}</ul>`;
+            } else { html += `<p style="color:#27ae60; font-weight:bold;">✅ Zero rejects logged!</p>`; }
             html += `</div>`;
 
-            // Card 4: Labor Loss (OLE)
+            // Labor Loss (NEW)
             html += `<div class="track-card track-labor"><h3>👥 Top Labor Loss</h3>`;
-            let maxLaborReason = null, maxLaborTime = 0;
-            for(let k in globalLaborLosses) { if(globalLaborLosses[k] > maxLaborTime) { maxLaborTime = globalLaborLosses[k]; maxLaborReason = k; } }
-            if(maxLaborTime > 0) {
-                html += `<div class="machine-detail" style="border-left-color:#34495e; background:#f4f6f7;"><p>🏭 Top Factor affecting OLE</p></div><p><b>Primary Cause:</b> <span style="color:#2c3e50; font-weight:bold; font-size:16px;">${maxLaborReason}</span></p><p><b>Time Lost:</b> <span style="color:#e74c3c; font-weight:bold;">${maxLaborTime} Mins</span></p>`;
-            } else { html += `<p style="color:#27ae60; font-weight:bold; padding-top:10px;">✅ Labor efficiency is high. No losses.</p>`; }
+            let maxLabR = null, maxLabT = 0;
+            for(let k in globalLaborLosses) { if(globalLaborLosses[k] > maxLabT) { maxLabT = globalLaborLosses[k]; maxLabR = k; } }
+            if (maxLabT > 0) {
+                html += `<div class="machine-detail" style="border-left-color:#27ae60;"><p>🏭 Affecting Line: All</p></div><p><b>Primary Cause:</b> <span style="color:var(--text-main); font-weight:bold; font-size:16px;">${maxLabR}</span></p><p><b>Time Lost:</b> <span style="color:#e74c3c; font-weight:bold;">${maxLabT} Mins</span></p>`;
+            } else { html += `<p style="color:#27ae60; font-weight:bold;">✅ Labor efficiency is high.</p>`; }
             html += `</div>`;
 
             document.getElementById("trackingContainer").innerHTML = html;
         }
 
-        // 3. PROCESS FLOW LOGIC
+        // --- PROCESS FLOW (WITH ZOOM MODAL) ---
         function calculateProcessFlow(sessions) {
             let lineVal = document.getElementById("lineSelect").value;
             let flowCont = document.getElementById("flowContainer");
@@ -478,9 +476,7 @@
             flowCont.style.display = "flex"; flowNotice.style.display = "none";
             
             let lineMachs = allMachines.filter(m => getSafeVal(m, ["LineName", "Line"]) === lineVal).sort((a, b) => (parseInt(getSafeVal(a, ["OpSequence"]))||999) - (parseInt(getSafeVal(b, ["OpSequence"]))||999));
-            
-            let maxCT = -1;
-            lineMachs.forEach(m => { let ct = Number(getSafeVal(m, ["IdealCT", "Target"])) || 0; if(ct > maxCT) maxCT = ct; });
+            let maxCT = -1; lineMachs.forEach(m => { let ct = Number(getSafeVal(m, ["IdealCT", "Target"])) || 0; if(ct > maxCT) maxCT = ct; });
 
             let html = ""; let chartsToRender = []; let machineStats = [];
             flowChartInstances.forEach(c => c.destroy()); flowChartInstances = [];
@@ -493,44 +489,35 @@
                 mSesh.forEach(s => { dt+=s.dt; pt+=s.pt; it+=(s.idealCT*s.actual); actual+=s.actual; good+=s.good; scrap+=s.scrap; });
 
                 let rt = Math.max(0, pt - dt);
-                let a = pt > 0 ? rt / pt : 0;
-                let p = rt > 0 ? it / rt : 0; if(p > 1) p = 1;
+                let a = pt > 0 ? rt / pt : 0; let p = rt > 0 ? it / rt : 0; if(p > 1) p = 1;
                 let q = (good + scrap) > 0 ? good / (good + scrap) : 0;
                 if (mSesh.length === 0) { a=0; p=0; q=0; }
-                let oee = a * p * q;
-
+                
                 let ct = Number(getSafeVal(m, ["IdealCT", "Target"])) || 0;
                 let opName = getSafeVal(m, ["Operation", "Op"]) || "Standard Op";
                 let machName = getSafeVal(m, ["MachineName", "Machine"]) || "Machine";
+                let dept = getSafeVal(m, ["Department", "Dept"]) || "";
 
-                machineStats.push({ m, idx, asset, machName, dept: getSafeVal(m, ["Department"]), opName, ct, actual, good, dt, pt, p, oee: oee*100, perf: p*100, qual: q*100 });
+                machineStats.push({ m, idx, asset, machName, dept, opName, ct, actual, good, dt, pt, p, oee: (a*p*q)*100, perf: p*100, qual: q*100 });
             });
 
             machineStats.forEach((stat, i) => {
                 let partIn = i === 0 ? stat.actual : (stat.actual > 0 ? stat.actual : machineStats[i-1].good);
                 let partOut = stat.good > 0 ? stat.good : 0; 
-                
                 let alertClass = ""; let badge = ""; let statusText = "Running Smoothly";
 
-                if (stat.ct > 0 && stat.ct === maxCT) {
-                    alertClass = "alert-bottleneck"; badge = "<div class='alert-badge' style='background:#f1c40f; color:#2c3e50;' title='Bottleneck'>B</div>"; statusText = "Bottleneck (Highest Cycle Time)";
-                }
-                if (stat.dt >= 30) { 
-                    alertClass = "alert-downtime"; badge = "<div class='alert-badge'>!</div>"; statusText = `Critical Downtime (${stat.dt} mins)`;
-                } else if (stat.pt > 0 && stat.p <= 0.75) { 
-                    alertClass = "alert-perf"; badge = "<div class='alert-badge'>!</div>"; statusText = `Low Performance (${(stat.p*100).toFixed(1)}%)`;
-                }
+                if (stat.ct > 0 && stat.ct === maxCT) { alertClass = "alert-bottleneck"; badge = "<div class='alert-badge' style='background:#f1c40f; color:#2c3e50;' title='Bottleneck'>B</div>"; statusText = "Bottleneck (Highest Cycle Time)"; }
+                if (stat.dt >= 30) { alertClass = "alert-downtime"; badge = "<div class='alert-badge'>!</div>"; statusText = `Critical Downtime (${stat.dt} mins)`; } 
+                else if (stat.pt > 0 && stat.p <= 0.75) { alertClass = "alert-perf"; badge = "<div class='alert-badge'>!</div>"; statusText = `Low Performance (${(stat.p*100).toFixed(1)}%)`; }
 
-                processedMachineCache[stat.idx] = {
-                    name: stat.machName, asset: stat.asset, line: lineVal, dept: stat.dept, op: stat.opName, ct: stat.ct, dt: stat.dt,
-                    oee: stat.oee.toFixed(1), perf: stat.perf.toFixed(1), qual: stat.qual.toFixed(1), status: statusText
-                };
+                processedMachineCache[stat.idx] = { name: stat.machName, asset: stat.asset, line: lineVal, dept: stat.dept, op: stat.opName, ct: stat.ct, dt: stat.dt, oee: stat.oee.toFixed(1), perf: stat.perf.toFixed(1), qual: stat.qual.toFixed(1), status: statusText };
+                let opSeq = getSafeVal(stat.m, ["OpSequence"]) || stat.idx+1;
 
                 html += `
                     <div class="flow-node ${alertClass}" onclick="openZoomModal(${stat.idx})">
                         ${badge}
                         <div class="badge-in">IN: ${partIn}</div><div class="badge-out">OUT: ${partOut}</div>
-                        <h4>[Op ${getSafeVal(stat.m, ["OpSequence"]) || stat.idx+1}] ${stat.machName}</h4>
+                        <h4>[Op ${opSeq}] ${stat.machName}</h4>
                         <div class="op-name">⚡ ${stat.opName}</div>
                         <p style="color:#e74c3c; font-size:11px; margin-bottom:5px;">Downtime: ${stat.dt}m</p>
                         <div class="flow-mini-charts">
@@ -551,20 +538,19 @@
             });
             
             flowCont.innerHTML = html;
-
             setTimeout(() => {
+                let tColor = document.body.classList.contains('dark-theme') ? '#ecf0f1' : '#2c3e50';
                 chartsToRender.forEach(c => {
-                    flowChartInstances.push(createMiniProcessDonut(`flow_oee_${c.idx}`, c.oee, '#2c3e50'));
-                    flowChartInstances.push(createMiniProcessDonut(`flow_perf_${c.idx}`, c.perf, '#f1c40f'));
-                    flowChartInstances.push(createMiniProcessDonut(`flow_qual_${c.idx}`, c.qual, '#e74c3c'));
+                    flowChartInstances.push(createMiniDonut(`flow_oee_${c.idx}`, c.oee, '#3498db', tColor));
+                    flowChartInstances.push(createMiniDonut(`flow_perf_${c.idx}`, c.perf, '#f1c40f', tColor));
+                    flowChartInstances.push(createMiniDonut(`flow_qual_${c.idx}`, c.qual, '#e74c3c', tColor));
                 });
             }, 50);
         }
 
-        // ZOOM MODAL LOGIC FOR PROCESS FLOW CARDS
+        // ZOOM MODAL LOGIC
         function openZoomModal(idx) {
-            let data = processedMachineCache[idx];
-            if(!data) return;
+            let data = processedMachineCache[idx]; if(!data) return;
             document.getElementById('zoomTitle').innerText = `${data.name} (Op: ${data.op})`;
             document.getElementById('zoomBody').innerHTML = `
                 <div class="zoom-row"><span>Machine Name:</span> <span>${data.name}</span></div>
@@ -573,24 +559,25 @@
                 <div class="zoom-row"><span>Ideal Cycle Time:</span> <span>${data.ct} mins</span></div>
                 <div class="zoom-row"><span>Accumulated Downtime:</span> <span style="color:#e74c3c;">${data.dt} mins</span></div>
                 <div class="zoom-row"><span>OEE Score:</span> <span style="color:#27ae60;">${data.oee}%</span></div>
-                <div class="zoom-row"><span>Performance:</span> <span style="color:#d35400;">${data.perf}%</span></div>
+                <div class="zoom-row"><span>Performance:</span> <span style="color:#f39c12;">${data.perf}%</span></div>
                 <div class="zoom-row"><span>Quality:</span> <span style="color:#8e44ad;">${data.qual}%</span></div>
-                <div class="zoom-row" style="border-bottom:none; margin-top:10px; background:#edf2f7; padding:10px; border-radius:6px;">
-                    <span>Current Status / Reason:</span> <span style="color:#c0392b;">${data.status}</span>
+                <div class="zoom-row" style="border-bottom:none; margin-top:15px; background:var(--bg-body); padding:10px; border-radius:6px; border-left:4px solid #e74c3c;">
+                    <span>Current Status / Reason:</span> <span style="color:#e74c3c;">${data.status}</span>
                 </div>`;
             document.getElementById('zoomModal').style.display = 'flex';
         }
         function closeZoomModal(event) { if(event.target.id === 'zoomModal') document.getElementById('zoomModal').style.display = 'none'; }
 
-        function createMiniProcessDonut(canvasId, val, color) {
-            let canvas = document.getElementById(canvasId); if(!canvas) return null;
-            let v = Math.min(Math.max(val, 0), 100);
+        function createMiniDonut(id, val, color, textColor) {
+            let canvas = document.getElementById(id); if(!canvas) return null;
+            let safeVal = Math.min(Math.max(val, 0), 100);
+            let bgFill = document.body.classList.contains('dark-theme') ? '#2c3e50' : '#ecf0f1';
             return new Chart(canvas.getContext('2d'), {
-                type: 'doughnut', data: { datasets: [{ data: [v, 100 - v], backgroundColor: [color, '#ecf0f1'], borderWidth: 0 }] },
+                type: 'doughnut', data: { datasets: [{ data: [safeVal, 100 - safeVal], backgroundColor: [color, bgFill], borderWidth: 0 }] },
                 options: { responsive: true, maintainAspectRatio: false, plugins: { tooltip: { enabled: false } }, cutout: '65%' },
                 plugins: [{ id: 'textCenter', beforeDraw: function(chart) {
                     let ctx = chart.ctx; ctx.restore(); ctx.font = "bold " + (chart.height / 3.2).toFixed(2) + "px sans-serif";
-                    ctx.fillStyle = "#2c3e50"; ctx.textBaseline = "middle"; let text = Math.round(v);
+                    ctx.fillStyle = textColor; ctx.textBaseline = "middle"; let text = Math.round(safeVal);
                     ctx.fillText(text, Math.round((chart.width - ctx.measureText(text).width) / 2), chart.height / 2); ctx.save();
                 }}]
             });
