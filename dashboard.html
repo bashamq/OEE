@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MES Live Dashboard (OEE & OLE)</title>
+    <title>MES Live Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background-color: #f4f7f6; margin: 0; padding: 0; overflow-x: hidden; }
@@ -34,37 +34,28 @@
         .controls { text-align: center; margin-bottom: 20px; display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; }
         select.filter-select, input[type="date"].filter-select { padding: 12px; font-size: 15px; border-radius: 5px; border: 2px solid #bdc3c7; font-weight: bold; color: #2c3e50; outline: none; cursor: pointer; }
         
-        /* TOP CARDS (OEE, OLE, MTTR, MTBF) */
-        .cards { display: flex; justify-content: center; flex-wrap: wrap; margin-bottom: 20px; gap: 15px; }
-        .card { background: white; padding: 15px 25px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); text-align: center; border-top: 4px solid #3498db; }
-        .card h3 { margin: 0 0 10px 0; color: #34495e; font-size: 15px; text-transform: uppercase; }
-        .card .value { font-size: 28px; font-weight: bold; }
-        .val-oee { color: #2980b9; } .val-ole { color: #27ae60; }
-        .val-mttr { color: #8e44ad; } .val-mtbf { color: #16a085; }
-
-        /* DUAL OVERVIEW (OEE vs OLE) */
-        .dual-overview { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 20px; }
-        .overview-box { flex: 1; min-width: 300px; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); text-align: center; }
-        .overview-box.oee-box { border-top: 5px solid #2980b9; }
-        .overview-box.ole-box { border-top: 5px solid #27ae60; background: #f9fdfa; }
-        .overview-box h2 { margin-top: 0; font-size: 20px; color: #2c3e50; border-bottom: 2px solid #ecf0f1; padding-bottom: 10px; }
+        /* CARDS */
+        .cards { display: flex; justify-content: center; flex-wrap: wrap; margin-bottom: 25px; gap: 15px; }
+        .card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); width: 15%; text-align: center; min-width: 140px; border-top: 4px solid #3498db; }
+        .card h3 { margin: 0 0 10px 0; color: #34495e; font-size: 14px; }
+        .card .value { font-size: 24px; font-weight: bold; color: #27ae60; }
         
-        .donuts-grid { display: flex; justify-content: space-around; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
-        .donut-box { width: 22%; min-width: 90px; position: relative; }
-        .donut-box canvas { max-width: 100px; max-height: 100px; margin: 0 auto; display: block; }
-        .donut-box p { margin-top:8px; font-size: 13px; font-weight:bold; color: #34495e; }
+        /* DOUGHNUT CHARTS */
+        .doughnut-container { width: 100%; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); box-sizing: border-box; text-align: center; margin-bottom: 20px; }
+        .donuts-grid { display: flex; justify-content: space-around; flex-wrap: wrap; gap: 15px; margin-top: 15px; }
+        .donut-box { width: 22%; min-width: 120px; position: relative; }
+        .donut-box canvas { max-width: 120px; max-height: 120px; margin: 0 auto; display: block; }
 
-        /* TRACKING STYLES (4 CARDS NOW) */
-        .track-grid { display: flex; justify-content: space-between; gap: 15px; flex-wrap: wrap; }
-        .track-card { flex: 1; min-width: 250px; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); border-top: 5px solid #bdc3c7; }
-        .track-card h3 { margin-top: 0; font-size: 16px; border-bottom: 1px dashed #ccc; padding-bottom: 10px; text-transform: uppercase; }
+        /* TRACKING STYLES */
+        .track-grid { display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+        .track-card { flex: 1; min-width: 300px; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); border-top: 5px solid #bdc3c7; }
+        .track-card h3 { margin-top: 0; font-size: 18px; border-bottom: 1px dashed #ccc; padding-bottom: 10px; text-transform: uppercase; }
         .track-downtime { border-top-color: #e74c3c; } .track-downtime h3 { color: #c0392b; }
         .track-perf { border-top-color: #f39c12; } .track-perf h3 { color: #d35400; }
         .track-qual { border-top-color: #9b59b6; } .track-qual h3 { color: #8e44ad; }
-        .track-labor { border-top-color: #34495e; background: #fdfefe; } .track-labor h3 { color: #2c3e50; }
         .machine-detail { background: #f8f9f9; padding: 10px; border-radius: 5px; margin-bottom: 15px; border-left: 3px solid #34495e; }
-        .machine-detail p { margin: 4px 0; font-size: 12px; color: #2c3e50; font-weight: 600; }
-        .problem-list { margin: 10px 0 0 0; padding-left: 20px; color: #7f8c8d; font-size: 13px; }
+        .machine-detail p { margin: 4px 0; font-size: 13px; color: #2c3e50; font-weight: 600; }
+        .problem-list { margin: 10px 0 0 0; padding-left: 20px; color: #7f8c8d; font-size: 14px; }
         
         /* PROCESS FLOW STYLES */
         .flow-wrapper { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; padding: 30px 20px; background: white; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); gap: 20px; }
@@ -73,6 +64,7 @@
         .flow-node h4 { margin: 0 0 2px 0; color: #2c3e50; font-size: 13px; font-weight: 700; }
         .flow-node .op-name { font-size: 11px; color: #7f8c8d; margin-bottom: 8px; font-weight: 600; }
         
+        /* ARROW & BUFFER */
         .arrow-container { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 60px; }
         .flow-arrow { font-size: 28px; color: #bdc3c7; font-weight: bold; line-height: 1; margin-top: 5px; }
         .buffer-badge { background: #f39c12; color: white; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
@@ -83,13 +75,17 @@
         .flow-mini-box canvas { max-width: 50px; max-height: 50px; display: block; margin: 0 auto; }
         .flow-mini-box span { display: block; font-size: 9px; font-weight: bold; color: #7f8c8d; margin-top: 3px; }
 
-        .badge-in { position: absolute; top: -10px; left: -8px; background: #3498db; color: white; padding: 3px 8px; border-radius: 5px; font-size: 11px; font-weight: bold; }
-        .badge-out { position: absolute; top: -10px; right: -8px; background: #27ae60; color: white; padding: 3px 8px; border-radius: 5px; font-size: 11px; font-weight: bold; }
+        /* IN / OUT BADGES */
+        .badge-in { position: absolute; top: -10px; left: -8px; background: #3498db; color: white; padding: 3px 8px; border-radius: 5px; font-size: 11px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .badge-out { position: absolute; top: -10px; right: -8px; background: #27ae60; color: white; padding: 3px 8px; border-radius: 5px; font-size: 11px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+
+        /* ALERTS & BOTTLENECK */
         .alert-bottleneck { border-color: #f1c40f !important; background: #fcf3cf !important; }
         .alert-downtime { border-color: #e74c3c !important; background: #fadbd8 !important; }
         .alert-perf { border-color: #f39c12 !important; background: #fdebd0 !important; }
         .alert-badge { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: #e74c3c; color: white; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; animation: blink 1s infinite; z-index: 10; }
 
+        /* ZOOM-IN CARD MODAL */
         .zoom-modal { display: none; position: fixed; z-index: 3000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); align-items: center; justify-content: center; backdrop-filter: blur(4px); }
         .zoom-content { background: white; width: 90%; max-width: 500px; border-radius: 12px; padding: 25px; position: relative; animation: zoomIn 0.3s ease; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
         @keyframes zoomIn { from { transform: scale(0.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
@@ -103,6 +99,7 @@
 </head>
 <body>
 
+    <!-- SIDEBAR -->
     <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">⚙️ MES Control</div>
@@ -111,6 +108,7 @@
         <a onclick="switchView('view-flow', this)">🔄 Process Flow</a>
     </div>
 
+    <!-- HEADER -->
     <div class="header">
         <button class="menu-btn" onclick="toggleSidebar()">☰</button>
         <h1>Manufacturing Excellence Dashboard</h1>
@@ -118,6 +116,7 @@
     </div>
 
     <div class="main-container">
+        <!-- GLOBAL CONTROLS -->
         <div class="controls">
             <input type="date" id="dateSelect" class="filter-select" onchange="processAllViews()">
             <select id="lineSelect" class="filter-select" onchange="processAllViews()">
@@ -127,44 +126,40 @@
 
         <div id="loadingMsg" class="loading">Fetching Data... Please wait.</div>
 
-        <!-- VIEW 1: LIVE DASHBOARD (OEE vs OLE) -->
+        <!-- VIEW 1: LIVE DASHBOARD -->
         <div id="view-dashboard" class="view-section active">
-            
             <div class="cards">
-                <div class="card" style="border-top-color:#2980b9;"><h3>Overall OEE</h3><div class="value val-oee" id="cardOEE">0%</div></div>
-                <div class="card" style="border-top-color:#27ae60;"><h3>Overall OLE</h3><div class="value val-ole" id="cardOLE">0%</div></div>
-                <div class="card" style="border-top-color:#8e44ad;"><h3>Avg MTTR</h3><div class="value val-mttr" id="cardMTTR">0 Min</div></div>
-                <div class="card" style="border-top-color:#16a085;"><h3>Avg MTBF</h3><div class="value val-mtbf" id="cardMTBF">0 Min</div></div>
+                <div class="card"><h3>OEE</h3><div class="value" id="valOEE">0%</div></div>
+                <div class="card"><h3>Availability</h3><div class="value" id="valA">0%</div></div>
+                <div class="card"><h3>Performance</h3><div class="value" id="valP">0%</div></div>
+                <div class="card"><h3>Quality</h3><div class="value" id="valQ">0%</div></div>
             </div>
             
-            <div class="dual-overview">
-                <!-- OEE OVERVIEW -->
-                <div class="overview-box oee-box">
-                    <h2><i class="fa-solid fa-gears"></i> Equipment Performance (OEE)</h2>
-                    <div class="donuts-grid">
-                        <div class="donut-box"><canvas id="oeeDonut"></canvas><p>OEE</p></div>
-                        <div class="donut-box"><canvas id="oeeADonut"></canvas><p style="color:#3498db;">Avail</p></div>
-                        <div class="donut-box"><canvas id="oeePDonut"></canvas><p style="color:#f1c40f;">Perf</p></div>
-                        <div class="donut-box"><canvas id="oeeQDonut"></canvas><p style="color:#e74c3c;">Qual</p></div>
-                    </div>
+            <div class="doughnut-container">
+                <h3 style="color:#2c3e50;">Performance Metrics Breakdown</h3>
+                <div class="donuts-grid">
+                    <div class="donut-box"><canvas id="oeeDonut"></canvas><p style="margin-top:8px; font-weight:bold;">OEE</p></div>
+                    <div class="donut-box"><canvas id="aDonut"></canvas><p style="margin-top:8px; font-weight:bold; color:#3498db;">Avail</p></div>
+                    <div class="donut-box"><canvas id="pDonut"></canvas><p style="margin-top:8px; font-weight:bold; color:#f1c40f;">Perf</p></div>
+                    <div class="donut-box"><canvas id="qDonut"></canvas><p style="margin-top:8px; font-weight:bold; color:#e74c3c;">Qual</p></div>
                 </div>
+            </div>
 
-                <!-- OLE OVERVIEW -->
-                <div class="overview-box ole-box">
-                    <h2><i class="fa-solid fa-users"></i> Labor Effectiveness (OLE)</h2>
-                    <div class="donuts-grid">
-                        <div class="donut-box"><canvas id="oleDonut"></canvas><p>OLE</p></div>
-                        <div class="donut-box"><canvas id="oleADonut"></canvas><p style="color:#27ae60;">Avail</p></div>
-                        <div class="donut-box"><canvas id="olePDonut"></canvas><p style="color:#d35400;">Perf</p></div>
-                        <div class="donut-box"><canvas id="oleQDonut"></canvas><p style="color:#8e44ad;">Qual</p></div>
-                    </div>
+            <div class="cards" style="justify-content: center;">
+                <div class="card" style="width: 40%; min-width: 220px; border-top-color: #8e44ad;">
+                    <h3>MTTR (Mean Time To Repair)</h3>
+                    <div class="value" style="color:#8e44ad; font-size: 32px;" id="cardMTTR">0 Min</div>
+                </div>
+                <div class="card" style="width: 40%; min-width: 220px; border-top-color: #16a085;">
+                    <h3>MTBF (Mean Time Between Failures)</h3>
+                    <div class="value" style="color:#16a085; font-size: 32px;" id="cardMTBF">0 Min</div>
                 </div>
             </div>
         </div>
 
-        <!-- VIEW 2: SMART TRACKING -->
+        <!-- VIEW 2: TRACKING -->
         <div id="view-tracking" class="view-section">
-            <h2 style="color: #2c3e50; text-align: center; border-bottom: 2px solid #ccc; padding-bottom: 10px;">🚨 Issue Tracking & Analyzer</h2>
+            <h2 style="color: #2c3e50; text-align: center; border-bottom: 2px solid #ccc; padding-bottom: 10px;">🚨 Issue Tracking & Analysis</h2>
             <div class="track-grid" id="trackingContainer"></div>
         </div>
 
@@ -177,22 +172,23 @@
 
     </div>
 
-    <!-- ZOOM-IN MODAL -->
+    <!-- ZOOM-IN MACHINE DETAIL MODAL -->
     <div class="zoom-modal" id="zoomModal" onclick="closeZoomModal(event)">
         <div class="zoom-content">
             <span class="zoom-close" onclick="document.getElementById('zoomModal').style.display='none'">&times;</span>
             <h3 id="zoomTitle" style="margin-top:0; color:#2c3e50; border-bottom:2px solid #e2e8f0; padding-bottom:10px;">Machine Deep Dive</h3>
-            <div id="zoomBody"></div>
+            <div id="zoomBody">
+                <!-- Dynamically populated -->
+            </div>
         </div>
     </div>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbzREGDC03uDNfgswSy49bMwGtlzok9fiT2Ro1w78JwfmPTp93hhmFnaSRz0pmE3mXJrXA/exec"; // Backend URL yahan daalein
-        
+        const API_URL = "https://script.google.com/macros/s/AKfycbyRkmh4_ofJjAftObCfnX9gmhqCa4xcsvSp143BXCUdQujfy4gaFkBMlEhsVrwa61HugQ/exec";
         let allLogs = [], allMachines = [];
-        let charts = {}; // Store chart instances dynamically
+        let oeeDonutInst = null, aDonutInst = null, pDonutInst = null, qDonutInst = null;
         let flowChartInstances = [];
-        let processedMachineCache = {}; 
+        let processedMachineCache = {}; // Stores details for zoom modal
 
         function getSafeVal(obj, possibleKeys) {
             let lowerKeys = possibleKeys.map(k => k.toLowerCase().replace(/\s/g, ''));
@@ -214,7 +210,8 @@
         }
 
         window.onload = function() {
-            let d = new Date(); let month = '' + (d.getMonth() + 1), day = '' + d.getDate(), year = d.getFullYear();
+            let d = new Date();
+            let month = '' + (d.getMonth() + 1), day = '' + d.getDate(), year = d.getFullYear();
             if (month.length < 2) month = '0' + month; if (day.length < 2) day = '0' + day;
             document.getElementById("dateSelect").value = [year, month, day].join('-');
             fetchAllData();
@@ -252,172 +249,118 @@
                 });
             }
 
-            // Generate Sessions to prevent double counting
-            let sessions = generateSessions(targetLogs);
-
-            calculateDashboard(sessions);
-            calculateTracking(sessions);
-            calculateProcessFlow(sessions);
+            calculateDashboard(targetLogs);
+            calculateTracking(targetLogs);
+            calculateProcessFlow(targetLogs);
         }
 
-        // --- SESSION AGGREGATOR FOR ACCURATE OEE & OLE ---
-        function generateSessions(logs) {
+        // 1. DASHBOARD LOGIC
+        function calculateDashboard(logs) {
             let lineVal = document.getElementById("lineSelect").value;
-            let filteredLogs = logs;
+            let filtered = logs;
+
             if (lineVal !== "All") {
                 let lineMachines = allMachines.filter(m => getSafeVal(m, ["LineName", "Line"]) === lineVal);
                 let lineAssets = lineMachines.map(m => String(getSafeVal(m, ["AssetNumber", "Barcode"])));
-                filteredLogs = logs.filter(l => lineAssets.includes(String(getSafeVal(l, ["Barcode#", "Barcode"]))));
+                filtered = logs.filter(l => lineAssets.includes(String(getSafeVal(l, ["Barcode#", "Barcode"]))));
             }
 
-            let sessions = {};
-            filteredLogs.forEach(r => {
-                let dStr = ""; 
-                let rawDate = getSafeVal(r, ["Timestamp", "Date"]); 
-                if(rawDate) dStr = new Date(rawDate).toDateString();
-                
-                let shift = getSafeVal(r, ["Shift"]) || "Unknown";
-                let barcode = String(getSafeVal(r, ["Barcode#", "Barcode"])).trim();
-                let key = `${dStr}_${shift}_${barcode}`;
-
-                if(!sessions[key]) {
-                    sessions[key] = { 
-                        barcode: barcode,
-                        pt: 480, dt: 0, actual: 0, idealCT: 0, good: 0, scrap: 0, 
-                        schedLabor: 480, actManpower: 1, laborLoss: 0, stdManpower: 1,
-                        dtReasons: {}, lossReasons: {}, rejectReasons: {}, laborLossReasons: {}
-                    };
-                    let mach = allMachines.find(m => String(getSafeVal(m, ["AssetNumber", "Barcode"])) === barcode);
-                    if(mach) {
-                        sessions[key].stdManpower = Number(getSafeVal(mach, ["StdManpower"])) || 1;
-                        sessions[key].machName = getSafeVal(mach, ["MachineName"]);
-                        sessions[key].line = getSafeVal(mach, ["LineName", "Line"]);
-                        sessions[key].op = getSafeVal(mach, ["Operation", "Op"]);
-                    }
-                }
-
-                let eType = String(getSafeVal(r, ["EntryType", "Type"])).trim();
-                
-                if (eType === "Availability" || eType === "Maintenance") {
-                    sessions[key].dt += Number(getSafeVal(r, ["Downtime(Min)", "Downtime"])) || 0;
-                    sessions[key].laborLoss += Number(getSafeVal(r, ["LaborLossTime"])) || 0;
-                    if(Number(getSafeVal(r, ["ScheduledLaborTime"]))) sessions[key].schedLabor = Number(getSafeVal(r, ["ScheduledLaborTime"]));
-                    if(Number(getSafeVal(r, ["ActualManpower"]))) sessions[key].actManpower = Number(getSafeVal(r, ["ActualManpower"]));
-                    
-                    let mR = getSafeVal(r, ["Maint.Reason", "MaintReason"]); if(mR && sessions[key].dt > 0) sessions[key].dtReasons[mR] = (sessions[key].dtReasons[mR] || 0) + sessions[key].dt;
-                    let llR = getSafeVal(r, ["LaborLossReason"]); if(llR && sessions[key].laborLoss > 0) sessions[key].laborLossReasons[llR] = (sessions[key].laborLossReasons[llR] || 0) + sessions[key].laborLoss;
-                
-                } else if (eType === "Performance" || eType === "Production") {
-                    sessions[key].pt = Number(getSafeVal(r, ["PlannedTime(Min)", "ShiftTime"])) || 480;
-                    sessions[key].idealCT = Number(getSafeVal(r, ["IdealCT(Min)", "Target"])) || 0;
-                    sessions[key].actual += Number(getSafeVal(r, ["TotalCount", "Actual"])) || 0;
-                    if(Number(getSafeVal(r, ["ScheduledLaborTime"]))) sessions[key].schedLabor = Number(getSafeVal(r, ["ScheduledLaborTime"]));
-                    if(Number(getSafeVal(r, ["ActualManpower"]))) sessions[key].actManpower = Number(getSafeVal(r, ["ActualManpower"]));
-                    
-                    let pR = getSafeVal(r, ["Low Production Reason", "LossReason"]); if(pR) sessions[key].lossReasons[pR] = (sessions[key].lossReasons[pR] || 0) + 1;
-
-                } else if (eType === "Quality") {
-                    sessions[key].good += Number(getSafeVal(r, ["GoodCount", "GoodParts"])) || 0;
-                    sessions[key].scrap += Number(getSafeVal(r, ["ScrapCount", "RejectParts"])) || 0;
-                    let qR = getSafeVal(r, ["RejectReason"]); if(qR && sessions[key].scrap > 0) sessions[key].rejectReasons[qR] = (sessions[key].rejectReasons[qR] || 0) + sessions[key].scrap;
-                }
-            });
-            return Object.values(sessions);
-        }
-
-        // 1. DASHBOARD LOGIC (OEE & OLE)
-        function calculateDashboard(sessions) {
-            if (sessions.length === 0) {
-                document.getElementById("cardOEE").innerText = "0%"; document.getElementById("cardOLE").innerText = "0%";
+            if (filtered.length === 0) {
+                document.getElementById("valOEE").innerText = "0.0%"; document.getElementById("valA").innerText = "0.0%";
+                document.getElementById("valP").innerText = "0.0%"; document.getElementById("valQ").innerText = "0.0%";
                 document.getElementById("cardMTTR").innerText = "0 Min"; document.getElementById("cardMTBF").innerText = "0 Min";
-                renderDonut('oeeDonut', 0, '#2c3e50'); renderDonut('oeeADonut', 0, '#3498db'); renderDonut('oeePDonut', 0, '#f1c40f'); renderDonut('oeeQDonut', 0, '#e74c3c');
-                renderDonut('oleDonut', 0, '#27ae60'); renderDonut('oleADonut', 0, '#2ecc71'); renderDonut('olePDonut', 0, '#d35400'); renderDonut('oleQDonut', 0, '#8e44ad');
-                return;
+                updateCharts(0, 0, 0, 0); return;
             }
 
-            let tPT=0, tDT=0, tIT=0, dtCount=0;
-            let tGood=0, tScrap=0;
-            let tSchedLabor=0, tLaborLoss=0, tExpectedLabor=0, tActualLabor=0;
-
-            sessions.forEach(s => {
-                // OEE Variables
-                tPT += s.pt; 
-                tDT += s.dt; if(s.dt > 0) dtCount++;
-                tIT += (s.idealCT * s.actual);
-                tGood += s.good; tScrap += s.scrap;
-
-                // OLE Variables
-                tSchedLabor += s.schedLabor;
-                tLaborLoss += s.laborLoss;
-                tActualLabor += (s.schedLabor * s.actManpower); // Total human minutes deployed
-                tExpectedLabor += (s.idealCT * s.actual * s.stdManpower); // Total human minutes earned
-            });
-
-            // OEE Calcs
-            let oeeA = tPT > 0 ? Math.max(0, tPT - tDT) / tPT : 0;
-            let oeeP = (tPT - tDT) > 0 ? Math.min(1, tIT / (tPT - tDT)) : 0;
-            let qual = (tGood + tScrap) > 0 ? tGood / (tGood + tScrap) : 0;
-            let oee = oeeA * oeeP * qual;
-
-            // OLE Calcs
-            let oleA = tSchedLabor > 0 ? Math.max(0, tSchedLabor - tLaborLoss) / tSchedLabor : 0;
-            let oleP = tActualLabor > 0 ? Math.min(1, tExpectedLabor / tActualLabor) : 0;
-            let ole = oleA * oleP * qual;
-
-            // MTTR & MTBF
-            let mttr = dtCount > 0 ? (tDT / dtCount).toFixed(1) : 0;
-            let mtbf = dtCount > 0 ? ((tPT - tDT) / dtCount).toFixed(1) : Math.max(0, tPT - tDT).toFixed(1);
-
-            document.getElementById("cardOEE").innerText = (oee * 100).toFixed(1) + "%";
-            document.getElementById("cardOLE").innerText = (ole * 100).toFixed(1) + "%";
-            document.getElementById("cardMTTR").innerText = mttr + " Min"; 
-            document.getElementById("cardMTBF").innerText = mtbf + " Min";
-
-            // Render OEE
-            renderDonut('oeeDonut', oee*100, '#2c3e50'); renderDonut('oeeADonut', oeeA*100, '#3498db'); 
-            renderDonut('oeePDonut', oeeP*100, '#f1c40f'); renderDonut('oeeQDonut', qual*100, '#e74c3c');
-            // Render OLE
-            renderDonut('oleDonut', ole*100, '#27ae60'); renderDonut('oleADonut', oleA*100, '#2ecc71'); 
-            renderDonut('olePDonut', oleP*100, '#d35400'); renderDonut('oleQDonut', qual*100, '#8e44ad');
-        }
-
-        function renderDonut(id, val, color) {
-            if(charts[id]) charts[id].destroy();
-            let safeVal = Math.min(Math.max(val, 0), 100);
-            charts[id] = new Chart(document.getElementById(id).getContext('2d'), { 
-                type: 'doughnut', 
-                data: { datasets: [{ data: [safeVal, 100-safeVal], backgroundColor: [color, '#ecf0f1'], borderWidth: 0 }] }, 
-                options: { responsive: true, maintainAspectRatio: false, plugins: { tooltip: { enabled: false } }, cutout: '75%' }, 
-                plugins: [{ id: 'tc', beforeDraw: function(c) { 
-                    let ctx=c.ctx; ctx.restore(); ctx.font="bold "+(c.height/4).toFixed(2)+"px sans-serif"; 
-                    ctx.fillStyle="#2c3e50"; ctx.textBaseline="middle"; let t=Math.round(safeVal)+"%"; 
-                    ctx.fillText(t, (c.width-ctx.measureText(t).width)/2, c.height/2); ctx.save(); 
-                }}]
-            });
-        }
-
-        // 2. SMART TRACKING LOGIC (ADDED LABOR LOSS CARD)
-        function calculateTracking(sessions) {
-            let stats = {};
-            let globalLaborLosses = {};
-
-            sessions.forEach(s => {
-                let a = s.barcode;
-                if(!stats[a]) {
-                    stats[a] = { name: s.machName || a, line: s.line, op: s.op, dt: 0, dtReasons: {}, pt: 0, it: 0, actual: 0, lossReasons: {}, good: 0, scrap: 0, rejectReasons: {} };
+            let pt = 0, dt = 0, it = 0, dtC = 0, totalGood = 0, totalScrap = 0;
+            filtered.forEach(row => {
+                let eType = String(getSafeVal(row, ["EntryType", "Type"])).trim();
+                if (eType === "Availability" || eType === "Maintenance") {
+                    let d = Number(getSafeVal(row, ["Downtime(Min)", "Downtime"])) || 0;
+                    dt += d; if(d > 0) dtC++;
+                } else if (eType === "Performance" || eType === "Production") {
+                    pt += Number(getSafeVal(row, ["PlannedTime(Min)", "ShiftTime"])) || 480;
+                    it += (Number(getSafeVal(row, ["IdealCT(Min)", "Target"])) || 0) * (Number(getSafeVal(row, ["TotalCount", "Actual"])) || 0);
+                } else if (eType === "Quality") {
+                    totalGood += Number(getSafeVal(row, ["GoodCount", "GoodParts"])) || 0;
+                    totalScrap += Number(getSafeVal(row, ["ScrapCount", "RejectParts"])) || 0;
                 }
-                stats[a].dt += s.dt; stats[a].pt += s.pt; stats[a].it += (s.idealCT * s.actual); 
-                stats[a].actual += s.actual; stats[a].good += s.good; stats[a].scrap += s.scrap;
-                
-                for(let k in s.dtReasons) stats[a].dtReasons[k] = (stats[a].dtReasons[k]||0) + s.dtReasons[k];
-                for(let k in s.lossReasons) stats[a].lossReasons[k] = (stats[a].lossReasons[k]||0) + s.lossReasons[k];
-                for(let k in s.rejectReasons) stats[a].rejectReasons[k] = (stats[a].rejectReasons[k]||0) + s.rejectReasons[k];
-                
-                // Aggregate Labor Losses Globally
-                for(let k in s.laborLossReasons) globalLaborLosses[k] = (globalLaborLosses[k]||0) + s.laborLossReasons[k];
             });
 
-            let maxDtAsset = null, maxDt = 0, minPerfAsset = null, minPerf = 999, maxScrapAsset = null, maxScrap = 0;
+            let rt = Math.max(0, pt - dt);
+            let a = pt > 0 ? rt / pt : 0; let p = rt > 0 ? Math.min(1, it / rt) : 0;
+            let tq = totalGood + totalScrap; let q = tq > 0 ? totalGood / tq : 0;
+            let oee = a * p * q;
+
+            let mttr = dtC > 0 ? (dt / dtC).toFixed(1) : 0;
+            let mtbf = dtC > 0 ? (rt / dtC).toFixed(1) : rt.toFixed(1);
+
+            document.getElementById("valOEE").innerText = (oee * 100).toFixed(1) + "%";
+            document.getElementById("valA").innerText = (a * 100).toFixed(1) + "%";
+            document.getElementById("valP").innerText = (p * 100).toFixed(1) + "%";
+            document.getElementById("valQ").innerText = (q * 100).toFixed(1) + "%";
+            document.getElementById("cardMTTR").innerText = mttr + " Min"; document.getElementById("cardMTBF").innerText = mtbf + " Min";
+            updateCharts(a * 100, p * 100, q * 100, oee * 100);
+        }
+
+        function createDonut(id, val, color) {
+            return new Chart(document.getElementById(id).getContext('2d'), { type: 'doughnut', data: { datasets: [{ data: [val, 100-val], backgroundColor: [color, '#ecf0f1'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { tooltip: { enabled: false } }, cutout: '75%' }, plugins: [{ id: 'tc', beforeDraw: function(c) { let ctx=c.ctx; ctx.restore(); ctx.font="bold "+(c.height/5).toFixed(2)+"px sans-serif"; ctx.fillStyle="#2c3e50"; ctx.textBaseline="middle"; let t=Math.round(val)+"%"; ctx.fillText(t, (c.width-ctx.measureText(t).width)/2, c.height/2); ctx.save(); } }]});
+        }
+        function updateCharts(a, p, q, o) {
+            if(oeeDonutInst) oeeDonutInst.destroy(); if(aDonutInst) aDonutInst.destroy(); if(pDonutInst) pDonutInst.destroy(); if(qDonutInst) qDonutInst.destroy();
+            oeeDonutInst = createDonut('oeeDonut', o, '#2c3e50'); aDonutInst = createDonut('aDonut', a, '#3498db'); pDonutInst = createDonut('pDonut', p, '#f1c40f'); qDonutInst = createDonut('qDonut', q, '#e74c3c');
+        }
+
+        // 2. TRACKING LOGIC
+        function calculateTracking(logs) {
+            let stats = {};
+            let lineVal = document.getElementById("lineSelect").value;
+            let targetLogs = logs;
+
+            if (lineVal !== "All") {
+                let lineMachines = allMachines.filter(m => getSafeVal(m, ["LineName", "Line"]) === lineVal);
+                let lineAssets = lineMachines.map(m => String(getSafeVal(m, ["AssetNumber", "Barcode"])));
+                targetLogs = logs.filter(l => lineAssets.includes(String(getSafeVal(l, ["Barcode#", "Barcode"]))));
+            }
+
+            targetLogs.forEach(r => {
+                let asset = String(getSafeVal(r, ["Barcode#", "Barcode"])).trim();
+                if(!asset) return;
+                
+                if(!stats[asset]) {
+                    let m = allMachines.find(x => String(getSafeVal(x, ["AssetNumber", "Barcode"])) === asset);
+                    stats[asset] = { 
+                        name: m ? getSafeVal(m, ["MachineName"]) : "Machine "+asset, 
+                        line: m ? getSafeVal(m, ["LineName", "Line"]) : "Unknown Line",
+                        op: m ? getSafeVal(m, ["Operation", "Op"]) : "Unknown",
+                        dt: 0, dtReasons: {}, 
+                        pt: 0, it: 0, actual: 0, lossReasons: {},
+                        good: 0, scrap: 0, rejectReasons: {}
+                    };
+                }
+                
+                let type = String(getSafeVal(r, ["EntryType", "Type"])).trim();
+                
+                if (type === "Availability" || type === "Maintenance") {
+                    let d = Number(getSafeVal(r, ["Downtime(Min)"])) || 0; stats[asset].dt += d;
+                    let reason = getSafeVal(r, ["Maint.Reason"]) || "Other";
+                    if(d > 0) stats[asset].dtReasons[reason] = (stats[asset].dtReasons[reason] || 0) + d;
+                } else if (type === "Performance" || type === "Production") {
+                    let pt = Number(getSafeVal(r, ["PlannedTime(Min)"])) || 480; let act = Number(getSafeVal(r, ["TotalCount"])) || 0;
+                    stats[asset].pt += pt; stats[asset].actual += act; stats[asset].it += ((Number(getSafeVal(r, ["IdealCT(Min)"])) || 0) * act);
+                    let lossR = getSafeVal(r, ["Low Production Reason", "LossReason"]);
+                    if(lossR) stats[asset].lossReasons[lossR] = (stats[asset].lossReasons[lossR] || 0) + 1;
+                } else if (type === "Quality") {
+                    let g = Number(getSafeVal(r, ["GoodCount", "GoodParts"])) || 0; stats[asset].good += g;
+                    let s = Number(getSafeVal(r, ["ScrapCount", "RejectParts"])) || 0; stats[asset].scrap += s;
+                    let rejR = getSafeVal(r, ["RejectReason"]);
+                    if(s > 0 && rejR) stats[asset].rejectReasons[rejR] = (stats[asset].rejectReasons[rejR] || 0) + s;
+                }
+            });
+
+            let maxDtAsset = null, maxDt = 0;
+            let minPerfAsset = null, minPerf = 999;
+            let maxScrapAsset = null, maxScrap = 0;
 
             for(let a in stats) {
                 if(stats[a].dt > maxDt) { maxDt = stats[a].dt; maxDtAsset = a; }
@@ -428,48 +371,35 @@
             }
 
             let html = "";
-            
-            // Card 1: Downtime
             html += `<div class="track-card track-downtime"><h3>🚨 Highest Downtime</h3>`;
             if (maxDtAsset && maxDt > 0) {
                 let s = stats[maxDtAsset];
                 let rList = Object.keys(s.dtReasons).map(k => `<li>${k}: ${s.dtReasons[k]} mins</li>`).join('');
-                html += `<div class="machine-detail"><p>🏭 Line: ${s.line}</p><p>⚙️ Op: ${s.op}</p><p>🔧 Mach: ${s.name}</p></div><p><b>Total Down:</b> <span style="color:#e74c3c; font-weight:bold; font-size:18px;">${maxDt} Mins</span></p><ul class="problem-list">${rList || '<li>No details</li>'}</ul>`;
-            } else { html += `<p style="color:#27ae60; font-weight:bold; padding-top:10px;">✅ No downtime logged.</p>`; }
+                html += `<div class="machine-detail"><p>🏭 Line: ${s.line}</p><p>⚙️ Operation: ${s.op}</p><p>🔧 Machine: ${s.name} (${maxDtAsset})</p></div><p><b>Total Down:</b> <span style="color:#e74c3c; font-weight:bold; font-size:18px;">${maxDt} Mins</span></p><ul class="problem-list">${rList || '<li>No specific reasons logged</li>'}</ul>`;
+            } else { html += `<p style="color:#27ae60; font-weight:bold; padding-top:10px;">✅ No downtime logged today.</p>`; }
             html += `</div>`;
 
-            // Card 2: Performance
             html += `<div class="track-card track-perf"><h3>⚠️ Lowest Performance</h3>`;
             if (minPerfAsset && minPerf < 1) {
                 let s = stats[minPerfAsset];
                 let pList = Object.keys(s.lossReasons).map(k => `<li>${k}: Flagged ${s.lossReasons[k]} times</li>`).join('');
-                html += `<div class="machine-detail"><p>🏭 Line: ${s.line}</p><p>⚙️ Op: ${s.op}</p><p>🔧 Mach: ${s.name}</p></div><p><b>Performance:</b> <span style="color:#d35400; font-weight:bold; font-size:18px;">${(minPerf*100).toFixed(1)}%</span></p><ul class="problem-list">${pList || '<li>No details</li>'}</ul>`;
+                html += `<div class="machine-detail"><p>🏭 Line: ${s.line}</p><p>⚙️ Operation: ${s.op}</p><p>🔧 Machine: ${s.name} (${minPerfAsset})</p></div><p><b>Performance:</b> <span style="color:#d35400; font-weight:bold; font-size:18px;">${(minPerf*100).toFixed(1)}%</span></p><ul class="problem-list">${pList || '<li>No specific loss reasons logged</li>'}</ul>`;
             } else { html += `<p style="color:#27ae60; font-weight:bold; padding-top:10px;">✅ Performance is optimal.</p>`; }
             html += `</div>`;
 
-            // Card 3: Quality
             html += `<div class="track-card track-qual"><h3>📉 Highest Rejections</h3>`;
             if (maxScrapAsset && maxScrap > 0) {
                 let s = stats[maxScrapAsset];
                 let qList = Object.keys(s.rejectReasons).map(k => `<li>${k}: ${s.rejectReasons[k]} Parts</li>`).join('');
-                html += `<div class="machine-detail"><p>🏭 Line: ${s.line}</p><p>⚙️ Op: ${s.op}</p><p>🔧 Mach: ${s.name}</p></div><p><b>Rejected:</b> <span style="color:#8e44ad; font-weight:bold; font-size:18px;">${maxScrap} Parts</span></p><ul class="problem-list">${qList || '<li>No details</li>'}</ul>`;
-            } else { html += `<p style="color:#27ae60; font-weight:bold; padding-top:10px;">✅ Zero rejects logged!</p>`; }
-            html += `</div>`;
-
-            // Card 4: Labor Loss (OLE)
-            html += `<div class="track-card track-labor"><h3>👥 Top Labor Loss</h3>`;
-            let maxLaborReason = null, maxLaborTime = 0;
-            for(let k in globalLaborLosses) { if(globalLaborLosses[k] > maxLaborTime) { maxLaborTime = globalLaborLosses[k]; maxLaborReason = k; } }
-            if(maxLaborTime > 0) {
-                html += `<div class="machine-detail" style="border-left-color:#34495e; background:#f4f6f7;"><p>🏭 Top Factor affecting OLE</p></div><p><b>Primary Cause:</b> <span style="color:#2c3e50; font-weight:bold; font-size:16px;">${maxLaborReason}</span></p><p><b>Time Lost:</b> <span style="color:#e74c3c; font-weight:bold;">${maxLaborTime} Mins</span></p>`;
-            } else { html += `<p style="color:#27ae60; font-weight:bold; padding-top:10px;">✅ Labor efficiency is high. No losses.</p>`; }
+                html += `<div class="machine-detail"><p>🏭 Line: ${s.line}</p><p>⚙️ Operation: ${s.op}</p><p>🔧 Machine: ${s.name} (${maxScrapAsset})</p></div><p><b>Total Rejected:</b> <span style="color:#8e44ad; font-weight:bold; font-size:18px;">${maxScrap} Parts</span></p><ul class="problem-list">${qList || '<li>No specific defect reasons logged</li>'}</ul>`;
+            } else { html += `<p style="color:#27ae60; font-weight:bold; padding-top:10px;">✅ Zero rejects logged today!</p>`; }
             html += `</div>`;
 
             document.getElementById("trackingContainer").innerHTML = html;
         }
 
-        // 3. PROCESS FLOW LOGIC
-        function calculateProcessFlow(sessions) {
+        // 3. PROCESS FLOW LOGIC (WITH OP NAMES & ZOOM DEEP DIVE)
+        function calculateProcessFlow(logs) {
             let lineVal = document.getElementById("lineSelect").value;
             let flowCont = document.getElementById("flowContainer");
             let flowNotice = document.getElementById("flowNotice");
@@ -480,73 +410,130 @@
             let lineMachs = allMachines.filter(m => getSafeVal(m, ["LineName", "Line"]) === lineVal).sort((a, b) => (parseInt(getSafeVal(a, ["OpSequence"]))||999) - (parseInt(getSafeVal(b, ["OpSequence"]))||999));
             
             let maxCT = -1;
-            lineMachs.forEach(m => { let ct = Number(getSafeVal(m, ["IdealCT", "Target"])) || 0; if(ct > maxCT) maxCT = ct; });
+            lineMachs.forEach(m => {
+                let ct = Number(getSafeVal(m, ["IdealCT", "Target"])) || 0;
+                if(ct > maxCT) maxCT = ct;
+            });
 
-            let html = ""; let chartsToRender = []; let machineStats = [];
-            flowChartInstances.forEach(c => c.destroy()); flowChartInstances = [];
+            let html = "";
+            let chartsToRender = [];
+            let machineStats = [];
+
+            flowChartInstances.forEach(c => c.destroy());
+            flowChartInstances = [];
 
             lineMachs.forEach((m, idx) => {
                 let asset = String(getSafeVal(m, ["AssetNumber", "Barcode"]));
-                let mSesh = sessions.filter(s => s.barcode === asset);
+                let mLogs = logs.filter(l => String(getSafeVal(l, ["Barcode#", "Barcode"])) === asset);
                 
-                let dt=0, pt=0, it=0, good=0, scrap=0, actual=0;
-                mSesh.forEach(s => { dt+=s.dt; pt+=s.pt; it+=(s.idealCT*s.actual); actual+=s.actual; good+=s.good; scrap+=s.scrap; });
+                let dt = 0, pt = 0, it = 0, good = 0, scrap = 0, actual = 0;
+                mLogs.forEach(r => {
+                    let type = String(getSafeVal(r, ["EntryType", "Type"])).trim();
+                    if(type === "Availability" || type === "Maintenance") {
+                        dt += Number(getSafeVal(r, ["Downtime(Min)"])) || 0;
+                    } else if(type === "Performance" || type === "Production") {
+                        pt += Number(getSafeVal(r, ["PlannedTime(Min)"])) || 480;
+                        let act = Number(getSafeVal(r, ["TotalCount", "Actual"])) || 0;
+                        actual += act;
+                        it += (Number(getSafeVal(r, ["IdealCT(Min)", "Target"])) || 0) * act;
+                    } else if (type === "Quality") {
+                        good += Number(getSafeVal(r, ["GoodCount", "GoodParts"])) || 0;
+                        scrap += Number(getSafeVal(r, ["ScrapCount", "RejectParts"])) || 0;
+                    }
+                });
 
                 let rt = Math.max(0, pt - dt);
                 let a = pt > 0 ? rt / pt : 0;
                 let p = rt > 0 ? it / rt : 0; if(p > 1) p = 1;
-                let q = (good + scrap) > 0 ? good / (good + scrap) : 0;
-                if (mSesh.length === 0) { a=0; p=0; q=0; }
+                let totalPQ = good + scrap; let q = totalPQ > 0 ? good / totalPQ : 0;
+                
+                if (mLogs.length === 0) { a=0; p=0; q=0; }
                 let oee = a * p * q;
 
                 let ct = Number(getSafeVal(m, ["IdealCT", "Target"])) || 0;
                 let opName = getSafeVal(m, ["Operation", "Op"]) || "Standard Op";
+                let dept = getSafeVal(m, ["Department", "Dept"]) || "Machining";
                 let machName = getSafeVal(m, ["MachineName", "Machine"]) || "Machine";
+                let lineName = getSafeVal(m, ["LineName", "Line"]) || lineVal;
 
-                machineStats.push({ m, idx, asset, machName, dept: getSafeVal(m, ["Department"]), opName, ct, actual, good, dt, pt, p, oee: oee*100, perf: p*100, qual: q*100 });
+                machineStats.push({ m, idx, asset, machName, lineName, dept, opName, ct, actual, good, dt, pt, p, oee: oee*100, perf: p*100, qual: q*100 });
             });
 
             machineStats.forEach((stat, i) => {
-                let partIn = i === 0 ? stat.actual : (stat.actual > 0 ? stat.actual : machineStats[i-1].good);
+                let partIn = 0;
+                if (i === 0) { partIn = stat.actual; } 
+                else { partIn = stat.actual > 0 ? stat.actual : machineStats[i-1].good; }
+                
                 let partOut = stat.good > 0 ? stat.good : 0; 
                 
-                let alertClass = ""; let badge = ""; let statusText = "Running Smoothly";
+                let alertClass = ""; let badge = "";
+                let statusText = "Running Smoothly";
 
                 if (stat.ct > 0 && stat.ct === maxCT) {
-                    alertClass = "alert-bottleneck"; badge = "<div class='alert-badge' style='background:#f1c40f; color:#2c3e50;' title='Bottleneck'>B</div>"; statusText = "Bottleneck (Highest Cycle Time)";
+                    alertClass = "alert-bottleneck"; 
+                    badge = "<div class='alert-badge' style='background:#f1c40f; color:#2c3e50;' title='Bottleneck'>B</div>";
+                    statusText = "Bottleneck (Highest Cycle Time)";
                 }
+                
                 if (stat.dt >= 30) { 
-                    alertClass = "alert-downtime"; badge = "<div class='alert-badge'>!</div>"; statusText = `Critical Downtime (${stat.dt} mins)`;
+                    alertClass = "alert-downtime"; badge = "<div class='alert-badge'>!</div>"; 
+                    statusText = `Critical Downtime (${stat.dt} mins)`;
                 } else if (stat.pt > 0 && stat.p <= 0.75) { 
-                    alertClass = "alert-perf"; badge = "<div class='alert-badge'>!</div>"; statusText = `Low Performance (${(stat.p*100).toFixed(1)}%)`;
+                    alertClass = "alert-perf"; badge = "<div class='alert-badge'>!</div>"; 
+                    statusText = `Low Performance (${(stat.p*100).toFixed(1)}%)`;
                 }
 
+                // Cache data for zoom modal
                 processedMachineCache[stat.idx] = {
-                    name: stat.machName, asset: stat.asset, line: lineVal, dept: stat.dept, op: stat.opName, ct: stat.ct, dt: stat.dt,
-                    oee: stat.oee.toFixed(1), perf: stat.perf.toFixed(1), qual: stat.qual.toFixed(1), status: statusText
+                    name: stat.machName,
+                    asset: stat.asset,
+                    line: stat.lineName,
+                    dept: stat.dept,
+                    op: stat.opName,
+                    ct: stat.ct,
+                    dt: stat.dt,
+                    oee: stat.oee.toFixed(1),
+                    perf: stat.perf.toFixed(1),
+                    qual: stat.qual.toFixed(1),
+                    status: statusText
                 };
+
+                let opSeq = getSafeVal(stat.m, ["OpSequence"]) || stat.idx+1;
 
                 html += `
                     <div class="flow-node ${alertClass}" onclick="openZoomModal(${stat.idx})">
                         ${badge}
-                        <div class="badge-in">IN: ${partIn}</div><div class="badge-out">OUT: ${partOut}</div>
-                        <h4>[Op ${getSafeVal(stat.m, ["OpSequence"]) || stat.idx+1}] ${stat.machName}</h4>
+                        <div class="badge-in">IN: ${partIn}</div>
+                        <div class="badge-out">OUT: ${partOut}</div>
+                        
+                        <h4>[Op ${opSeq}] ${stat.machName}</h4>
                         <div class="op-name">⚡ ${stat.opName}</div>
                         <p style="color:#e74c3c; font-size:11px; margin-bottom:5px;">Downtime: ${stat.dt}m</p>
+                        
                         <div class="flow-mini-charts">
                             <div class="flow-mini-box"><canvas id="flow_oee_${stat.idx}"></canvas><span>OEE</span></div>
                             <div class="flow-mini-box"><canvas id="flow_perf_${stat.idx}"></canvas><span>PERF</span></div>
                             <div class="flow-mini-box"><canvas id="flow_qual_${stat.idx}"></canvas><span>QUAL</span></div>
                         </div>
-                    </div>`;
+                    </div>
+                `;
 
                 if(i < machineStats.length - 1) {
                     let nextMachineIn = machineStats[i+1].actual > 0 ? machineStats[i+1].actual : 0;
-                    let bufferCount = Math.max(0, partOut - nextMachineIn);
+                    let bufferCount = partOut - nextMachineIn; 
+                    if (bufferCount < 0) bufferCount = 0; 
+                    
                     let bufferClass = bufferCount > 0 ? "" : "buffer-ok";
                     let bufferText = bufferCount > 0 ? `WIP: ${bufferCount}` : "Clear";
-                    html += `<div class="arrow-container"><div class="buffer-badge ${bufferClass}">${bufferText}</div><div class="flow-arrow">➔</div></div>`;
+
+                    html += `
+                        <div class="arrow-container">
+                            <div class="buffer-badge ${bufferClass}">${bufferText}</div>
+                            <div class="flow-arrow">➔</div>
+                        </div>
+                    `;
                 }
+
                 chartsToRender.push({ idx: stat.idx, oee: stat.oee, perf: stat.perf, qual: stat.qual });
             });
             
@@ -565,34 +552,51 @@
         function openZoomModal(idx) {
             let data = processedMachineCache[idx];
             if(!data) return;
+
             document.getElementById('zoomTitle').innerText = `${data.name} (Op: ${data.op})`;
             document.getElementById('zoomBody').innerHTML = `
                 <div class="zoom-row"><span>Machine Name:</span> <span>${data.name}</span></div>
-                <div class="zoom-row"><span>Asset ID:</span> <span>${data.asset}</span></div>
-                <div class="zoom-row"><span>Line / Dept:</span> <span>${data.line} / ${data.dept}</span></div>
-                <div class="zoom-row"><span>Ideal Cycle Time:</span> <span>${data.ct} mins</span></div>
+                <div class="zoom-row"><span>Asset / Barcode ID:</span> <span>${data.asset}</span></div>
+                <div class="zoom-row"><span>Line Name:</span> <span>${data.line}</span></div>
+                <div class="zoom-row"><span>Department:</span> <span>${data.dept}</span></div>
+                <div class="zoom-row"><span>Operation Name:</span> <span>${data.op}</span></div>
+                <div class="zoom-row"><span>Ideal Cycle Time (CT):</span> <span>${data.ct} mins</span></div>
                 <div class="zoom-row"><span>Accumulated Downtime:</span> <span style="color:#e74c3c;">${data.dt} mins</span></div>
                 <div class="zoom-row"><span>OEE Score:</span> <span style="color:#27ae60;">${data.oee}%</span></div>
                 <div class="zoom-row"><span>Performance:</span> <span style="color:#d35400;">${data.perf}%</span></div>
                 <div class="zoom-row"><span>Quality:</span> <span style="color:#8e44ad;">${data.qual}%</span></div>
                 <div class="zoom-row" style="border-bottom:none; margin-top:10px; background:#edf2f7; padding:10px; border-radius:6px;">
                     <span>Current Status / Reason:</span> <span style="color:#c0392b;">${data.status}</span>
-                </div>`;
+                </div>
+            `;
             document.getElementById('zoomModal').style.display = 'flex';
         }
-        function closeZoomModal(event) { if(event.target.id === 'zoomModal') document.getElementById('zoomModal').style.display = 'none'; }
+
+        function closeZoomModal(event) {
+            if(event.target.id === 'zoomModal') {
+                document.getElementById('zoomModal').style.display = 'none';
+            }
+        }
 
         function createMiniProcessDonut(canvasId, val, color) {
-            let canvas = document.getElementById(canvasId); if(!canvas) return null;
+            let canvas = document.getElementById(canvasId);
+            if(!canvas) return null;
             let v = Math.min(Math.max(val, 0), 100);
             return new Chart(canvas.getContext('2d'), {
-                type: 'doughnut', data: { datasets: [{ data: [v, 100 - v], backgroundColor: [color, '#ecf0f1'], borderWidth: 0 }] },
+                type: 'doughnut',
+                data: { datasets: [{ data: [v, 100 - v], backgroundColor: [color, '#ecf0f1'], borderWidth: 0 }] },
                 options: { responsive: true, maintainAspectRatio: false, plugins: { tooltip: { enabled: false } }, cutout: '65%' },
-                plugins: [{ id: 'textCenter', beforeDraw: function(chart) {
-                    let ctx = chart.ctx; ctx.restore(); ctx.font = "bold " + (chart.height / 3.2).toFixed(2) + "px sans-serif";
-                    ctx.fillStyle = "#2c3e50"; ctx.textBaseline = "middle"; let text = Math.round(v);
-                    ctx.fillText(text, Math.round((chart.width - ctx.measureText(text).width) / 2), chart.height / 2); ctx.save();
-                }}]
+                plugins: [{
+                    id: 'textCenter',
+                    beforeDraw: function(chart) {
+                        let width = chart.width, height = chart.height, ctx = chart.ctx;
+                        ctx.restore();
+                        ctx.font = "bold " + (height / 3.2).toFixed(2) + "px sans-serif";
+                        ctx.fillStyle = "#2c3e50"; ctx.textBaseline = "middle";
+                        let text = Math.round(v), textX = Math.round((width - ctx.measureText(text).width) / 2), textY = height / 2;
+                        ctx.fillText(text, textX, textY); ctx.save();
+                    }
+                }]
             });
         }
     </script>
